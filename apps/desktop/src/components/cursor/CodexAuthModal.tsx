@@ -77,7 +77,7 @@ export function CodexAuthModal({ open, onClose, onSuccess }: CodexAuthModalProps
     const poll = async () => {
       if (stopped || !activeRef.current) return;
       try {
-        const res = await api.pollCodexDeviceAuth(deviceData.device_code);
+        const res = await api.pollCodexDeviceAuth(deviceData.device_code, deviceData.user_code);
         if (res.status === "success" && res.access_token) {
           setPollStatus("success");
           message(t("ChatGPT / Codex 账号授权成功！"));

@@ -331,7 +331,7 @@ export const api = {
   startGrokDeviceAuth: (clientId?: string) => request<GrokDeviceCodeResponse>("/auth/grok/device-code", { method: "POST", body: JSON.stringify({ client_id: clientId }) }),
   pollGrokDeviceAuth: (deviceCode: string, clientId?: string) => request<GrokTokenPollResponse>("/auth/grok/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, client_id: clientId }) }),
   startCodexDeviceAuth: (clientId?: string) => request<CodexDeviceCodeResponse>("/auth/codex/device-code", { method: "POST", body: JSON.stringify({ client_id: clientId }) }),
-  pollCodexDeviceAuth: (deviceCode: string, clientId?: string) => request<CodexTokenPollResponse>("/auth/codex/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, client_id: clientId }) }),
+  pollCodexDeviceAuth: (deviceCode: string, userCode?: string, clientId?: string) => request<CodexTokenPollResponse>("/auth/codex/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, user_code: userCode, client_id: clientId }) }),
   overview: (filter?: { startMs: number; endMs: number; modelHashes?: string[] }) => {
     const params = new URLSearchParams();
     if (filter) {

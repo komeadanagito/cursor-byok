@@ -188,6 +188,7 @@ pub struct CodexDeviceCodeResponse {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CodexTokenPollInput {
     pub device_code: String,
+    pub user_code: Option<String>,
     pub client_id: Option<String>,
 }
 
@@ -266,10 +267,13 @@ pub async fn codex_token_poll(
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| DEFAULT_CODEX_CLIENT_ID.to_string());
 
-    let payload = serde_json::json!({
+    let mut payload = serde_json::json!({
         "client_id": client_id,
         "device_auth_id": input.device_code,
     });
+    if let Some(user_code) = input.user_code.filter(|s| !s.trim().is_empty()) {
+        payload["user_code"] = serde_json::Value::String(user_code);
+    }
 
     let response = client
         .post(CODEX_TOKEN_URL)
@@ -300,10 +304,16 @@ pub async fn codex_token_poll(
         }
     }
 
+    let raw_status = body
+        .get("status")
+        .or_else(|| body.get("state"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
     let error_code = body
         .get("error")
         .and_then(|v| if v.is_string() { v.as_str() } else { v.get("code").and_then(|c| c.as_str()) })
-        .unwrap_or("");
+        .unwrap_or(raw_status);
 
     let error_desc = body
         .get("error_description")
@@ -313,7 +323,15 @@ pub async fn codex_token_poll(
         .map(ToString::to_string);
 
     match error_code {
-        "authorization_pending" | "pending" => Ok(Json(CodexTokenPollResponse {
+        "authorization_pending" | "pending" | "waiting" | "in_progress" => Ok(Json(CodexTokenPollResponse {
+            status: "pending".into(),
+            access_token: None,
+            refresh_token: None,
+            token_type: None,
+            expires_in: None,
+            error_message: None,
+        })),
+        "" if body.get("error").is_none() => Ok(Json(CodexTokenPollResponse {
             status: "pending".into(),
             access_token: None,
             refresh_token: None,
