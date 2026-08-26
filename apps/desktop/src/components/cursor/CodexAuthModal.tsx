@@ -10,8 +10,17 @@ import styles from "./GrokAuthModal.module.scss";
 type CodexAuthModalProps = {
   open: boolean;
   onClose: () => void;
-  onSuccess: (accessToken: string) => void;
+  onSuccess: (accessToken: string, refreshToken?: string | null) => void;
 };
+
+function isCodexAuthorizationPending(errorMessage: string | null | undefined): boolean {
+  const message = (errorMessage || "").toLowerCase();
+  return (
+    message.includes("authorization is pending") ||
+    message.includes("authorization_pending") ||
+    message.includes("device authorization is pending")
+  );
+}
 
 export function CodexAuthModal({ open, onClose, onSuccess }: CodexAuthModalProps) {
   const message = useMessage();
@@ -81,7 +90,7 @@ export function CodexAuthModal({ open, onClose, onSuccess }: CodexAuthModalProps
         if (res.status === "success" && res.access_token) {
           setPollStatus("success");
           message(t("ChatGPT / Codex 账号授权成功！"));
-          onSuccess(res.access_token);
+          onSuccess(res.access_token, res.refresh_token);
           setTimeout(() => {
             if (activeRef.current) onClose();
           }, 1200);
@@ -94,7 +103,7 @@ export function CodexAuthModal({ open, onClose, onSuccess }: CodexAuthModalProps
           setPollStatus("error");
           setErrorMessage(t("用户拒绝了授权请求。"));
           return;
-        } else if (res.status === "error") {
+        } else if (res.status === "error" && !isCodexAuthorizationPending(res.error_message)) {
           setPollStatus("error");
           setErrorMessage(res.error_message || t("授权发生错误。"));
           return;

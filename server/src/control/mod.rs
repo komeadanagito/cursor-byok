@@ -1,3 +1,4 @@
+mod accounts;
 mod ads;
 mod calls;
 mod harness;
@@ -6,6 +7,7 @@ mod oauth;
 mod overview;
 mod service;
 mod settings;
+mod usage;
 
 use axum::{
     body::{to_bytes, Body},
@@ -119,12 +121,31 @@ pub fn api_router(service: ControlService) -> Router {
             "/__byok-api__/api/auth/grok/device-code",
             post(oauth::grok_device_code),
         )
+        .route("/__byok-api__/api/auth/accounts/import", post(accounts::import_accounts))
         .route("/__byok-api__/api/auth/grok/poll", post(oauth::grok_token_poll))
+        .route("/__byok-api__/api/auth/grok/usage", post(usage::grok_usage))
+        .route(
+            "/__byok-api__/api/auth/grok/accounts",
+            get(accounts::list_grok).post(accounts::upsert_grok),
+        )
+        .route(
+            "/__byok-api__/api/auth/grok/accounts/{account_id}",
+            put(accounts::activate_grok).delete(accounts::delete_grok),
+        )
         .route(
             "/__byok-api__/api/auth/codex/device-code",
             post(oauth::codex_device_code),
         )
         .route("/__byok-api__/api/auth/codex/poll", post(oauth::codex_token_poll))
+        .route("/__byok-api__/api/auth/codex/usage", post(usage::codex_usage))
+        .route(
+            "/__byok-api__/api/auth/codex/accounts",
+            get(accounts::list_codex).post(accounts::upsert_codex),
+        )
+        .route(
+            "/__byok-api__/api/auth/codex/accounts/{account_id}",
+            put(accounts::activate_codex).delete(accounts::delete_codex),
+        )
         .route(
             "/__byok-api__/api/models",
             get(models::list).post(models::create),

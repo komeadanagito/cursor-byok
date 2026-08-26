@@ -669,16 +669,31 @@ fn model_discovery_url(base_url: &str) -> Result<Url> {
     Ok(url)
 }
 
+fn openai_models_request_url(base_url: &str) -> Result<Url> {
+    let url = Url::parse(base_url)
+        .map_err(|error| Error::Config(format!("invalid model request URL: {error}")))?;
+    if url
+        .host_str()
+        .is_some_and(|host| host.eq_ignore_ascii_case("chatgpt.com"))
+    {
+        return Url::parse("https://chatgpt.com/backend-api/codex/models?client_version=1.0.0")
+            .map_err(|error| Error::Config(format!("invalid Codex models URL: {error}")));
+    }
+    model_discovery_url(base_url)
+}
+
 async fn openai_models(
     client: &reqwest::Client,
     base_url: &str,
     api_key: &str,
     custom_headers: &serde_json::Value,
 ) -> Result<Vec<String>> {
-    let mut request = client.get(model_discovery_url(base_url)?);
+    let url = openai_models_request_url(base_url)?;
+    let mut request = client.get(url.clone());
     if !api_key.is_empty() {
         request = request.bearer_auth(api_key);
     }
+    request = crate::provider::apply_chatgpt_codex_headers(request, url.as_str(), api_key);
     let response = apply_discovery_headers(request, custom_headers)?
         .send()
         .await?;
@@ -689,7 +704,11 @@ async fn openai_models(
             "model discovery failed ({status}): {body}"
         )));
     }
-    Ok(model_ids(body.get("data").unwrap_or(&body)))
+    Ok(model_ids(
+        body.get("data")
+            .or_else(|| body.get("models"))
+            .unwrap_or(&body),
+    ))
 }
 
 async fn anthropic_models(
@@ -745,11 +764,30 @@ fn model_ids(value: &serde_json::Value) -> Vec<String> {
         .flatten()
         .filter_map(|item| match item {
             serde_json::Value::String(id) => Some(id.clone()),
-            serde_json::Value::Object(object) => object
-                .get("id")
-                .or_else(|| object.get("name"))
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_owned),
+            serde_json::Value::Object(object) => {
+                if object
+                    .get("supported_in_api")
+                    .and_then(serde_json::Value::as_bool)
+                    == Some(false)
+                {
+                    return None;
+                }
+                if object
+                    .get("visibility")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|visibility| visibility != "list")
+                {
+                    return None;
+                }
+                object
+                    .get("id")
+                    .or_else(|| object.get("name"))
+                    .or_else(|| object.get("slug"))
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|id| !id.is_empty())
+                    .map(ToString::to_string)
+            }
             _ => None,
         })
         .collect()
@@ -983,5 +1021,28 @@ mod tests {
             "Bearer secret"
         );
         server.abort();
+    }
+
+    #[test]
+    fn chatgpt_codex_discovery_uses_backend_models_endpoint() {
+        assert_eq!(
+            super::openai_models_request_url("https://chatgpt.com/backend-api/codex")
+                .unwrap()
+                .as_str(),
+            "https://chatgpt.com/backend-api/codex/models?client_version=1.0.0"
+        );
+    }
+
+    #[test]
+    fn model_ids_read_openai_and_codex_listings() {
+        let openai = serde_json::json!([{ "id": "grok-4" }, { "name": "grok-4.20" }]);
+        assert_eq!(super::model_ids(&openai), vec!["grok-4", "grok-4.20"]);
+
+        let codex = serde_json::json!([
+            { "slug": "gpt-5.4", "supported_in_api": true, "visibility": "list" },
+            { "slug": "hidden-model", "supported_in_api": true, "visibility": "hidden" },
+            { "slug": "internal-model", "supported_in_api": false, "visibility": "list" }
+        ]);
+        assert_eq!(super::model_ids(&codex), vec!["gpt-5.4"]);
     }
 }

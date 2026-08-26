@@ -60,8 +60,8 @@
   height: 40px;
   border-radius: 8px;
   background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.06));
-  font-size: 20px;
   flex-shrink: 0;
+  color: var(--vscode-foreground);
 }
 
 .names {
@@ -107,6 +107,24 @@
   background: rgba(148, 163, 184, 0.15);
   color: #94a3b8;
   border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.accountBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accountSelect {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.accountHint {
+  flex: 0 0 auto;
+  font-size: type.$font-size-2xs;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
 }
 
 .cardBody {
@@ -157,7 +175,6 @@
   }
 
   span:last-child {
-    color: #4ade80;
     font-weight: 600;
   }
 }
@@ -172,9 +189,32 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #22c55e, #4ade80);
   border-radius: 999px;
   transition: width 0.3s ease;
+}
+
+.usageOk {
+  color: #4ade80;
+}
+
+.usageWarn {
+  color: #fbbf24;
+}
+
+.usageBad {
+  color: #f87171;
+}
+
+.usageOkFill {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.usageWarnFill {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+
+.usageBadFill {
+  background: linear-gradient(90deg, #dc2626, #f87171);
 }
 
 .balanceList {

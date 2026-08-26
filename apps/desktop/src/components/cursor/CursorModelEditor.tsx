@@ -54,7 +54,7 @@ export function CursorModelEditor({ draft, isEditing = false, modelOptions, disc
   discovering: boolean;
   onChange: (draft: CursorModelDraft) => void;
   onDiscover: () => void;
-  onGrokAuthorized?: (accessToken: string) => void;
+  onGrokAuthorized?: () => void;
 }) {
   const setModel = (patch: Partial<ModelInput>) => onChange({ ...draft, model: { ...draft.model, ...patch } });
   const setType = (type: ModelType) => setModel({
@@ -150,7 +150,7 @@ export function CursorModelEditor({ draft, isEditing = false, modelOptions, disc
         {
           value: "subscriptions",
           label: t("订阅与认证"),
-          content: <SubscriptionAuthTab onSwitchToModels={() => onGrokAuthorized?.("")} />,
+          content: <SubscriptionAuthTab onSwitchToModels={() => onGrokAuthorized?.()} />,
         },
       ]}
     />

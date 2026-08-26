@@ -129,6 +129,36 @@ export interface CodexTokenPollResponse {
   error_message: string | null;
 }
 
+export interface SubscriptionUsage {
+  plan_label: string | null;
+  remaining_percent: number | null;
+  used_percent: number | null;
+  reset_at_ms: number | null;
+  limit_reached: boolean;
+  session_remaining_percent: number | null;
+  session_reset_at_ms: number | null;
+}
+
+export interface SubscriptionAccount {
+  account_id: string;
+  provider: string;
+  display_name: string;
+  plan_label: string | null;
+  remaining_percent: number | null;
+  used_percent: number | null;
+  reset_at_ms: number | null;
+  session_remaining_percent: number | null;
+  session_reset_at_ms: number | null;
+  limit_reached: boolean;
+  active: boolean;
+}
+
+export interface SubscriptionImportResult {
+  imported: number;
+  skipped: number;
+  errors: Array<{ name: string; message: string }>;
+}
+
 export type CaState = "missing" | "untrusted" | "ready" | "invalid";
 export type IntegrationState = "disabled" | "enabled" | "degraded";
 export interface CursorHarnessStatus {
@@ -332,6 +362,17 @@ export const api = {
   pollGrokDeviceAuth: (deviceCode: string, clientId?: string) => request<GrokTokenPollResponse>("/auth/grok/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, client_id: clientId }) }),
   startCodexDeviceAuth: (clientId?: string) => request<CodexDeviceCodeResponse>("/auth/codex/device-code", { method: "POST", body: JSON.stringify({ client_id: clientId }) }),
   pollCodexDeviceAuth: (deviceCode: string, userCode?: string, clientId?: string) => request<CodexTokenPollResponse>("/auth/codex/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, user_code: userCode, client_id: clientId }) }),
+  grokUsage: (apiKey?: string) => request<SubscriptionUsage>("/auth/grok/usage", { method: "POST", body: JSON.stringify({ api_key: apiKey ?? null }) }),
+  codexUsage: (apiKey?: string) => request<SubscriptionUsage>("/auth/codex/usage", { method: "POST", body: JSON.stringify({ api_key: apiKey ?? null }) }),
+  grokAccounts: () => request<SubscriptionAccount[]>("/auth/grok/accounts"),
+  saveGrokAccount: (accessToken: string, refreshToken?: string | null) => request<SubscriptionAccount>("/auth/grok/accounts", { method: "POST", body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken ?? null }) }),
+  activateGrokAccount: (accountId: string) => request<SubscriptionAccount>(`/auth/grok/accounts/${encodeURIComponent(accountId)}`, { method: "PUT" }),
+  deleteGrokAccount: (accountId: string) => request<SubscriptionAccount[]>(`/auth/grok/accounts/${encodeURIComponent(accountId)}`, { method: "DELETE" }),
+  codexAccounts: () => request<SubscriptionAccount[]>("/auth/codex/accounts"),
+  saveCodexAccount: (accessToken: string, refreshToken?: string | null) => request<SubscriptionAccount>("/auth/codex/accounts", { method: "POST", body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken ?? null }) }),
+  activateCodexAccount: (accountId: string) => request<SubscriptionAccount>(`/auth/codex/accounts/${encodeURIComponent(accountId)}`, { method: "PUT" }),
+  deleteCodexAccount: (accountId: string) => request<SubscriptionAccount[]>(`/auth/codex/accounts/${encodeURIComponent(accountId)}`, { method: "DELETE" }),
+  importAccounts: (provider: "grok" | "codex", files: Array<{ name: string; content: unknown }>) => request<SubscriptionImportResult>("/auth/accounts/import", { method: "POST", body: JSON.stringify({ provider, files }) }),
   overview: (filter?: { startMs: number; endMs: number; modelHashes?: string[] }) => {
     const params = new URLSearchParams();
     if (filter) {

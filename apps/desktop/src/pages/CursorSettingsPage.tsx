@@ -249,36 +249,9 @@ export function CursorSettingsPage() {
           discovering={discovering}
           onChange={setDraft}
           onDiscover={() => void discover()}
-          onGrokAuthorized={async (accessToken) => {
-            try {
-              await appStore.createModels([{
-                sort_order: models.length + 1,
-                display_name: "grok-beta (OAuth)",
-                type: "openai",
-                base_url: "https://api.x.ai/v1",
-                use_full_url: false,
-                api_key: accessToken,
-                tooltip_data: "xAI Grok (OAuth)",
-                model_id: "grok-beta",
-                reasoning_effort: null,
-                openai_endpoint: "/v1/chat/completions",
-                openai_extra_params_enabled: false,
-                openai_extra_params: {},
-                custom_headers_enabled: false,
-                custom_headers: {},
-                anthropic_extra_params_enabled: false,
-                anthropic_extra_params: {},
-                context_window_tokens: 500000,
-                max_completion_tokens: 16384,
-                anthropic_max_tokens: null,
-                anthropic_thinking_effort: "xhigh",
-                thinking_budget_tokens: null,
-              }]);
-              setDraft(null);
-              setEditing(null);
-            } catch (err) {
-              message(errorText(err));
-            }
+          onGrokAuthorized={() => {
+            setDraft(null);
+            setEditing(null);
           }}
         />
       </>}

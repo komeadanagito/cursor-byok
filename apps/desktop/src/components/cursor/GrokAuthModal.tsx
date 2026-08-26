@@ -10,7 +10,7 @@ import styles from "./GrokAuthModal.module.scss";
 type GrokAuthModalProps = {
   open: boolean;
   onClose: () => void;
-  onSuccess: (accessToken: string) => void;
+  onSuccess: (accessToken: string, refreshToken?: string | null) => void;
 };
 
 export function GrokAuthModal({ open, onClose, onSuccess }: GrokAuthModalProps) {
@@ -82,7 +82,7 @@ export function GrokAuthModal({ open, onClose, onSuccess }: GrokAuthModalProps) 
         if (res.status === "success" && res.access_token) {
           setPollStatus("success");
           message(t("Grok 账号授权成功！"));
-          onSuccess(res.access_token);
+          onSuccess(res.access_token, res.refresh_token);
           setTimeout(() => {
             if (activeRef.current) onClose();
           }, 1200);
