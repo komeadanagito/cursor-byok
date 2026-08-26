@@ -47,7 +47,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 226,
+          "line": 243,
           "column": 25
         }
       ]
@@ -202,7 +202,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 239,
+          "line": 256,
           "column": 34
         }
       ]
@@ -415,6 +415,28 @@
         }
       ]
     },
+    "110ff21b09a20735": {
+      "source": "本周剩余额度",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 215,
+          "column": 28
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 230,
+          "column": 26
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 287,
+          "column": 26
+        }
+      ]
+    },
     "124be3f86f197802": {
       "source": "Token 消耗",
       "kind": "text",
@@ -581,7 +603,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 278,
+          "line": 299,
           "column": 31
         }
       ]
@@ -1144,23 +1166,6 @@
         }
       ]
     },
-    "3002bcb155bc8f8d": {
-      "source": "额度状态",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 217,
-          "column": 26
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 270,
-          "column": 26
-        }
-      ]
-    },
     "32e5306b774bed42": {
       "source": "已接入模型",
       "kind": "text",
@@ -1168,7 +1173,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 223,
+          "line": 240,
           "column": 26
         }
       ]
@@ -1532,23 +1537,6 @@
         }
       ]
     },
-    "46e3c97d470be5a5": {
-      "source": "订阅套餐",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 213,
-          "column": 26
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 266,
-          "column": 26
-        }
-      ]
-    },
     "470049252e54de6a": {
       "source": "成功占比：{rate}",
       "kind": "template",
@@ -1572,6 +1560,23 @@
           "file": "components/settings/AppLifecycleSettingsCard.tsx",
           "line": 102,
           "column": 17
+        }
+      ]
+    },
+    "4807869c2873960f": {
+      "source": "周额度上限",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 226,
+          "column": 26
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 283,
+          "column": 26
         }
       ]
     },
@@ -1690,6 +1695,23 @@
         }
       ]
     },
+    "4beea275de17e02e": {
+      "source": "周额度与剩余额度",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 199,
+          "column": 29
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 279,
+          "column": 29
+        }
+      ]
+    },
     "4d0680f9efaef147": {
       "source": "未读",
       "kind": "text",
@@ -1704,6 +1726,18 @@
           "file": "layouts/AppLayout.tsx",
           "line": 200,
           "column": 67
+        }
+      ]
+    },
+    "4df5269bb978f5e8": {
+      "source": "100%（额度充足，无限调用）",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 232,
+          "column": 40
         }
       ]
     },
@@ -2158,6 +2192,18 @@
         }
       ]
     },
+    "637a0d380aecea8e": {
+      "source": "刷新额度",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 207,
+          "column": 49
+        }
+      ]
+    },
     "63c73c4730f4473e": {
       "source": "应用",
       "kind": "text",
@@ -2280,18 +2326,6 @@
         }
       ]
     },
-    "660cddb241320a03": {
-      "source": "充足（官方订阅模型）",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 219,
-          "column": 40
-        }
-      ]
-    },
     "68ad603fafe4e0d6": {
       "source": "导入旧版配置",
       "kind": "text",
@@ -2313,18 +2347,6 @@
           "file": "layouts/AppLayout.tsx",
           "line": 77,
           "column": 47
-        }
-      ]
-    },
-    "6a676e75a839e98e": {
-      "source": "刷新余额",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 207,
-          "column": 49
         }
       ]
     },
@@ -2628,7 +2650,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 239,
+          "line": 256,
           "column": 53
         }
       ]
@@ -2695,6 +2717,23 @@
           "file": "components/settings/AppLifecycleSettingsCard.tsx",
           "line": 61,
           "column": 25
+        }
+      ]
+    },
+    "86aa0c9a73df7f6d": {
+      "source": "额度重置周期",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 236,
+          "column": 26
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 291,
+          "column": 26
         }
       ]
     },
@@ -2994,7 +3033,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 214,
+          "line": 227,
           "column": 71
         }
       ]
@@ -3313,6 +3352,18 @@
           "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 133,
           "column": 17
+        }
+      ]
+    },
+    "a5d53dd2c9b4a657": {
+      "source": "每周一 00:00 (UTC) 动态刷新",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 237,
+          "column": 26
         }
       ]
     },
@@ -4072,6 +4123,18 @@
         }
       ]
     },
+    "d56bfdd5ce61b1f6": {
+      "source": "充足",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 216,
+          "column": 34
+        }
+      ]
+    },
     "d86fa42c3848c680": {
       "source": "使用系统代理",
       "kind": "text",
@@ -4185,12 +4248,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 255,
+          "line": 272,
           "column": 16
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 271,
+          "line": 288,
           "column": 26
         }
       ]
@@ -4346,23 +4409,6 @@
         }
       ]
     },
-    "e24bfbb480d9103a": {
-      "source": "余额与额度状态",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 199,
-          "column": 29
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 262,
-          "column": 29
-        }
-      ]
-    },
     "e24ebe4a866d69bf": {
       "source": "测试失败：{error}",
       "kind": "template",
@@ -4461,7 +4507,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 227,
+          "line": 244,
           "column": 25
         }
       ]
@@ -4719,6 +4765,18 @@
         }
       ]
     },
+    "f6e01007fa848aea": {
+      "source": "官方订阅配额 (X Premium+)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 227,
+          "column": 44
+        }
+      ]
+    },
     "f78413c36d36f090": {
       "source": "默认跟随操作系统；不支持的系统语言使用英文。当前：{language}",
       "kind": "template",
@@ -4819,6 +4877,18 @@
         }
       ]
     },
+    "fbd779e65571f855": {
+      "source": "按月/按周自动刷新",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 292,
+          "column": 26
+        }
+      ]
+    },
     "fbe8778fa8b9bab5": {
       "source": "需要先初始化本地 CA",
       "kind": "text",
@@ -4882,8 +4952,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 219,
-          "column": 58
+          "line": 232,
+          "column": 63
         }
       ]
     },

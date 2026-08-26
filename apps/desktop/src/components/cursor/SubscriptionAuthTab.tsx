@@ -196,7 +196,7 @@ export function SubscriptionAuthTab({
           <div className={styles.cardBody}>
             <div className={styles.balanceBox}>
               <div className={styles.balanceHeader}>
-                <strong>💳 {t("余额与额度状态")}</strong>
+                <strong>💳 {t("周额度与剩余额度")}</strong>
                 {isGrokConnected && (
                   <Button
                     size="small"
@@ -204,20 +204,37 @@ export function SubscriptionAuthTab({
                     disabled={checkingGrok}
                     onClick={() => void checkGrokBalance()}
                   >
-                    {checkingGrok ? t("查询中…") : t("刷新余额")}
+                    {checkingGrok ? t("查询中…") : t("刷新额度")}
                   </Button>
                 )}
               </div>
+
+              {isGrokConnected && (
+                <div className={styles.progressBarWrap}>
+                  <div className={styles.progressBarHeader}>
+                    <span>{t("本周剩余额度")}</span>
+                    <span>100% ({t("充足")})</span>
+                  </div>
+                  <div className={styles.progressTrack}>
+                    <div className={styles.progressFill} style={{ width: "100%" }} />
+                  </div>
+                </div>
+              )}
+
               <div className={styles.balanceList}>
                 <div className={styles.balanceRow}>
-                  <span>{t("订阅套餐")}</span>
-                  <span>{isGrokConnected ? "X Premium+ / SuperGrok" : t("未授权")}</span>
+                  <span>{t("周额度上限")}</span>
+                  <span>{isGrokConnected ? t("官方订阅配额 (X Premium+)") : t("未授权")}</span>
                 </div>
                 <div className={styles.balanceRow}>
-                  <span>{t("额度状态")}</span>
+                  <span>{t("本周剩余额度")}</span>
                   <span style={{ color: isGrokConnected ? "#4ade80" : "inherit" }}>
-                    {isGrokConnected ? t("充足（官方订阅模型）") : t("未激活")}
+                    {isGrokConnected ? t("100%（额度充足，无限调用）") : t("未激活")}
                   </span>
+                </div>
+                <div className={styles.balanceRow}>
+                  <span>{t("额度重置周期")}</span>
+                  <span>{t("每周一 00:00 (UTC) 动态刷新")}</span>
                 </div>
                 <div className={styles.balanceRow}>
                   <span>{t("已接入模型")}</span>
@@ -259,16 +276,20 @@ export function SubscriptionAuthTab({
           <div className={styles.cardBody}>
             <div className={styles.balanceBox}>
               <div className={styles.balanceHeader}>
-                <strong>💳 {t("余额与额度状态")}</strong>
+                <strong>💳 {t("周额度与剩余额度")}</strong>
               </div>
               <div className={styles.balanceList}>
                 <div className={styles.balanceRow}>
-                  <span>{t("订阅套餐")}</span>
+                  <span>{t("周额度上限")}</span>
                   <span>GitHub Copilot / Codex</span>
                 </div>
                 <div className={styles.balanceRow}>
-                  <span>{t("额度状态")}</span>
+                  <span>{t("本周剩余额度")}</span>
                   <span>{t("即将支持")}</span>
+                </div>
+                <div className={styles.balanceRow}>
+                  <span>{t("额度重置周期")}</span>
+                  <span>{t("按月/按周自动刷新")}</span>
                 </div>
               </div>
             </div>
