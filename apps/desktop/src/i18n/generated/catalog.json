@@ -1393,7 +1393,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 180,
+          "line": 183,
           "column": 18
         }
       ]
@@ -2564,7 +2564,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 145,
+          "line": 143,
           "column": 14
         }
       ]
@@ -2823,7 +2823,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 174,
+          "line": 177,
           "column": 38
         },
         {
@@ -3077,7 +3077,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 194,
+          "line": 197,
           "column": 17
         },
         {
@@ -3094,7 +3094,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 174,
+          "line": 177,
           "column": 27
         },
         {
@@ -3137,7 +3137,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 186,
+          "line": 189,
           "column": 22
         }
       ]
@@ -3163,6 +3163,18 @@
           "file": "layouts/AppLayout.tsx",
           "line": 73,
           "column": 39
+        }
+      ]
+    },
+    "93f3703b5a12a65d": {
+      "source": "⚙️ 打开 ChatGPT 安全设置",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 160,
+          "column": 18
         }
       ]
     },
@@ -3337,7 +3349,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 167,
+          "line": 170,
           "column": 16
         }
       ]
@@ -3792,7 +3804,7 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 153,
+          "line": 151,
           "column": 17
         }
       ]
@@ -3895,8 +3907,8 @@
       "refs": [
         {
           "file": "components/cursor/CodexAuthModal.tsx",
-          "line": 160,
-          "column": 68
+          "line": 162,
+          "column": 70
         }
       ]
     },

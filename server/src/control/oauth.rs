@@ -300,9 +300,15 @@ pub async fn codex_token_poll(
         }
     }
 
-    let error_code = body.get("error").and_then(|v| v.as_str()).unwrap_or("");
+    let error_code = body
+        .get("error")
+        .and_then(|v| if v.is_string() { v.as_str() } else { v.get("code").and_then(|c| c.as_str()) })
+        .unwrap_or("");
+
     let error_desc = body
         .get("error_description")
+        .or_else(|| body.get("message"))
+        .or_else(|| body.get("error").and_then(|e| e.get("message")))
         .and_then(|v| v.as_str())
         .map(ToString::to_string);
 
@@ -339,13 +345,22 @@ pub async fn codex_token_poll(
             expires_in: None,
             error_message: error_desc.or_else(|| Some("User denied authorization".into())),
         })),
-        _ => Ok(Json(CodexTokenPollResponse {
-            status: "error".into(),
-            access_token: None,
-            refresh_token: None,
-            token_type: None,
-            expires_in: None,
-            error_message: error_desc.or_else(|| Some(format!("OAuth error: {error_code}"))),
-        })),
+        _ => {
+            let msg = error_desc.unwrap_or_else(|| {
+                if !error_code.is_empty() {
+                    format!("OAuth error: {error_code}")
+                } else {
+                    "授权等待中或需在 ChatGPT 安全设置中启用 Codex 设备代码授权".into()
+                }
+            });
+            Ok(Json(CodexTokenPollResponse {
+                status: "error".into(),
+                access_token: None,
+                refresh_token: None,
+                token_type: None,
+                expires_in: None,
+                error_message: Some(msg),
+            }))
+        }
     }
 }

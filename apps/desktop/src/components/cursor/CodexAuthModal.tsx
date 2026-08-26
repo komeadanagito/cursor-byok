@@ -155,7 +155,12 @@ export function CodexAuthModal({ open, onClose, onSuccess }: CodexAuthModalProps
         {errorMessage && (
           <div className={styles.errorBanner}>
             <span>{errorMessage}</span>
-            <Button size="small" onClick={() => void startAuth()}>{t("重试")}</Button>
+            <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
+              <Button size="small" variant="secondary" onClick={() => void api.openExternalUrl("https://chatgpt.com/#settings/Security")}>
+                {t("⚙️ 打开 ChatGPT 安全设置")}
+              </Button>
+              <Button size="small" onClick={() => void startAuth()}>{t("重试")}</Button>
+            </div>
           </div>
         )}
 
