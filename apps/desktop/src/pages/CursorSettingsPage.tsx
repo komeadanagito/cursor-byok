@@ -4,6 +4,7 @@ import { CursorCaGate, CursorCaProvider, CursorModelGate, CursorModelProvider } 
 import { CursorModelCards } from "../components/cursor/CursorModelCards";
 import { CursorModelEditor, emptyCursorModelDraft, type CursorModelDraft } from "../components/cursor/CursorModelEditor";
 import { CursorModelTestResult, type CursorModelTestState } from "../components/cursor/CursorModelTestResult";
+import { SubscriptionAuthTab } from "../components/cursor/SubscriptionAuthTab";
 import styles from "../components/cursor/CursorSettings.module.scss";
 import { PageContent } from "../components/layout/PageContent";
 import { LegacyModelImport } from "../components/models/LegacyModelImport";
@@ -11,6 +12,7 @@ import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import controls from "../components/ui/Controls.module.scss";
 import { Icon } from "../components/ui/Icon";
 import { Modal } from "../components/ui/Modal";
+import { Tabs } from "../components/ui/Tabs";
 import { TooltipTrigger } from "../components/ui/TooltipTrigger";
 import { addIcon } from "../components/ui/icons";
 import { useMessage } from "../components/ui/message";
@@ -185,13 +187,32 @@ export function CursorSettingsPage() {
     setCaCommand(null);
     setWaitingForCaRefresh(true);
   };
-  const content = <CursorCaProvider><CursorCaGate busy={cursorBusy} waitingForRefresh={waitingForCaRefresh} onInitialize={() => void initializeCa()} onRefresh={() => void refreshCa()}>
+
+  const modelsContent = <CursorCaProvider><CursorCaGate busy={cursorBusy} waitingForRefresh={waitingForCaRefresh} onInitialize={() => void initializeCa()} onRefresh={() => void refreshCa()}>
     <div className={styles.page}>
       <LegacyModelImport>{({ busy: importingLegacyModels, previewing, open }) =>
         <CursorModelProvider><CursorModelGate busy={cursorBusy || importingLegacyModels} previewingImport={previewing} onAdd={openNew} onImport={open}>{list}</CursorModelGate></CursorModelProvider>
       }</LegacyModelImport>
     </div>
   </CursorCaGate></CursorCaProvider>;
+
+  const subscriptionsContent = <SubscriptionAuthTab onSwitchToModels={() => void appStore.refresh()} />;
+
+  const content = <Tabs
+    defaultValue="models"
+    items={[
+      {
+        value: "models",
+        label: t("上游模型"),
+        content: modelsContent,
+      },
+      {
+        value: "subscriptions",
+        label: t("订阅与认证"),
+        content: subscriptionsContent,
+      },
+    ]}
+  />;
 
   const editorTestState = editing ? modelTestResults.get(editing.model_hash) : undefined;
   const editorTesting = savingAndTesting || Boolean(editing && testingModelHashes.has(editing.model_hash));
@@ -202,7 +223,45 @@ export function CursorSettingsPage() {
     <PageContent title={t("Cursor 配置")} sections={[{ key: "cursor-settings", estimatedHeight: Math.max(380, Math.ceil(models.length / 3) * 196), content }]} />
     <Modal open={draft !== null} title={editing ? t("编辑模型") : t("添加模型")} banner={draft && (editorTesting || editorTestState) ? <CursorModelTestResult state={editorTestState} testing={editorTesting} /> : undefined} busy={cursorBusy || savingAndTesting} onClose={() => setDraft(null)} onSubmit={() => void save()} secondaryAction={<button type="button" className={controls.secondary} disabled={cursorBusy || savingAndTesting} onClick={() => void saveAndTest()}>{savingAndTesting ? t("测试中…") : t("保存并测试")}</button>}>
       {draft && <>
-        <CursorModelEditor draft={draft} modelOptions={modelOptions} discovering={discovering} onChange={setDraft} onDiscover={() => void discover()} />
+        <CursorModelEditor
+          draft={draft}
+          isEditing={Boolean(editing)}
+          modelOptions={modelOptions}
+          discovering={discovering}
+          onChange={setDraft}
+          onDiscover={() => void discover()}
+          onGrokAuthorized={async (accessToken) => {
+            try {
+              await appStore.createModels([{
+                sort_order: models.length + 1,
+                display_name: "grok-beta (OAuth)",
+                type: "openai",
+                base_url: "https://api.x.ai/v1",
+                use_full_url: false,
+                api_key: accessToken,
+                tooltip_data: "xAI Grok (OAuth)",
+                model_id: "grok-beta",
+                reasoning_effort: null,
+                openai_endpoint: "/v1/chat/completions",
+                openai_extra_params_enabled: false,
+                openai_extra_params: {},
+                custom_headers_enabled: false,
+                custom_headers: {},
+                anthropic_extra_params_enabled: false,
+                anthropic_extra_params: {},
+                context_window_tokens: 500000,
+                max_completion_tokens: 16384,
+                anthropic_max_tokens: null,
+                anthropic_thinking_effort: "xhigh",
+                thinking_budget_tokens: null,
+              }]);
+              setDraft(null);
+              setEditing(null);
+            } catch (err) {
+              message(errorText(err));
+            }
+          }}
+        />
       </>}
     </Modal>
     <ConfirmDialog open={caCommand !== null} title={t("安装本地 CA")} cancelLabel={t("关闭")} confirmLabel={t("打开终端")} onCancel={() => setCaCommand(null)} onConfirm={openCaTerminal}>

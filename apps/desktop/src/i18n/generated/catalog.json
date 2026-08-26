@@ -26,18 +26,6 @@
         }
       ]
     },
-    "019a81c1957e5611": {
-      "source": "Grok 账号授权登录",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 112,
-          "column": 14
-        }
-      ]
-    },
     "01f3e69a5a9b2c9b": {
       "source": "访问模型服务所需的密钥。",
       "kind": "text",
@@ -45,8 +33,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 104,
-          "column": 50
+          "line": 110,
+          "column": 52
         }
       ]
     },
@@ -56,14 +44,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
-          "line": 178,
-          "column": 28
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 174,
+          "column": 24
         },
         {
-          "file": "pages/OAuthPage.tsx",
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 221,
-          "column": 28
+          "column": 24
         }
       ]
     },
@@ -136,7 +124,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 101,
+          "line": 103,
           "column": 27
         }
       ]
@@ -188,12 +176,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 150,
-          "column": 16
+          "line": 143,
+          "column": 18
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 230,
+          "line": 289,
           "column": 73
         }
       ]
@@ -216,9 +204,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 193,
-          "column": 38
+          "column": 34
         }
       ]
     },
@@ -241,7 +229,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 241,
+          "line": 300,
           "column": 89
         }
       ]
@@ -255,6 +243,18 @@
           "file": "components/metrics/HomeMetrics.tsx",
           "line": 171,
           "column": 40
+        }
+      ]
+    },
+    "0af85cc0cae958e8": {
+      "source": "上游模型",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "pages/CursorSettingsPage.tsx",
+          "line": 206,
+          "column": 16
         }
       ]
     },
@@ -385,9 +385,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
-          "line": 170,
-          "column": 20
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 166,
+          "column": 16
         }
       ]
     },
@@ -408,12 +408,12 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 200,
+          "line": 221,
           "column": 231
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 203,
+          "line": 224,
           "column": 480
         }
       ]
@@ -424,9 +424,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
-          "line": 163,
-          "column": 21
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 159,
+          "column": 17
         }
       ]
     },
@@ -449,12 +449,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 137,
-          "column": 16
+          "line": 130,
+          "column": 18
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 240,
+          "line": 299,
           "column": 36
         }
       ]
@@ -478,7 +478,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 200,
+          "line": 221,
           "column": 243
         }
       ]
@@ -514,8 +514,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 122,
-          "column": 283
+          "line": 115,
+          "column": 285
         }
       ]
     },
@@ -526,13 +526,13 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 94,
-          "column": 59
+          "line": 100,
+          "column": 61
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 94,
-          "column": 124
+          "line": 100,
+          "column": 126
         }
       ]
     },
@@ -548,17 +548,17 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 201,
+          "line": 222,
           "column": 51
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 201,
+          "line": 222,
           "column": 130
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 203,
+          "line": 224,
           "column": 63
         }
       ]
@@ -595,19 +595,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
-          "line": 228,
-          "column": 35
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 157,
+          "column": 25
         },
         {
-          "file": "pages/OAuthPage.tsx",
-          "line": 260,
-          "column": 35
-        },
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 292,
-          "column": 35
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 232,
+          "column": 31
         }
       ]
     },
@@ -664,7 +659,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 211,
+          "line": 270,
           "column": 52
         }
       ]
@@ -747,9 +742,26 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 206,
+          "column": 40
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 219,
           "column": 42
+        }
+      ]
+    },
+    "1d8a2d2fd2451342": {
+      "source": "授权成功！模型已自动同步配置。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 193,
+          "column": 22
         }
       ]
     },
@@ -775,18 +787,18 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 126,
-          "column": 49
+          "line": 119,
+          "column": 51
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 128,
-          "column": 50
+          "line": 121,
+          "column": 52
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 131,
-          "column": 50
+          "line": 124,
+          "column": 52
         }
       ]
     },
@@ -799,7 +811,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 234,
+          "line": 293,
           "column": 89
         }
       ]
@@ -854,23 +866,6 @@
         }
       ]
     },
-    "24bbeda1b52fcac0": {
-      "source": "OAuth 登录",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "layouts/AppLayout.tsx",
-          "line": 77,
-          "column": 44
-        },
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 307,
-          "column": 30
-        }
-      ]
-    },
     "2555d6c7fbb7e070": {
       "source": "可以直接输入模型标识，也可以读取接口返回的模型列表。",
       "kind": "text",
@@ -878,8 +873,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 122,
-          "column": 42
+          "line": 115,
+          "column": 44
         }
       ]
     },
@@ -904,7 +899,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 239,
+          "line": 238,
           "column": 14
         }
       ]
@@ -928,12 +923,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 133,
-          "column": 27
+          "line": 126,
+          "column": 29
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 233,
+          "line": 292,
           "column": 186
         }
       ]
@@ -943,6 +938,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 188,
+          "column": 20
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 201,
@@ -987,17 +987,17 @@
         },
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 229,
+          "line": 228,
           "column": 20
         },
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 240,
+          "line": 239,
           "column": 20
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 211,
+          "line": 270,
           "column": 76
         },
         {
@@ -1049,6 +1049,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 80,
+          "column": 19
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 84,
           "column": 19
@@ -1062,8 +1067,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 123,
-          "column": 42
+          "line": 116,
+          "column": 44
         }
       ]
     },
@@ -1076,7 +1081,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 247,
+          "line": 306,
           "column": 70
         }
       ]
@@ -1124,7 +1129,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 228,
+          "line": 227,
           "column": 14
         }
       ]
@@ -1155,20 +1160,8 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 211,
+          "line": 270,
           "column": 99
-        }
-      ]
-    },
-    "3228cd9766abf7ae": {
-      "source": "支持连接 Claude 官方账号与 Pro 订阅额度。",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 282,
-          "column": 21
         }
       ]
     },
@@ -1201,7 +1194,7 @@
         },
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 241,
+          "line": 240,
           "column": 21
         }
       ]
@@ -1213,7 +1206,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 232,
+          "line": 291,
           "column": 123
         }
       ]
@@ -1247,6 +1240,18 @@
           "file": "components/metrics/HomeMetrics.tsx",
           "line": 157,
           "column": 46
+        }
+      ]
+    },
+    "37f5e5e726427f24": {
+      "source": "Grok 账号已连接，已自动添加到「上游模型」！",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 120,
+          "column": 17
         }
       ]
     },
@@ -1400,6 +1405,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 85,
+          "column": 27
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 92,
           "column": 27
@@ -1442,22 +1452,8 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 208,
+          "line": 267,
           "column": 80
-        }
-      ]
-    },
-    "4100f76ad1efd834": {
-      "source": "Grok 账号授权成功，已同步 {count} 个模型到 Cursor 配置！",
-      "kind": "template",
-      "placeholders": [
-        "count"
-      ],
-      "refs": [
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 84,
-          "column": 17
         }
       ]
     },
@@ -1531,18 +1527,6 @@
         }
       ]
     },
-    "4574e4196a23f448": {
-      "source": "Grok 账号已连接，已自动添加到 Cursor 模型列表！",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 122,
-          "column": 17
-        }
-      ]
-    },
     "461d6a57900c2ed7": {
       "source": "连通性测试失败：{error}",
       "kind": "template",
@@ -1552,7 +1536,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 106,
+          "line": 108,
           "column": 27
         }
       ]
@@ -1664,12 +1648,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 126,
-          "column": 25
+          "line": 119,
+          "column": 27
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 233,
+          "line": 292,
           "column": 34
         }
       ]
@@ -1693,8 +1677,20 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 100,
-          "column": 145
+          "line": 106,
+          "column": 147
+        }
+      ]
+    },
+    "4c2689c08fe779b6": {
+      "source": "连接到 Grok",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 185,
+          "column": 18
         }
       ]
     },
@@ -1704,9 +1700,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 156,
+          "column": 14
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 214,
-          "column": 21
+          "column": 17
         }
       ]
     },
@@ -1722,7 +1723,7 @@
         },
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 201,
+          "line": 200,
           "column": 67
         }
       ]
@@ -1734,7 +1735,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 175,
+          "line": 208,
           "column": 41
         }
       ]
@@ -1792,7 +1793,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 138,
+          "line": 140,
           "column": 11
         }
       ]
@@ -1814,6 +1815,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 181,
+          "column": 16
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 194,
@@ -1845,6 +1851,18 @@
         }
       ]
     },
+    "54b86d066a8da8c6": {
+      "source": "Grok 账号授权成功，已更新「上游模型」中的凭证！",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 94,
+          "column": 17
+        }
+      ]
+    },
     "54c53e5fe791d1f3": {
       "source": "初始化 CA",
       "kind": "text",
@@ -1864,7 +1882,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 163,
+          "line": 165,
           "column": 47
         }
       ]
@@ -1888,7 +1906,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 201,
+          "line": 222,
           "column": 63
         }
       ]
@@ -1900,17 +1918,17 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 128,
-          "column": 27
+          "line": 121,
+          "column": 29
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 131,
-          "column": 27
+          "line": 124,
+          "column": 29
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 233,
+          "line": 292,
           "column": 83
         }
       ]
@@ -1934,8 +1952,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 124,
-          "column": 69
+          "line": 117,
+          "column": 71
         }
       ]
     },
@@ -2010,9 +2028,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
-          "line": 160,
-          "column": 63
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 156,
+          "column": 59
         }
       ]
     },
@@ -2073,7 +2091,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 245,
+          "line": 244,
           "column": 11
         }
       ]
@@ -2319,7 +2337,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 78,
+          "line": 77,
           "column": 47
         }
       ]
@@ -2365,6 +2383,20 @@
         }
       ]
     },
+    "6c8f30df8a415d87": {
+      "source": "Grok 账号授权成功，已同步 {count} 个模型到「上游模型」！",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 82,
+          "column": 17
+        }
+      ]
+    },
     "6d1876364ac6457d": {
       "source": "代理方式",
       "kind": "text",
@@ -2405,9 +2437,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 182,
-          "column": 28
+          "column": 24
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 225,
+          "column": 24
         }
       ]
     },
@@ -2472,6 +2509,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 174,
+          "column": 18
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 187,
           "column": 20
@@ -2533,12 +2575,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 144,
-          "column": 16
+          "line": 137,
+          "column": 18
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 228,
+          "line": 287,
           "column": 67
         }
       ]
@@ -2552,7 +2594,7 @@
       "refs": [
         {
           "file": "App.tsx",
-          "line": 52,
+          "line": 50,
           "column": 19
         }
       ]
@@ -2635,9 +2677,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 193,
-          "column": 57
+          "column": 53
         }
       ]
     },
@@ -2648,8 +2690,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 122,
-          "column": 295
+          "line": 115,
+          "column": 297
         }
       ]
     },
@@ -2687,6 +2729,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 166,
+          "column": 42
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 179,
@@ -2764,8 +2811,20 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 100,
-          "column": 115
+          "line": 106,
+          "column": 117
+        }
+      ]
+    },
+    "89a548593ac05d02": {
+      "source": "订阅与认证",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "pages/CursorSettingsPage.tsx",
+          "line": 211,
+          "column": 16
         }
       ]
     },
@@ -2804,9 +2863,26 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 89,
+          "column": 27
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 96,
           "column": 27
+        }
+      ]
+    },
+    "8c5270fe597a8d2f": {
+      "source": "官方账号订阅与授权管理",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 132,
+          "column": 18
         }
       ]
     },
@@ -2846,7 +2922,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 247,
+          "line": 246,
           "column": 16
         }
       ]
@@ -2858,8 +2934,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 94,
-          "column": 76
+          "line": 100,
+          "column": 78
         }
       ]
     },
@@ -2875,7 +2951,7 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 202,
+          "line": 223,
           "column": 25
         }
       ]
@@ -2897,6 +2973,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 166,
+          "column": 31
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 179,
@@ -2925,7 +3006,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 248,
+          "line": 307,
           "column": 87
         }
       ]
@@ -2954,30 +3035,6 @@
         }
       ]
     },
-    "92e5397b4a996d45": {
-      "source": "通过官方 OAuth 授权连接你的订阅账号（如 X Premium+ / SuperGrok 等），直接使用官方模型额度，无需额外购买开发者 API Key。",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 138,
-          "column": 16
-        }
-      ]
-    },
-    "9362c1bc379ee28d": {
-      "source": "支持连接 OpenAI 账号与 ChatGPT Plus 订阅额度。",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 250,
-          "column": 21
-        }
-      ]
-    },
     "940a168911ade998": {
       "source": "每页条数",
       "kind": "text",
@@ -2997,7 +3054,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 211,
+          "line": 270,
           "column": 250
         }
       ]
@@ -3029,6 +3086,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 125,
+          "column": 17
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 132,
@@ -3069,8 +3131,20 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 234,
+          "line": 233,
           "column": 11
+        }
+      ]
+    },
+    "9b8bde03cdd56154": {
+      "source": "使用 X Premium+ 或 SuperGrok 订阅账号登录，直接使用 Grok 官方模型额度，无需单独购买 API Key。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 142,
+          "column": 12
         }
       ]
     },
@@ -3091,13 +3165,13 @@
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 132,
-          "column": 27
+          "line": 125,
+          "column": 29
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 132,
-          "column": 58
+          "line": 125,
+          "column": 60
         }
       ]
     },
@@ -3122,6 +3196,18 @@
           "file": "components/overview/OverviewTimeRangeFilter.tsx",
           "line": 106,
           "column": 70
+        }
+      ]
+    },
+    "9f3713edd7973fef": {
+      "source": "连接到 Codex",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 180,
+          "column": 18
         }
       ]
     },
@@ -3182,7 +3268,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 147,
+          "line": 149,
           "column": 22
         }
       ]
@@ -3293,18 +3379,6 @@
         }
       ]
     },
-    "a522993938423dec": {
-      "source": "Grok 账号授权成功，已更新模型凭证！",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 95,
-          "column": 17
-        }
-      ]
-    },
     "a5fb6189a8ad011d": {
       "source": "打开教程",
       "kind": "text",
@@ -3312,7 +3386,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 230,
+          "line": 229,
           "column": 21
         }
       ]
@@ -3341,7 +3415,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 203,
+          "line": 224,
           "column": 492
         }
       ]
@@ -3375,8 +3449,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 101,
-          "column": 61
+          "line": 107,
+          "column": 63
         }
       ]
     },
@@ -3414,8 +3488,20 @@
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 123,
-          "column": 25
+          "line": 116,
+          "column": 27
+        }
+      ]
+    },
+    "aa1c6eafef0bb16a": {
+      "source": "连接到模型",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 175,
+          "column": 18
         }
       ]
     },
@@ -3448,6 +3534,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 158,
+          "column": 50
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 171,
@@ -3485,24 +3576,14 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
-          "line": 174,
-          "column": 28
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 170,
+          "column": 24
         },
         {
-          "file": "pages/OAuthPage.tsx",
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 217,
-          "column": 28
-        },
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 253,
-          "column": 28
-        },
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 285,
-          "column": 28
+          "column": 24
         }
       ]
     },
@@ -3539,12 +3620,12 @@
         },
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 261,
+          "line": 260,
           "column": 64
         },
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 261,
+          "line": 260,
           "column": 125
         }
       ]
@@ -3676,7 +3757,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 208,
+          "line": 267,
           "column": 103
         }
       ]
@@ -3737,7 +3818,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 139,
+          "line": 141,
           "column": 11
         }
       ]
@@ -3778,7 +3859,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 252,
+          "line": 251,
           "column": 24
         }
       ]
@@ -3840,18 +3921,6 @@
         }
       ]
     },
-    "c7452b885d981b6e": {
-      "source": "官方账号 OAuth 授权中心",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 136,
-          "column": 22
-        }
-      ]
-    },
     "c7ea2c9bc43134bd": {
       "source": "编辑模型",
       "kind": "text",
@@ -3859,7 +3928,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 203,
+          "line": 224,
           "column": 51
         }
       ]
@@ -3871,13 +3940,13 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 129,
-          "column": 27
+          "line": 122,
+          "column": 29
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 129,
-          "column": 58
+          "line": 122,
+          "column": 60
         }
       ]
     },
@@ -3948,8 +4017,8 @@
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 122,
-          "column": 25
+          "line": 115,
+          "column": 27
         }
       ]
     },
@@ -4018,8 +4087,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 133,
-          "column": 50
+          "line": 126,
+          "column": 52
         }
       ]
     },
@@ -4059,8 +4128,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 100,
-          "column": 70
+          "line": 106,
+          "column": 72
         }
       ]
     },
@@ -4100,7 +4169,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 187,
+          "line": 186,
           "column": 54
         }
       ]
@@ -4112,7 +4181,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 209,
+          "line": 268,
           "column": 47
         }
       ]
@@ -4136,18 +4205,18 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 29,
+          "line": 30,
           "column": 19
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 84,
+          "line": 88,
           "column": 50
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 124,
-          "column": 54
+          "line": 117,
+          "column": 56
         }
       ]
     },
@@ -4193,19 +4262,9 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "pages/OAuthPage.tsx",
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
           "line": 209,
-          "column": 20
-        },
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 245,
-          "column": 20
-        },
-        {
-          "file": "pages/OAuthPage.tsx",
-          "line": 277,
-          "column": 20
+          "column": 16
         }
       ]
     },
@@ -4343,7 +4402,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 159,
+          "line": 161,
           "column": 26
         }
       ]
@@ -4398,6 +4457,18 @@
         }
       ]
     },
+    "e472a112d627842a": {
+      "source": "默认上下文",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 178,
+          "column": 24
+        }
+      ]
+    },
     "e4760c6a1df24f17": {
       "source": "完整请求 URL",
       "kind": "text",
@@ -4405,8 +4476,8 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 100,
-          "column": 54
+          "line": 106,
+          "column": 56
         }
       ]
     },
@@ -4457,6 +4528,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 93,
+          "column": 48
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 100,
           "column": 48
@@ -4487,13 +4563,13 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 90,
-          "column": 25
+          "line": 96,
+          "column": 27
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 90,
-          "column": 55
+          "line": 96,
+          "column": 57
         }
       ]
     },
@@ -4518,6 +4594,18 @@
           "file": "components/models/LegacyModelImport.tsx",
           "line": 71,
           "column": 66
+        }
+      ]
+    },
+    "e8c82ed1fc02fec0": {
+      "source": "通过官方 OAuth 授权连接你的订阅账号，成功授权后得到的模型将自动加入「上游模型」中统一进行管理和调用。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 134,
+          "column": 12
         }
       ]
     },
@@ -4564,7 +4652,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 209,
+          "line": 268,
           "column": 77
         }
       ]
@@ -4588,7 +4676,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 208,
+          "line": 267,
           "column": 53
         }
       ]
@@ -4890,6 +4978,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/EmbeddedGrokAuth.tsx",
+          "line": 149,
+          "column": 18
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 162,
           "column": 20
@@ -4903,7 +4996,7 @@
       "refs": [
         {
           "file": "layouts/AppLayout.tsx",
-          "line": 79,
+          "line": 78,
           "column": 48
         }
       ]
