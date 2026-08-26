@@ -13,7 +13,7 @@ import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import controls from "../components/ui/Controls.module.scss";
 import { Icon } from "../components/ui/Icon";
 import { TooltipTrigger } from "../components/ui/TooltipTrigger";
-import { flatColorAboutIcon, flatColorAreaChartIcon, flatColorSalesPerformanceIcon, flatColorSettingsIcon, refreshIcon } from "../components/ui/icons";
+import { flatColorAboutIcon, flatColorAreaChartIcon, flatColorKeyIcon, flatColorSalesPerformanceIcon, flatColorSettingsIcon, refreshIcon } from "../components/ui/icons";
 import { useMessage } from "../components/ui/message";
 import { VirtualList } from "../components/virtual/VirtualList";
 import { useI18n } from "../i18n/store";
@@ -27,7 +27,7 @@ type MenuItem =
   | { kind: "external"; id: string; label: string; icon: IconifyIcon | string }
   | { kind: "group"; label: string };
 
-const keptAlivePages = ["/", "/calls", "/settings", "/harness/cursor"];
+const keptAlivePages = ["/", "/calls", "/settings", "/harness/cursor", "/oauth"];
 const readAdStorageKey = "cursor-byok:read-ad-ids";
 const dismissedAdStorageKey = "cursor-byok:dismissed-ad-ids";
 const tutorialReadStorageKey = "cursor-byok:tutorial-read";
@@ -74,6 +74,7 @@ export function AppLayout() {
     { kind: "page", path: "/calls", label: t("调用详细"), icon: flatColorSalesPerformanceIcon },
     { kind: "group", label: "Harness" },
     { kind: "page", path: "/harness/cursor", label: t("Cursor 配置"), icon: cursorIconUrl },
+    { kind: "page", path: "/oauth", label: t("OAuth 登录"), icon: flatColorKeyIcon },
     { kind: "page", path: "/settings", label: t("系统设置"), icon: flatColorSettingsIcon },
     { kind: "external", id: "tutorial", label: t("使用教程"), icon: flatColorAboutIcon },
   ];

@@ -2,6 +2,7 @@ mod ads;
 mod calls;
 mod harness;
 mod models;
+mod oauth;
 mod overview;
 mod service;
 mod settings;
@@ -114,6 +115,11 @@ pub fn api_router(service: ControlService) -> Router {
             "/__byok-api__/api/ads/{ad_id}/dismissals",
             post(ads::dismiss),
         )
+        .route(
+            "/__byok-api__/api/auth/grok/device-code",
+            post(oauth::grok_device_code),
+        )
+        .route("/__byok-api__/api/auth/grok/poll", post(oauth::grok_token_poll))
         .route(
             "/__byok-api__/api/models",
             get(models::list).post(models::create),

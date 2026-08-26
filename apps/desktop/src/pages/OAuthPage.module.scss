@@ -1,0 +1,166 @@
+@use "../styles/typography" as type;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-xs;
+  line-height: 1.5;
+
+  strong {
+    color: var(--vscode-foreground);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  background: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-sideBar-border);
+  border-radius: var(--oa-overlay-radius, 8px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--vscode-focusBorder, #007acc);
+  }
+}
+
+.cardDisabled {
+  opacity: 0.65;
+  &:hover {
+    border-color: var(--vscode-sideBar-border);
+  }
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.providerInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .iconWrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.1));
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .names {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: type.$font-size-base;
+      color: var(--vscode-foreground);
+    }
+
+    span {
+      font-size: type.$font-size-xs;
+      color: var(--vscode-descriptionForeground);
+    }
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: type.$font-size-2xs;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badgeConnected {
+  background: rgba(115, 201, 145, 0.15);
+  color: var(--vscode-testing-iconPassed, #73c991);
+  border: 1px solid rgba(115, 201, 145, 0.3);
+}
+
+.badgeAvailable {
+  background: rgba(14, 112, 192, 0.15);
+  color: var(--vscode-progressBar-background, #0e70c0);
+  border: 1px solid rgba(14, 112, 192, 0.3);
+}
+
+.badgeComingSoon {
+  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.08));
+  color: var(--vscode-badge-foreground, var(--vscode-descriptionForeground));
+  border: 1px solid var(--vscode-widget-border, transparent);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+
+  p {
+    margin: 0;
+  }
+}
+
+.metaList {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--vscode-input-background, rgba(0, 0, 0, 0.2));
+  border-radius: 6px;
+  font-size: type.$font-size-2xs;
+
+  .metaItem {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+
+    span:first-child {
+      color: var(--vscode-descriptionForeground);
+    }
+
+    span:last-child {
+      color: var(--vscode-foreground);
+      font-family: var(--vscode-editor-font-family, monospace);
+    }
+  }
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}

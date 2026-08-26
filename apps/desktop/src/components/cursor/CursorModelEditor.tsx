@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ModelInput, ModelType } from "../../api";
 import { defaultCustomHeadersText } from "../../utils/modelDefaults";
 import { Button } from "../ui/Button";
@@ -7,6 +8,7 @@ import { JsonEditor } from "../ui/JsonEditor";
 import { Combobox, Select } from "../ui/Select";
 import { Switch } from "../ui/Switch";
 import { claudeIcon, openAiIcon } from "../ui/icons";
+import { GrokAuthModal } from "./GrokAuthModal";
 import styles from "./CursorSettings.module.scss";
 
 export type CursorModelDraft = {
@@ -52,6 +54,7 @@ export function CursorModelEditor({ draft, modelOptions, discovering, onChange, 
   onChange: (draft: CursorModelDraft) => void;
   onDiscover: () => void;
 }) {
+  const [grokModalOpen, setGrokModalOpen] = useState(false);
   const setModel = (patch: Partial<ModelInput>) => onChange({ ...draft, model: { ...draft.model, ...patch } });
   const setType = (type: ModelType) => setModel({
     type,
@@ -70,6 +73,20 @@ export function CursorModelEditor({ draft, modelOptions, discovering, onChange, 
       ? "https://api.anthropic.com"
       : "https://api.openai.com";
 
+  const handleGrokAuthSuccess = (accessToken: string) => {
+    setModel({
+      type: "openai",
+      openai_endpoint: "/v1/chat/completions",
+      base_url: "https://api.x.ai/v1",
+      api_key: accessToken,
+      model_id: draft.model.model_id || "grok-beta",
+      display_name: draft.model.display_name || "Grok",
+      context_window_tokens: 500000,
+      max_completion_tokens: 16384,
+      tooltip_data: draft.model.tooltip_data === t("备注") ? "xAI Grok (OAuth)" : draft.model.tooltip_data,
+    });
+  };
+
   return <div className={styles.editor}>
     <div className={styles.grid}>
       <FormField label={t("模型类型")}><Select ariaLabel={t("模型类型")} value={draft.model.type} options={[
@@ -85,7 +102,24 @@ export function CursorModelEditor({ draft, modelOptions, discovering, onChange, 
         <FormField label={draft.model.use_full_url ? t("完整请求 URL") : t("服务器地址")} hint={draft.model.use_full_url ? t("系统会原样使用此地址，不追加或修改请求路径。") : t("系统会根据请求协议自动追加标准端点路径。")}> <TextInput placeholder={requestUrlPlaceholder} value={draft.model.base_url} onChange={(event) => setModel({ base_url: event.target.value })} /></FormField>
         <Checkbox checked={draft.model.use_full_url} label={t("使用完整请求地址")} onChange={(use_full_url) => setModel({ use_full_url })} />
       </div>
-      <FormField label="API Key" hint={t("访问模型服务所需的密钥。")}> <SecretTextInput placeholder="sk-xxxxxx" autoComplete="off" value={draft.model.api_key} onChange={(event) => setModel({ api_key: event.target.value })} /></FormField>
+      <div className={styles.apiKeyField}>
+        <FormField label="API Key / Token" hint={t("访问模型服务所需的密钥。")}>
+          <SecretTextInput placeholder="sk-xxxxxx" autoComplete="off" value={draft.model.api_key} onChange={(event) => setModel({ api_key: event.target.value })} />
+        </FormField>
+        <Button
+          className={styles.authButton}
+          size="small"
+          onClick={() => setGrokModalOpen(true)}
+        >
+          ⚡ {t("Grok 账号授权登录")}
+        </Button>
+      </div>
+
+      <GrokAuthModal
+        open={grokModalOpen}
+        onClose={() => setGrokModalOpen(false)}
+        onSuccess={handleGrokAuthSuccess}
+      />
 
       <FormField label={t("模型名称")} hint={t("可以直接输入模型标识，也可以读取接口返回的模型列表。")}> <Combobox value={draft.model.model_id} options={modelOptions} placeholder="gpt-5" append={<Button className={styles.discoverButton} disabled={discovering || !canDiscover} onClick={onDiscover}>{discovering ? t("获取中…") : t("获取模型")}</Button>} onChange={(model_id) => setModel({ model_id, display_name: draft.model.display_name || model_id })} /></FormField>
       <FormField label={t("显示名称")} hint={t("仅用于界面展示，不会改变发送给模型服务的模型名称。")}> <TextInput value={draft.model.display_name} onChange={(event) => setModel({ display_name: event.target.value })} /></FormField>

@@ -149,6 +149,10 @@ impl ControlService {
         &self.cursor_harness
     }
 
+    pub fn store(&self) -> &Store {
+        &self.store
+    }
+
     pub(super) async fn ads(
         &self,
         disabled_ad_ids: Option<&str>,
