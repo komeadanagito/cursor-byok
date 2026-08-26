@@ -167,8 +167,9 @@ export function CursorSettingsPage() {
   }, [message]);
 
   const customModels = models.filter((m) => !isSubscriptionModel(m));
+  const subscriptionModels = models.filter((m) => isSubscriptionModel(m));
 
-  const list = <CursorModelCards
+  const customList = <CursorModelCards
     models={customModels}
     disabled={testingModelHashes.size > 0 || cursorBusy || batchTesting}
     testingModelHashes={testingModelHashes}
@@ -179,6 +180,20 @@ export function CursorSettingsPage() {
     onDelete={setDeleting}
     onReorder={reorderModels}
   />;
+
+  const subscriptionList = subscriptionModels.length > 0 ? (
+    <CursorModelCards
+      models={subscriptionModels}
+      disabled={testingModelHashes.size > 0 || cursorBusy || batchTesting}
+      testingModelHashes={testingModelHashes}
+      testResults={modelTestResults}
+      onTest={(model) => void testModel(model)}
+      onEdit={openEdit}
+      onDuplicate={(model) => void duplicateModel(model)}
+      onDelete={setDeleting}
+      onReorder={reorderModels}
+    />
+  ) : null;
 
   const refreshCa = async () => {
     await appStore.refresh();
@@ -193,17 +208,14 @@ export function CursorSettingsPage() {
   const modelsContent = <CursorCaProvider><CursorCaGate busy={cursorBusy} waitingForRefresh={waitingForCaRefresh} onInitialize={() => void initializeCa()} onRefresh={() => void refreshCa()}>
     <div className={styles.page}>
       <LegacyModelImport>{({ busy: importingLegacyModels, previewing, open }) =>
-        <CursorModelProvider><CursorModelGate busy={cursorBusy || importingLegacyModels} previewingImport={previewing} onAdd={openNew} onImport={open}>{list}</CursorModelGate></CursorModelProvider>
+        <CursorModelProvider><CursorModelGate busy={cursorBusy || importingLegacyModels} previewingImport={previewing} onAdd={openNew} onImport={open}>{customList}</CursorModelGate></CursorModelProvider>
       }</LegacyModelImport>
     </div>
   </CursorCaGate></CursorCaProvider>;
 
-  const subscriptionsContent = <SubscriptionAuthTab
-    onTest={(model) => void testModel(model)}
-    onEdit={openEdit}
-    onDelete={setDeleting}
-    onSwitchToModels={() => void appStore.refresh()}
-  />;
+  const subscriptionsContent = <SubscriptionAuthTab onSwitchToModels={() => void appStore.refresh()}>
+    {subscriptionList}
+  </SubscriptionAuthTab>;
 
   const content = <Tabs
     defaultValue="models"

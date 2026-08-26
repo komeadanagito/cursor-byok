@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "../ui/Button";
 import { Icon } from "../ui/Icon";
 import { checkIcon } from "../ui/icons";
 import { GrokAuthModal } from "./GrokAuthModal";
 import { useAppStore, appStore } from "../../store/appStore";
 import { useMessage } from "../ui/message";
-import { api, type Model, type ModelInput } from "../../api";
+import { api, type ModelInput } from "../../api";
 import styles from "./SubscriptionAuthTab.module.scss";
 
 export function isSubscriptionModel(m: { base_url?: string; tooltip_data?: string }): boolean {
@@ -18,14 +18,10 @@ export function isSubscriptionModel(m: { base_url?: string; tooltip_data?: strin
 }
 
 export function SubscriptionAuthTab({
-  onTest,
-  onEdit,
-  onDelete,
+  children,
   onSwitchToModels,
 }: {
-  onTest?: (model: Model) => void;
-  onEdit?: (model: Model) => void;
-  onDelete?: (model: Model) => void;
+  children?: ReactNode;
   onSwitchToModels?: () => void;
 }) {
   const { models } = useAppStore();
@@ -203,39 +199,6 @@ export function SubscriptionAuthTab({
                 <span>Device Code Grant (RFC 8628)</span>
               </div>
             </div>
-
-            {grokModels.length > 0 && (
-              <div className={styles.modelsSection}>
-                <strong>{t("已添加的 Grok 模型 ({count})", { count: grokModels.length })}</strong>
-                <div className={styles.modelsList}>
-                  {grokModels.map((m) => (
-                    <div key={m.model_hash} className={styles.modelRow}>
-                      <div className={styles.modelInfo}>
-                        <strong>{m.display_name}</strong>
-                        <span>{m.model_id}</span>
-                      </div>
-                      <div className={styles.modelActions}>
-                        {onTest && (
-                          <Button size="small" onClick={() => onTest(m)}>
-                            {t("测试")}
-                          </Button>
-                        )}
-                        {onEdit && (
-                          <Button size="small" onClick={() => onEdit(m)}>
-                            {t("编辑")}
-                          </Button>
-                        )}
-                        {onDelete && (
-                          <Button size="small" onClick={() => onDelete(m)}>
-                            {t("删除")}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className={styles.cardFooter}>
@@ -286,6 +249,12 @@ export function SubscriptionAuthTab({
           </div>
         </div>
       </div>
+
+      {children && (
+        <div className={styles.modelsSection}>
+          {children}
+        </div>
+      )}
 
       <GrokAuthModal
         open={grokModalOpen}
