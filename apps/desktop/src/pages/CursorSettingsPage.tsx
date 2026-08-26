@@ -4,7 +4,7 @@ import { CursorCaGate, CursorCaProvider, CursorModelGate, CursorModelProvider } 
 import { CursorModelCards } from "../components/cursor/CursorModelCards";
 import { CursorModelEditor, emptyCursorModelDraft, type CursorModelDraft } from "../components/cursor/CursorModelEditor";
 import { CursorModelTestResult, type CursorModelTestState } from "../components/cursor/CursorModelTestResult";
-import { SubscriptionAuthTab } from "../components/cursor/SubscriptionAuthTab";
+import { SubscriptionAuthTab, isSubscriptionModel } from "../components/cursor/SubscriptionAuthTab";
 import styles from "../components/cursor/CursorSettings.module.scss";
 import { PageContent } from "../components/layout/PageContent";
 import { LegacyModelImport } from "../components/models/LegacyModelImport";
@@ -166,8 +166,10 @@ export function CursorSettingsPage() {
     }
   }, [message]);
 
+  const customModels = models.filter((m) => !isSubscriptionModel(m));
+
   const list = <CursorModelCards
-    models={models}
+    models={customModels}
     disabled={testingModelHashes.size > 0 || cursorBusy || batchTesting}
     testingModelHashes={testingModelHashes}
     testResults={modelTestResults}
@@ -196,7 +198,12 @@ export function CursorSettingsPage() {
     </div>
   </CursorCaGate></CursorCaProvider>;
 
-  const subscriptionsContent = <SubscriptionAuthTab onSwitchToModels={() => void appStore.refresh()} />;
+  const subscriptionsContent = <SubscriptionAuthTab
+    onTest={(model) => void testModel(model)}
+    onEdit={openEdit}
+    onDelete={setDeleting}
+    onSwitchToModels={() => void appStore.refresh()}
+  />;
 
   const content = <Tabs
     defaultValue="models"

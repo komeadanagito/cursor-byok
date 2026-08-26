@@ -8,7 +8,7 @@ import { Combobox, Select } from "../ui/Select";
 import { Switch } from "../ui/Switch";
 import { Tabs } from "../ui/Tabs";
 import { claudeIcon, openAiIcon } from "../ui/icons";
-import { EmbeddedGrokAuth } from "./EmbeddedGrokAuth";
+import { SubscriptionAuthTab } from "./SubscriptionAuthTab";
 import styles from "./CursorSettings.module.scss";
 
 export type CursorModelDraft = {
@@ -74,21 +74,6 @@ export function CursorModelEditor({ draft, isEditing = false, modelOptions, disc
       ? "https://api.anthropic.com"
       : "https://api.openai.com";
 
-  const handleGrokAuthSuccess = (accessToken: string) => {
-    setModel({
-      type: "openai",
-      openai_endpoint: "/v1/chat/completions",
-      base_url: "https://api.x.ai/v1",
-      api_key: accessToken,
-      model_id: draft.model.model_id || "grok-beta",
-      display_name: draft.model.display_name || "grok-beta (OAuth)",
-      context_window_tokens: 500000,
-      max_completion_tokens: 16384,
-      tooltip_data: draft.model.tooltip_data === t("备注") ? "xAI Grok (OAuth)" : draft.model.tooltip_data,
-    });
-    onGrokAuthorized?.(accessToken);
-  };
-
   const customForm = (
     <div className={styles.editor}>
       <div className={styles.grid}>
@@ -149,18 +134,6 @@ export function CursorModelEditor({ draft, isEditing = false, modelOptions, disc
     </div>
   );
 
-  const codexTab = (
-    <div className={styles.gate}>
-      <strong>🐙 Codex (GitHub Copilot)</strong>
-      <span>{t("支持通过 GitHub 账号授权，使用 GitHub Copilot / Codex 订阅额度。")}</span>
-      <Button disabled>{t("即将推出")}</Button>
-    </div>
-  );
-
-  const grokTab = (
-    <EmbeddedGrokAuth onSuccess={handleGrokAuthSuccess} />
-  );
-
   if (isEditing) {
     return customForm;
   }
@@ -175,14 +148,9 @@ export function CursorModelEditor({ draft, isEditing = false, modelOptions, disc
           content: customForm,
         },
         {
-          value: "codex",
-          label: t("连接到 Codex"),
-          content: codexTab,
-        },
-        {
-          value: "grok",
-          label: t("连接到 Grok"),
-          content: grokTab,
+          value: "subscriptions",
+          label: t("订阅与认证"),
+          content: <SubscriptionAuthTab onSwitchToModels={() => onGrokAuthorized?.("")} />,
         },
       ]}
     />

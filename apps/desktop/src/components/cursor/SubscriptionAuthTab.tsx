@@ -5,18 +5,37 @@ import { checkIcon } from "../ui/icons";
 import { GrokAuthModal } from "./GrokAuthModal";
 import { useAppStore, appStore } from "../../store/appStore";
 import { useMessage } from "../ui/message";
-import { api, type ModelInput } from "../../api";
+import { api, type Model, type ModelInput } from "../../api";
 import styles from "./SubscriptionAuthTab.module.scss";
 
-export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: () => void }) {
+export function isSubscriptionModel(m: { base_url?: string; tooltip_data?: string }): boolean {
+  return Boolean(
+    m.base_url?.includes("api.x.ai") ||
+    m.base_url?.includes("copilot") ||
+    m.tooltip_data?.includes("xAI") ||
+    m.tooltip_data?.includes("OAuth")
+  );
+}
+
+export function SubscriptionAuthTab({
+  onTest,
+  onEdit,
+  onDelete,
+  onSwitchToModels,
+}: {
+  onTest?: (model: Model) => void;
+  onEdit?: (model: Model) => void;
+  onDelete?: (model: Model) => void;
+  onSwitchToModels?: () => void;
+}) {
   const { models } = useAppStore();
   const message = useMessage();
   const [grokModalOpen, setGrokModalOpen] = useState(false);
 
-  const grokModel = models.find(
+  const grokModels = models.filter(
     (m) => Boolean(m.base_url?.includes("api.x.ai") || m.model_id?.toLowerCase().includes("grok"))
   );
-  const isGrokConnected = Boolean(grokModel?.api_key);
+  const isGrokConnected = grokModels.some((m) => Boolean(m.api_key));
 
   const handleGrokAuthSuccess = async (accessToken: string) => {
     try {
@@ -48,7 +67,7 @@ export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: (
               openai_endpoint: "/v1/chat/completions",
               context_window_tokens: 500000,
               max_completion_tokens: 16384,
-              tooltip_data: "xAI Grok (OAuth)",
+              tooltip_data: "xAI Grok",
             });
           } else {
             newModelsToCreate.push({
@@ -58,7 +77,7 @@ export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: (
               base_url: "https://api.x.ai/v1",
               use_full_url: false,
               api_key: accessToken,
-              tooltip_data: "xAI Grok (OAuth)",
+              tooltip_data: "xAI Grok",
               model_id: modelId,
               reasoning_effort: null,
               openai_endpoint: "/v1/chat/completions",
@@ -79,19 +98,20 @@ export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: (
         if (newModelsToCreate.length > 0) {
           await appStore.createModels(newModelsToCreate);
         }
-        message(t("Grok 账号授权成功，已同步 {count} 个模型到「上游模型」！", { count: discoveredModels.length }));
-      } else if (grokModel) {
-        await appStore.updateCursorModel(grokModel.model_hash, {
-          ...grokModel,
+        message(t("Grok 账号授权成功，已同步 {count} 个模型！", { count: discoveredModels.length }));
+      } else if (grokModels.length > 0) {
+        const first = grokModels[0];
+        await appStore.updateCursorModel(first.model_hash, {
+          ...first,
           api_key: accessToken,
           type: "openai",
           base_url: "https://api.x.ai/v1",
           openai_endpoint: "/v1/chat/completions",
           context_window_tokens: 500000,
           max_completion_tokens: 16384,
-          tooltip_data: "xAI Grok (OAuth)",
+          tooltip_data: "xAI Grok",
         });
-        message(t("Grok 账号授权成功，已更新「上游模型」中的凭证！"));
+        message(t("Grok 账号授权成功，已更新模型凭证！"));
       } else {
         const input: ModelInput = {
           sort_order: models.length + 1,
@@ -100,7 +120,7 @@ export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: (
           base_url: "https://api.x.ai/v1",
           use_full_url: false,
           api_key: accessToken,
-          tooltip_data: "xAI Grok (OAuth)",
+          tooltip_data: "xAI Grok",
           model_id: "grok-beta",
           reasoning_effort: null,
           openai_endpoint: "/v1/chat/completions",
@@ -117,7 +137,7 @@ export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: (
           thinking_budget_tokens: null,
         };
         await appStore.createModels([input]);
-        message(t("Grok 账号已连接，已自动添加到「上游模型」！"));
+        message(t("Grok 账号已连接，已添加 grok-beta 模型！"));
       }
 
       onSwitchToModels?.();
@@ -131,7 +151,7 @@ export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: (
       <div className={styles.intro}>
         <strong>{t("官方账号订阅与授权管理")}</strong>
         <span>
-          {t("通过官方 OAuth 授权连接你的订阅账号，成功授权后得到的模型将自动加入「上游模型」中统一进行管理和调用。")}
+          {t("通过官方 OAuth 授权连接你的订阅账号，获取官方模型额度并在 Cursor 中直接使用。")}
         </span>
       </div>
 
@@ -183,6 +203,39 @@ export function SubscriptionAuthTab({ onSwitchToModels }: { onSwitchToModels?: (
                 <span>Device Code Grant (RFC 8628)</span>
               </div>
             </div>
+
+            {grokModels.length > 0 && (
+              <div className={styles.modelsSection}>
+                <strong>{t("已添加的 Grok 模型 ({count})", { count: grokModels.length })}</strong>
+                <div className={styles.modelsList}>
+                  {grokModels.map((m) => (
+                    <div key={m.model_hash} className={styles.modelRow}>
+                      <div className={styles.modelInfo}>
+                        <strong>{m.display_name}</strong>
+                        <span>{m.model_id}</span>
+                      </div>
+                      <div className={styles.modelActions}>
+                        {onTest && (
+                          <Button size="small" onClick={() => onTest(m)}>
+                            {t("测试")}
+                          </Button>
+                        )}
+                        {onEdit && (
+                          <Button size="small" onClick={() => onEdit(m)}>
+                            {t("编辑")}
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button size="small" onClick={() => onDelete(m)}>
+                            {t("删除")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className={styles.cardFooter}>

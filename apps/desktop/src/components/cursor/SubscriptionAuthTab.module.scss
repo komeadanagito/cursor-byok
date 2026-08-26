@@ -167,3 +167,61 @@
   gap: 10px;
   margin-top: 4px;
 }
+
+.modelsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+
+  strong {
+    font-size: type.$font-size-xs;
+    color: var(--vscode-foreground);
+  }
+}
+
+.modelsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
+  border-radius: 6px;
+
+  .modelInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+
+    strong {
+      font-size: type.$font-size-xs;
+      color: var(--vscode-foreground);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      font-size: type.$font-size-2xs;
+      color: var(--vscode-descriptionForeground);
+    }
+  }
+
+  .modelActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+}
