@@ -47,7 +47,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 194,
+          "line": 210,
           "column": 25
         }
       ]
@@ -147,7 +147,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 84,
+          "line": 100,
           "column": 17
         }
       ]
@@ -216,7 +216,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 207,
+          "line": 223,
           "column": 34
         }
       ]
@@ -424,7 +424,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 142,
+          "line": 158,
           "column": 17
         }
       ]
@@ -436,17 +436,17 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 166,
+          "line": 182,
           "column": 28
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 181,
+          "line": 197,
           "column": 26
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 238,
+          "line": 254,
           "column": 26
         }
       ]
@@ -617,7 +617,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 250,
+          "line": 266,
           "column": 31
         }
       ]
@@ -824,18 +824,6 @@
           "file": "pages/SettingsPage.tsx",
           "line": 250,
           "column": 43
-        }
-      ]
-    },
-    "21f3044f82c04b2b": {
-      "source": "Grok 凭证需刷新权限，请点击下方「重新授权 / 切换账号」重新登录即可恢复！",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 49,
-          "column": 17
         }
       ]
     },
@@ -1173,7 +1161,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 191,
+          "line": 207,
           "column": 26
         }
       ]
@@ -1570,12 +1558,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 177,
+          "line": 193,
           "column": 26
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 234,
+          "line": 250,
           "column": 26
         }
       ]
@@ -1702,12 +1690,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 150,
+          "line": 166,
           "column": 29
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 230,
+          "line": 246,
           "column": 29
         }
       ]
@@ -1736,7 +1724,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 183,
+          "line": 199,
           "column": 40
         }
       ]
@@ -2025,7 +2013,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 139,
+          "line": 155,
           "column": 59
         }
       ]
@@ -2199,7 +2187,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 158,
+          "line": 174,
           "column": 49
         }
       ]
@@ -2640,7 +2628,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 110,
+          "line": 126,
           "column": 17
         }
       ]
@@ -2664,7 +2652,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 207,
+          "line": 223,
           "column": 53
         }
       ]
@@ -2741,12 +2729,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 187,
+          "line": 203,
           "column": 26
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 242,
+          "line": 258,
           "column": 26
         }
       ]
@@ -3047,7 +3035,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 178,
+          "line": 194,
           "column": 71
         }
       ]
@@ -3350,7 +3338,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 188,
+          "line": 204,
           "column": 26
         }
       ]
@@ -3844,6 +3832,20 @@
         }
       ]
     },
+    "c0c2a34e43403c26": {
+      "source": "额度检测提示：{error}",
+      "kind": "template",
+      "placeholders": [
+        "error"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 70,
+          "column": 15
+        }
+      ]
+    },
     "c1e98892a77f7a19": {
       "source": "{count} 条/页",
       "kind": "template",
@@ -4070,7 +4072,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 158,
+          "line": 174,
           "column": 37
         }
       ]
@@ -4118,7 +4120,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 167,
+          "line": 183,
           "column": 34
         }
       ]
@@ -4217,6 +4219,18 @@
         }
       ]
     },
+    "dca31e82004697e2": {
+      "source": "未找到有效的 Grok 授权，请先点击下方「⚡ 立即登录授权」。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 40,
+          "column": 15
+        }
+      ]
+    },
     "ddde16f8839da3ce": {
       "source": "总请求",
       "kind": "text",
@@ -4236,12 +4250,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 223,
+          "line": 239,
           "column": 16
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 239,
+          "line": 255,
           "column": 26
         }
       ]
@@ -4495,7 +4509,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 195,
+          "line": 211,
           "column": 25
         }
       ]
@@ -4618,18 +4632,6 @@
         }
       ]
     },
-    "ecc07b6abc46e8ce": {
-      "source": "Grok 授权有效，周额度充足！",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 51,
-          "column": 17
-        }
-      ]
-    },
     "ed31fbb483ee1b0a": {
       "source": "操作",
       "kind": "text",
@@ -4675,7 +4677,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 45,
+          "line": 65,
           "column": 15
         }
       ]
@@ -4786,7 +4788,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 178,
+          "line": 194,
           "column": 44
         }
       ]
@@ -4898,7 +4900,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 243,
+          "line": 259,
           "column": 26
         }
       ]
@@ -4966,7 +4968,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 183,
+          "line": 199,
           "column": 63
         }
       ]

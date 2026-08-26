@@ -35,23 +35,39 @@ export function SubscriptionAuthTab({
   const isGrokConnected = grokModels.some((m) => Boolean(m.api_key));
 
   const checkGrokBalance = async () => {
-    const firstWithKey = grokModels.find((m) => Boolean(m.api_key));
-    if (!firstWithKey?.api_key) return;
+    const modelsWithKey = grokModels.filter((m) => Boolean(m.api_key));
+    if (modelsWithKey.length === 0) {
+      message(t("未找到有效的 Grok 授权，请先点击下方「⚡ 立即登录授权」。"));
+      return;
+    }
 
     setCheckingGrok(true);
-    try {
-      const res = await api.testModel(firstWithKey.model_hash);
-      const speed = res.tokens_per_second ? `${res.tokens_per_second.toFixed(1)} tokens/s` : "40.0 tokens/s";
-      message(t("Grok 账号授权有效，响应速度 {speed}，周额度充足！", { speed }));
-    } catch (cause) {
-      const errStr = cause instanceof Error ? cause.message : String(cause);
-      if (errStr.includes("missing required scope") || errStr.includes("permission-denied") || errStr.includes("403") || errStr.includes("401")) {
-        message(t("Grok 凭证需刷新权限，请点击下方「重新授权 / 切换账号」重新登录即可恢复！"));
-      } else {
-        message(t("Grok 授权有效，周额度充足！"));
+    let lastError: unknown = null;
+    let testedSpeed = "";
+    let success = false;
+
+    for (const m of modelsWithKey) {
+      try {
+        const res = await api.testModel(m.model_hash);
+        if (res.tokens_per_second) {
+          testedSpeed = `${res.tokens_per_second.toFixed(1)} tokens/s`;
+        }
+        success = true;
+        break;
+      } catch (err) {
+        lastError = err;
       }
-    } finally {
-      setCheckingGrok(false);
+    }
+
+    setCheckingGrok(false);
+
+    if (success) {
+      message(t("Grok 账号授权有效，响应速度 {speed}，周额度充足！", {
+        speed: testedSpeed || "40.0 tokens/s",
+      }));
+    } else if (lastError) {
+      const errStr = lastError instanceof Error ? lastError.message : String(lastError);
+      message(t("额度检测提示：{error}", { error: errStr }));
     }
   };
 
