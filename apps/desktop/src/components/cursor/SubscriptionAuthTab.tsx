@@ -48,9 +48,14 @@ export function SubscriptionAuthTab({
         custom_headers: {},
       });
       const count = res.models?.length || 0;
-      message(t("Grok 账号授权有效，可用模型 {count} 个，额度正常！", { count }));
+      message(t("Grok 账号授权有效，可用模型 {count} 个，周额度正常！", { count }));
     } catch (cause) {
-      message(cause instanceof Error ? cause.message : String(cause));
+      const errStr = cause instanceof Error ? cause.message : String(cause);
+      if (errStr.includes("missing required scope") || errStr.includes("permission-denied") || errStr.includes("403") || errStr.includes("401")) {
+        message(t("Grok 凭证需刷新权限，请点击下方「重新授权 / 切换账号」重新登录即可恢复！"));
+      } else {
+        message(errStr);
+      }
     } finally {
       setCheckingGrok(false);
     }
