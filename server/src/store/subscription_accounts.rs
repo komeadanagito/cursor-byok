@@ -1,7 +1,7 @@
 use sqlx::Row;
 
 use crate::{
-    subscription::{account_exhausted, SubscriptionKind, CODEX_SESSION_WINDOW_MS},
+    subscription::{account_exhausted, account_identity, SubscriptionKind, CODEX_SESSION_WINDOW_MS},
     Error, Result,
 };
 
@@ -95,8 +95,29 @@ impl Store {
     ) -> Result<SubscriptionAccount> {
         let now = now_ms();
         let _write = self.writes.lock().await;
+        let mut activate = make_active;
+        let mut stale_ids = Vec::new();
+        for account in self.subscription_accounts(provider).await? {
+            if account.account_id == account_id {
+                continue;
+            }
+            let same_token = account.access_token == access_token;
+            let same_identity = account_identity(provider, &account.access_token).0 == account_id;
+            if same_token || same_identity {
+                if account.active {
+                    activate = true;
+                }
+                stale_ids.push(account.account_id);
+            }
+        }
         let mut transaction = self.pool.begin().await?;
-        if make_active {
+        for stale_id in &stale_ids {
+            sqlx::query("DELETE FROM subscription_accounts WHERE account_id = ?")
+                .bind(stale_id)
+                .execute(&mut *transaction)
+                .await?;
+        }
+        if activate {
             sqlx::query(
                 "UPDATE subscription_accounts SET active = 0, updated_at_ms = ? WHERE provider = ? AND active = 1",
             )
@@ -127,7 +148,7 @@ impl Store {
         .bind(access_token)
         .bind(refresh_token)
         .bind(display_name)
-        .bind(i64::from(make_active))
+        .bind(i64::from(activate))
         .bind(now)
         .bind(now)
         .execute(&mut *transaction)

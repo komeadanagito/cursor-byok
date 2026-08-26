@@ -141,8 +141,9 @@ pub fn parse_imported_credentials(
     value: &serde_json::Value,
 ) -> Result<Vec<ImportedCredential>> {
     let mut credentials = Vec::new();
-    collect_imported_credentials(filename, value, &mut credentials)?;
-    if credentials.is_empty() {
+    let mut skipped_disabled = false;
+    collect_imported_credentials(filename, value, &mut credentials, &mut skipped_disabled)?;
+    if credentials.is_empty() && !skipped_disabled {
         return Err(Error::Config(format!(
             "{filename} does not contain a Grok or Codex access token"
         )));
@@ -154,10 +155,11 @@ fn collect_imported_credentials(
     filename: &str,
     value: &serde_json::Value,
     credentials: &mut Vec<ImportedCredential>,
+    skipped_disabled: &mut bool,
 ) -> Result<()> {
     if let Some(items) = value.as_array() {
         for item in items {
-            collect_imported_credentials(filename, item, credentials)?;
+            collect_imported_credentials(filename, item, credentials, skipped_disabled)?;
         }
         return Ok(());
     }
@@ -167,12 +169,13 @@ fn collect_imported_credentials(
     for key in ["accounts", "credentials", "items"] {
         if let Some(items) = object.get(key).and_then(|item| item.as_array()) {
             for item in items {
-                collect_imported_credentials(filename, item, credentials)?;
+                collect_imported_credentials(filename, item, credentials, skipped_disabled)?;
             }
             return Ok(());
         }
     }
     if object.get("disabled").and_then(serde_json::Value::as_bool) == Some(true) {
+        *skipped_disabled = true;
         return Ok(());
     }
     let token_source = object
@@ -181,7 +184,9 @@ fn collect_imported_credentials(
         .unwrap_or(object);
     let access_token = json_text(token_source.get("access_token"))
         .or_else(|| json_text(token_source.get("token")))
-        .or_else(|| json_text(object.get("access_token")));
+        .or_else(|| json_text(token_source.get("key")))
+        .or_else(|| json_text(object.get("access_token")))
+        .or_else(|| json_text(object.get("key")));
     let Some(access_token) = access_token else {
         return Ok(());
     };
@@ -194,7 +199,11 @@ fn collect_imported_credentials(
         .or_else(|| json_text(object.get("refresh_token")));
     let display_name = json_text(object.get("email"))
         .or_else(|| json_text(token_source.get("email")))
-        .or_else(|| email_from_filename(filename));
+        .or_else(|| email_from_filename(filename))
+        .or_else(|| {
+            json_text(object.get("id_token"))
+                .and_then(|token| jwt_string(&jwt_payload(&token), "email"))
+        });
     credentials.push(ImportedCredential {
         kind,
         access_token,
@@ -314,15 +323,15 @@ mod tests {
             "refresh_token": "ref-a",
             "auth_kind": "oauth",
             "base_url": "https://cli-chat-proxy.grok.com/v1",
-            "email": "8dw55ltk03@ggt666.cc.cd",
+            "email": "user@example.com",
             "type": "xai"
         });
-        let parsed = parse_imported_credentials("xai-8dw55ltk03@ggt666.cc.cd.json", &value).unwrap();
+        let parsed = parse_imported_credentials("xai-user@example.com.json", &value).unwrap();
         assert_eq!(parsed.len(), 1);
         assert_eq!(parsed[0].kind, SubscriptionKind::Grok);
         assert_eq!(parsed[0].access_token, "tok-a");
         assert_eq!(parsed[0].refresh_token.as_deref(), Some("ref-a"));
-        assert_eq!(parsed[0].display_name.as_deref(), Some("8dw55ltk03@ggt666.cc.cd"));
+        assert_eq!(parsed[0].display_name.as_deref(), Some("user@example.com"));
     }
 
     #[test]
@@ -332,7 +341,64 @@ mod tests {
             "disabled": true,
             "type": "xai"
         });
-        assert!(parse_imported_credentials("xai-disabled.json", &value).is_err());
+        assert!(parse_imported_credentials("xai-disabled.json", &value)
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn grok_pager_export_with_headers_is_one_grok_account() {
+        let value = serde_json::json!({
+            "access_token": "tok-a",
+            "refresh_token": "ref-a",
+            "auth_kind": "oauth",
+            "base_url": "https://cli-chat-proxy.grok.com/v1",
+            "disabled": false,
+            "email": "user@example.com",
+            "expired": "2026-01-01T00:00:00Z",
+            "expires_in": 21600,
+            "headers": {
+                "User-Agent": "grok-pager/0.2.93 grok-shell/0.2.93 (linux; x86_64)",
+                "x-authenticateresponse": "authenticate-response",
+                "x-grok-client-identifier": "grok-pager",
+                "x-grok-client-version": "0.2.93",
+                "x-xai-token-auth": "xai-grok-cli"
+            },
+            "id_token": "header.payload.sig",
+            "last_refresh": "2026-01-01T00:00:00Z",
+            "redirect_uri": "http://127.0.0.1:56121/callback",
+            "sub": "00000000-0000-4000-8000-000000000001",
+            "token_endpoint": "https://auth.x.ai/oauth2/token",
+            "token_type": "Bearer",
+            "type": "xai"
+        });
+        let parsed = parse_imported_credentials("xai-user@example.com.json", &value).unwrap();
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].kind, SubscriptionKind::Grok);
+        assert_eq!(parsed[0].access_token, "tok-a");
+        assert_eq!(parsed[0].refresh_token.as_deref(), Some("ref-a"));
+        assert_eq!(parsed[0].display_name.as_deref(), Some("user@example.com"));
+    }
+
+    #[test]
+    fn enabled_and_disabled_exports_keep_the_usable_account() {
+        let value = serde_json::json!([
+            {
+                "access_token": "tok-a",
+                "disabled": false,
+                "email": "ok@x.ai",
+                "type": "xai"
+            },
+            {
+                "access_token": "tok-b",
+                "disabled": true,
+                "email": "off@x.ai",
+                "type": "xai"
+            }
+        ]);
+        let parsed = parse_imported_credentials("accounts.json", &value).unwrap();
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].display_name.as_deref(), Some("ok@x.ai"));
     }
 
     #[test]

@@ -11,7 +11,7 @@ mod usage;
 
 use axum::{
     body::{to_bytes, Body},
-    extract::State,
+    extract::{DefaultBodyLimit, State},
     http::{header, header::CONTENT_TYPE, HeaderValue, Method, Request, Response, StatusCode},
     routing::{any, get, post, put},
     Router,
@@ -121,7 +121,10 @@ pub fn api_router(service: ControlService) -> Router {
             "/__byok-api__/api/auth/grok/device-code",
             post(oauth::grok_device_code),
         )
-        .route("/__byok-api__/api/auth/accounts/import", post(accounts::import_accounts))
+        .route(
+            "/__byok-api__/api/auth/accounts/import",
+            post(accounts::import_accounts).layer(DefaultBodyLimit::disable()),
+        )
         .route("/__byok-api__/api/auth/grok/poll", post(oauth::grok_token_poll))
         .route("/__byok-api__/api/auth/grok/usage", post(usage::grok_usage))
         .route(

@@ -156,6 +156,7 @@ export interface SubscriptionAccount {
 export interface SubscriptionImportResult {
   imported: number;
   skipped: number;
+  imported_names: string[];
   errors: Array<{ name: string; message: string }>;
 }
 

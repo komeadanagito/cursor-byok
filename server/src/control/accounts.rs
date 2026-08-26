@@ -35,6 +35,7 @@ pub struct ImportAccountFile {
 pub struct ImportAccountsResult {
     pub imported: usize,
     pub skipped: usize,
+    pub imported_names: Vec<String>,
     pub errors: Vec<ImportAccountError>,
 }
 
@@ -180,6 +181,7 @@ pub async fn import_accounts(
         .transpose()?;
     let mut imported = 0;
     let mut skipped = 0;
+    let mut imported_names = Vec::new();
     let mut errors = Vec::new();
     let mut grok_active = service
         .store()
@@ -194,9 +196,20 @@ pub async fn import_accounts(
     for file in input.files {
         match parse_imported_credentials(&file.name, &file.content) {
             Ok(credentials) => {
+                if credentials.is_empty() {
+                    skipped += 1;
+                    continue;
+                }
                 for credential in credentials {
                     if filter.is_some_and(|kind| kind != credential.kind) {
-                        skipped += 1;
+                        errors.push(ImportAccountError {
+                            name: file.name.clone(),
+                            message: format!(
+                                "{} is a {} credential",
+                                file.name,
+                                credential.kind.label()
+                            ),
+                        });
                         continue;
                     }
                     let (account_id, jwt_name) =
@@ -231,6 +244,7 @@ pub async fn import_accounts(
                         }
                     }
                     imported += 1;
+                    imported_names.push(display_name);
                 }
             }
             Err(error) => errors.push(ImportAccountError {
@@ -242,6 +256,7 @@ pub async fn import_accounts(
     Ok(Json(ImportAccountsResult {
         imported,
         skipped,
+        imported_names,
         errors,
     }))
 }

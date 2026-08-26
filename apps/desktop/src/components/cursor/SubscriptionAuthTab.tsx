@@ -14,6 +14,7 @@ import styles from "./SubscriptionAuthTab.module.scss";
 const GROK_BASE_URL = "https://api.x.ai/v1";
 const CODEX_BASE_URL = "https://chatgpt.com/backend-api/codex/responses";
 const CODEX_DISCOVERY_URL = "https://chatgpt.com/backend-api/codex";
+const IMPORT_CHUNK_SIZE = 40;
 
 export function isSubscriptionModel(m: { base_url?: string; tooltip_data?: string }): boolean {
   return Boolean(
@@ -190,19 +191,29 @@ export function SubscriptionAuthTab({
     try {
       const files: Array<{ name: string; content: unknown }> = [];
       const parseErrors: string[] = [];
+      const seen = new Set<string>();
       let bootstrapToken: string | undefined;
       for (const file of Array.from(fileList)) {
+        const seenKey = `${file.name}:${file.size}`;
+        if (seen.has(seenKey)) continue;
+        seen.add(seenKey);
         try {
-          const content = JSON.parse(await file.text()) as unknown;
+          const text = (await file.text()).replace(/^\uFEFF/, "");
+          const content = JSON.parse(text) as unknown;
           files.push({ name: file.name, content });
           bootstrapToken ??= firstAccessToken(content);
         } catch (cause) {
           parseErrors.push(`${file.name}: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       }
-      const result = files.length > 0
-        ? await api.importAccounts(provider, files)
-        : { imported: 0, skipped: 0, errors: [] };
+      const result = { imported: 0, skipped: 0, imported_names: [] as string[], errors: [] as Array<{ name: string; message: string }> };
+      for (let index = 0; index < files.length; index += IMPORT_CHUNK_SIZE) {
+        const chunk = await api.importAccounts(provider, files.slice(index, index + IMPORT_CHUNK_SIZE));
+        result.imported += chunk.imported;
+        result.skipped += chunk.skipped;
+        result.imported_names.push(...(chunk.imported_names ?? []));
+        result.errors.push(...chunk.errors);
+      }
       if (provider === "grok") await loadGrokAccounts();
       else await loadCodexAccounts();
       if (provider === "grok" && grokModels.length === 0 && bootstrapToken) {
@@ -238,13 +249,30 @@ export function SubscriptionAuthTab({
         });
       }
       const failed = result.errors.length + parseErrors.length;
+      const importedNames = (result.imported_names ?? []).filter(Boolean);
+      const names = importedNames.length <= 5
+        ? importedNames.join("、")
+        : t("{names} 等 {count} 个", { names: importedNames.slice(0, 3).join("、"), count: importedNames.length });
+      const detail = [...result.errors.map(importErrorText), ...parseErrors].slice(0, 8).join("；");
+      const duration = failed > 0 ? 8000 : 4000;
       if (result.imported > 0 && failed === 0) {
-        message(t("已导入 {count} 个账号。", { count: result.imported }));
+        message(
+          names
+            ? t("已导入 {count} 个账号：{names}。", { count: result.imported, names })
+            : t("已导入 {count} 个账号。", { count: result.imported }),
+          { duration },
+        );
       } else if (result.imported > 0) {
-        message(t("已导入 {imported} 个账号，失败 {failed} 个。", { imported: result.imported, failed }));
+        message(
+          t("已导入 {imported} 个账号，失败 {failed} 个。{detail}", {
+            imported: result.imported,
+            failed,
+            detail,
+          }),
+          { duration },
+        );
       } else {
-        const detail = result.errors[0]?.message || parseErrors[0] || t("未找到可导入的凭证。");
-        message(t("导入失败：{error}", { error: detail }));
+        message(t("导入失败：{error}", { error: detail || t("未找到可导入的凭证。") }), { duration });
       }
     } catch (cause) {
       message(cause instanceof Error ? cause.message : String(cause));
@@ -271,7 +299,11 @@ export function SubscriptionAuthTab({
           </div>
           <AccountBar
             accounts={grokAccounts}
-            hint={t("余额为 0 时自动切换")}
+            hint={
+              grokAccounts.length > 1
+                ? t("{count} 个账号，余额为 0 时自动切换", { count: grokAccounts.length })
+                : t("余额为 0 时自动切换")
+            }
             onSelect={async (accountId) => {
               await api.activateGrokAccount(accountId);
               await loadGrokAccounts();
@@ -324,7 +356,11 @@ export function SubscriptionAuthTab({
           </div>
           <AccountBar
             accounts={codexAccounts}
-            hint={t("5 小时或周额度用尽时自动切换")}
+            hint={
+              codexAccounts.length > 1
+                ? t("{count} 个账号，5 小时或周额度用尽时自动切换", { count: codexAccounts.length })
+                : t("5 小时或周额度用尽时自动切换")
+            }
             onSelect={async (accountId) => {
               await api.activateCodexAccount(accountId);
               await loadCodexAccounts();
@@ -423,6 +459,7 @@ function AccountBar({
       <div className={styles.accountSelect}>
         <Select
           ariaLabel={t("当前账号")}
+          searchable
           value={active.account_id}
           options={accounts.map((account) => ({
             value: account.account_id,
@@ -439,6 +476,11 @@ function AccountBar({
   );
 }
 
+function importErrorText(error: { name: string; message: string }): string {
+  const message = error.message.replace(/^(configuration error|config error):\s*/i, "");
+  return message.includes(error.name) ? message : `${error.name}: ${message}`;
+}
+
 function firstAccessToken(value: unknown): string | undefined {
   if (Array.isArray(value)) {
     for (const item of value) {
@@ -451,6 +493,9 @@ function firstAccessToken(value: unknown): string | undefined {
   const record = value as Record<string, unknown>;
   if (typeof record.access_token === "string" && record.access_token.trim()) {
     return record.access_token.trim();
+  }
+  if (typeof record.key === "string" && record.key.trim()) {
+    return record.key.trim();
   }
   if (record.tokens && typeof record.tokens === "object") {
     const tokens = record.tokens as Record<string, unknown>;
