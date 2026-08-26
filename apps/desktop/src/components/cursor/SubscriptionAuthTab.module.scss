@@ -6,22 +6,9 @@
   gap: 20px;
 }
 
-.intro {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: var(--vscode-descriptionForeground);
-  font-size: type.$font-size-xs;
-  line-height: 1.5;
-
-  strong {
-    color: var(--vscode-foreground);
-  }
-}
-
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 16px;
 }
 
@@ -125,27 +112,41 @@
 .cardBody {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+}
 
-  p {
-    margin: 0;
-    font-size: type.$font-size-xs;
-    color: var(--vscode-descriptionForeground);
-    line-height: 1.5;
+.balanceBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
+  border-radius: 6px;
+}
+
+.balanceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: type.$font-size-xs;
+
+  strong {
+    color: var(--vscode-foreground);
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 }
 
-.metaList {
+.balanceList {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 10px 12px;
-  background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.03));
-  border-radius: 6px;
   font-size: type.$font-size-2xs;
 }
 
-.metaItem {
+.balanceRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -157,7 +158,7 @@
 
   span:last-child {
     color: var(--vscode-foreground);
-    font-family: var(--vscode-editor-font-family, monospace);
+    font-weight: 500;
   }
 }
 
@@ -179,3 +180,4 @@
     color: var(--vscode-foreground);
   }
 }
+

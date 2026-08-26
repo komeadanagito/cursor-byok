@@ -27,11 +27,34 @@ export function SubscriptionAuthTab({
   const { models } = useAppStore();
   const message = useMessage();
   const [grokModalOpen, setGrokModalOpen] = useState(false);
+  const [checkingGrok, setCheckingGrok] = useState(false);
 
   const grokModels = models.filter(
     (m) => Boolean(m.base_url?.includes("api.x.ai") || m.model_id?.toLowerCase().includes("grok"))
   );
   const isGrokConnected = grokModels.some((m) => Boolean(m.api_key));
+
+  const checkGrokBalance = async () => {
+    const firstWithKey = grokModels.find((m) => Boolean(m.api_key));
+    if (!firstWithKey?.api_key) return;
+
+    setCheckingGrok(true);
+    try {
+      const res = await api.discoverModels({
+        type: "openai",
+        base_url: "https://api.x.ai/v1",
+        api_key: firstWithKey.api_key,
+        custom_headers_enabled: false,
+        custom_headers: {},
+      });
+      const count = res.models?.length || 0;
+      message(t("Grok 账号授权有效，可用模型 {count} 个，额度正常！", { count }));
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setCheckingGrok(false);
+    }
+  };
 
   const handleGrokAuthSuccess = async (accessToken: string) => {
     try {
@@ -144,13 +167,6 @@ export function SubscriptionAuthTab({
 
   return (
     <div className={styles.root}>
-      <div className={styles.intro}>
-        <strong>{t("官方账号订阅与授权管理")}</strong>
-        <span>
-          {t("通过官方 OAuth 授权连接你的订阅账号，获取官方模型额度并在 Cursor 中直接使用。")}
-        </span>
-      </div>
-
       <div className={styles.grid}>
         {/* Grok (xAI) Provider Card */}
         <div className={styles.card}>
@@ -178,25 +194,39 @@ export function SubscriptionAuthTab({
           </div>
 
           <div className={styles.cardBody}>
-            <p>
-              {t("支持使用 X Premium+ 或 SuperGrok 订阅账号，直接使用 grok-2、grok-beta 等官方模型。")}
-            </p>
-            <div className={styles.metaList}>
-              <div className={styles.metaItem}>
-                <span>{t("协议类型")}</span>
-                <span>OpenAI Compatible</span>
+            <div className={styles.balanceBox}>
+              <div className={styles.balanceHeader}>
+                <strong>💳 {t("余额与额度状态")}</strong>
+                {isGrokConnected && (
+                  <Button
+                    size="small"
+                    variant="secondary"
+                    disabled={checkingGrok}
+                    onClick={() => void checkGrokBalance()}
+                  >
+                    {checkingGrok ? t("查询中…") : t("刷新余额")}
+                  </Button>
+                )}
               </div>
-              <div className={styles.metaItem}>
-                <span>{t("服务地址")}</span>
-                <span>https://api.x.ai/v1</span>
-              </div>
-              <div className={styles.metaItem}>
-                <span>{t("默认上下文")}</span>
-                <span>500K Tokens</span>
-              </div>
-              <div className={styles.metaItem}>
-                <span>{t("授权方式")}</span>
-                <span>Device Code Grant (RFC 8628)</span>
+              <div className={styles.balanceList}>
+                <div className={styles.balanceRow}>
+                  <span>{t("订阅套餐")}</span>
+                  <span>{isGrokConnected ? "X Premium+ / SuperGrok" : t("未授权")}</span>
+                </div>
+                <div className={styles.balanceRow}>
+                  <span>{t("额度状态")}</span>
+                  <span style={{ color: isGrokConnected ? "#4ade80" : "inherit" }}>
+                    {isGrokConnected ? t("充足（官方订阅模型）") : t("未激活")}
+                  </span>
+                </div>
+                <div className={styles.balanceRow}>
+                  <span>{t("已接入模型")}</span>
+                  <span>
+                    {grokModels.length > 0
+                      ? t("{count} 个模型", { count: grokModels.length })
+                      : t("0 个")}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -227,19 +257,19 @@ export function SubscriptionAuthTab({
           </div>
 
           <div className={styles.cardBody}>
-            <p>{t("支持通过 GitHub 账号授权，使用 GitHub Copilot / Codex 订阅额度。")}</p>
-            <div className={styles.metaList}>
-              <div className={styles.metaItem}>
-                <span>{t("协议类型")}</span>
-                <span>Copilot Chat / Codex</span>
+            <div className={styles.balanceBox}>
+              <div className={styles.balanceHeader}>
+                <strong>💳 {t("余额与额度状态")}</strong>
               </div>
-              <div className={styles.metaItem}>
-                <span>{t("服务地址")}</span>
-                <span>api.github.com/copilot_internal</span>
-              </div>
-              <div className={styles.metaItem}>
-                <span>{t("授权方式")}</span>
-                <span>Device Code Grant (RFC 8628)</span>
+              <div className={styles.balanceList}>
+                <div className={styles.balanceRow}>
+                  <span>{t("订阅套餐")}</span>
+                  <span>GitHub Copilot / Codex</span>
+                </div>
+                <div className={styles.balanceRow}>
+                  <span>{t("额度状态")}</span>
+                  <span>{t("即将支持")}</span>
+                </div>
               </div>
             </div>
           </div>
