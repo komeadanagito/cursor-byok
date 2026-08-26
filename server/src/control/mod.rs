@@ -121,6 +121,11 @@ pub fn api_router(service: ControlService) -> Router {
         )
         .route("/__byok-api__/api/auth/grok/poll", post(oauth::grok_token_poll))
         .route(
+            "/__byok-api__/api/auth/codex/device-code",
+            post(oauth::codex_device_code),
+        )
+        .route("/__byok-api__/api/auth/codex/poll", post(oauth::codex_token_poll))
+        .route(
             "/__byok-api__/api/models",
             get(models::list).post(models::create),
         )

@@ -111,6 +111,24 @@ export interface GrokTokenPollResponse {
   error_message: string | null;
 }
 
+export interface CodexDeviceCodeResponse {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  verification_uri_complete: string | null;
+  expires_in: number;
+  interval: number;
+}
+
+export interface CodexTokenPollResponse {
+  status: "success" | "pending" | "slow_down" | "expired" | "access_denied" | "error";
+  access_token: string | null;
+  refresh_token: string | null;
+  token_type: string | null;
+  expires_in: number | null;
+  error_message: string | null;
+}
+
 export type CaState = "missing" | "untrusted" | "ready" | "invalid";
 export type IntegrationState = "disabled" | "enabled" | "degraded";
 export interface CursorHarnessStatus {
@@ -312,6 +330,8 @@ export const api = {
   testModel: (hash: string) => request<ModelConnectivityResult>(`/models/${hash}/test`, { method: "POST" }),
   startGrokDeviceAuth: (clientId?: string) => request<GrokDeviceCodeResponse>("/auth/grok/device-code", { method: "POST", body: JSON.stringify({ client_id: clientId }) }),
   pollGrokDeviceAuth: (deviceCode: string, clientId?: string) => request<GrokTokenPollResponse>("/auth/grok/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, client_id: clientId }) }),
+  startCodexDeviceAuth: (clientId?: string) => request<CodexDeviceCodeResponse>("/auth/codex/device-code", { method: "POST", body: JSON.stringify({ client_id: clientId }) }),
+  pollCodexDeviceAuth: (deviceCode: string, clientId?: string) => request<CodexTokenPollResponse>("/auth/codex/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, client_id: clientId }) }),
   overview: (filter?: { startMs: number; endMs: number; modelHashes?: string[] }) => {
     const params = new URLSearchParams();
     if (filter) {

@@ -26,6 +26,20 @@
         }
       ]
     },
+    "00aea4b34f09fe5e": {
+      "source": "已复制验证码：{code}",
+      "kind": "template",
+      "placeholders": [
+        "code"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 124,
+          "column": 15
+        }
+      ]
+    },
     "01f3e69a5a9b2c9b": {
       "source": "访问模型服务所需的密钥。",
       "kind": "text",
@@ -47,7 +61,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 210,
+          "line": 316,
+          "column": 25
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 406,
           "column": 25
         }
       ]
@@ -147,7 +166,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 100,
+          "line": 149,
           "column": 17
         }
       ]
@@ -216,8 +235,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 223,
+          "line": 329,
           "column": 34
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 419,
+          "column": 35
         }
       ]
     },
@@ -424,7 +448,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 158,
+          "line": 264,
+          "column": 17
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 354,
           "column": 17
         }
       ]
@@ -436,17 +465,22 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 182,
+          "line": 288,
           "column": 28
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 197,
+          "line": 303,
           "column": 26
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 254,
+          "line": 378,
+          "column": 28
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 393,
           "column": 26
         }
       ]
@@ -607,18 +641,6 @@
           "file": "layouts/WindowControls.tsx",
           "line": 38,
           "column": 49
-        }
-      ]
-    },
-    "18722bdc7cc31407": {
-      "source": "即将推出",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 266,
-          "column": 31
         }
       ]
     },
@@ -824,6 +846,20 @@
           "file": "pages/SettingsPage.tsx",
           "line": 250,
           "column": 43
+        }
+      ]
+    },
+    "21814d837da7242f": {
+      "source": "ChatGPT / Codex 账号授权有效，响应速度 {speed}，周额度充足！",
+      "kind": "template",
+      "placeholders": [
+        "speed"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 115,
+          "column": 15
         }
       ]
     },
@@ -1161,7 +1197,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 207,
+          "line": 313,
+          "column": 26
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 403,
           "column": 26
         }
       ]
@@ -1345,6 +1386,18 @@
         }
       ]
     },
+    "3c52fe9533c4f15e": {
+      "source": "🔗 打开 OpenAI 授权页面",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 180,
+          "column": 18
+        }
+      ]
+    },
     "3c94b4c75940c178": {
       "source": "输入 Token",
       "kind": "text",
@@ -1393,6 +1446,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 91,
+          "column": 27
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 92,
@@ -1558,12 +1616,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 193,
+          "line": 299,
           "column": 26
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 250,
+          "line": 389,
           "column": 26
         }
       ]
@@ -1690,12 +1748,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 166,
+          "line": 272,
           "column": 29
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 246,
+          "line": 362,
           "column": 29
         }
       ]
@@ -1724,8 +1782,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 199,
+          "line": 305,
           "column": 40
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 395,
+          "column": 41
         }
       ]
     },
@@ -1770,6 +1833,20 @@
           "file": "components/settings/TabSettingsCard.tsx",
           "line": 60,
           "column": 41
+        }
+      ]
+    },
+    "5088b46be1de4794": {
+      "source": "ChatGPT / Codex 账号授权成功，已同步添加 {count} 个官方模型！",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 232,
+          "column": 17
         }
       ]
     },
@@ -2013,7 +2090,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 155,
+          "line": 261,
+          "column": 59
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 351,
           "column": 59
         }
       ]
@@ -2111,6 +2193,20 @@
         }
       ]
     },
+    "61984234e27c99a3": {
+      "source": "ChatGPT / Codex 账号授权成功，已同步更新 {count} 个模型凭证！",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 206,
+          "column": 17
+        }
+      ]
+    },
     "61a4c7bac12dc125": {
       "source": "异常调用：{count}",
       "kind": "template",
@@ -2187,8 +2283,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 174,
+          "line": 280,
           "column": 49
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 370,
+          "column": 50
         }
       ]
     },
@@ -2223,7 +2324,7 @@
       "refs": [
         {
           "file": "api.ts",
-          "line": 333,
+          "line": 353,
           "column": 43
         }
       ]
@@ -2456,6 +2557,18 @@
         }
       ]
     },
+    "77cfc70bdcc7edc7": {
+      "source": "ChatGPT / OpenAI Codex 官方账号授权",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 145,
+          "column": 14
+        }
+      ]
+    },
     "788db1cfec2a3db5": {
       "source": "主题",
       "kind": "text",
@@ -2499,7 +2612,7 @@
       "refs": [
         {
           "file": "api.ts",
-          "line": 328,
+          "line": 348,
           "column": 43
         }
       ]
@@ -2628,7 +2741,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 126,
+          "line": 175,
           "column": 17
         }
       ]
@@ -2640,7 +2753,7 @@
       "refs": [
         {
           "file": "api.ts",
-          "line": 276,
+          "line": 294,
           "column": 21
         }
       ]
@@ -2652,8 +2765,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 223,
+          "line": 329,
           "column": 53
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 419,
+          "column": 54
         }
       ]
     },
@@ -2704,6 +2822,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 174,
+          "column": 38
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 179,
           "column": 44
@@ -2729,12 +2852,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 203,
+          "line": 309,
           "column": 26
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 258,
+          "line": 399,
           "column": 26
         }
       ]
@@ -2748,6 +2871,18 @@
           "file": "components/ui/FormControls.tsx",
           "line": 15,
           "column": 81
+        }
+      ]
+    },
+    "870c08c9196349aa": {
+      "source": "ChatGPT / Codex 账号授权成功！",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 83,
+          "column": 19
         }
       ]
     },
@@ -2854,6 +2989,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 95,
+          "column": 27
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 96,
           "column": 27
@@ -2936,6 +3076,11 @@
       "placeholders": [],
       "refs": [
         {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 194,
+          "column": 17
+        },
+        {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 206,
           "column": 24
@@ -2947,6 +3092,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 174,
+          "column": 27
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 179,
@@ -2977,6 +3127,18 @@
           "file": "pages/CursorSettingsPage.tsx",
           "line": 326,
           "column": 87
+        }
+      ]
+    },
+    "912ebc33a31a8446": {
+      "source": "等待在浏览器中完成授权…",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 186,
+          "column": 22
         }
       ]
     },
@@ -3035,8 +3197,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 194,
+          "line": 300,
           "column": 71
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 390,
+          "column": 83
         }
       ]
     },
@@ -3160,6 +3327,18 @@
           "file": "components/overview/OverviewTimeRangeFilter.tsx",
           "line": 106,
           "column": 70
+        }
+      ]
+    },
+    "9eabe7a0ff03e14f": {
+      "source": "点击下方按钮打开 OpenAI 授权页面，登录并输入以下验证码：",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 167,
+          "column": 16
         }
       ]
     },
@@ -3338,7 +3517,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 204,
+          "line": 310,
+          "column": 26
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 400,
           "column": 26
         }
       ]
@@ -3601,6 +3785,18 @@
         }
       ]
     },
+    "b3c87d3a77979587": {
+      "source": "正在向 OpenAI 请求授权码…",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 153,
+          "column": 17
+        }
+      ]
+    },
     "b4411558b932266f": {
       "source": "上游类型",
       "kind": "text",
@@ -3689,6 +3885,18 @@
           "file": "components/cursor/CursorModelTestResult.tsx",
           "line": 25,
           "column": 50
+        }
+      ]
+    },
+    "b8784c8dd5636ff2": {
+      "source": "重试",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 160,
+          "column": 68
         }
       ]
     },
@@ -3841,7 +4049,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 70,
+          "line": 83,
+          "column": 15
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 120,
           "column": 15
         }
       ]
@@ -3961,6 +4174,18 @@
         }
       ]
     },
+    "ca2c4e29ee94b2c9": {
+      "source": "ChatGPT Plus / Team / Pro 官方订阅",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 390,
+          "column": 45
+        }
+      ]
+    },
     "cb2f1709f983d2f4": {
       "source": "模型名称",
       "kind": "text",
@@ -4048,6 +4273,18 @@
         }
       ]
     },
+    "d17de1aacdeb7ae4": {
+      "source": "未找到有效的 ChatGPT / Codex 授权，请先点击下方「⚡ 立即登录授权」。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 90,
+          "column": 15
+        }
+      ]
+    },
     "d2d648bd1c94b7f9": {
       "source": "认证",
       "kind": "text",
@@ -4072,8 +4309,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 174,
+          "line": 280,
           "column": 37
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 370,
+          "column": 38
         }
       ]
     },
@@ -4120,7 +4362,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 183,
+          "line": 289,
+          "column": 34
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 379,
           "column": 34
         }
       ]
@@ -4226,7 +4473,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 40,
+          "line": 53,
           "column": 15
         }
       ]
@@ -4240,23 +4487,6 @@
           "file": "components/charts/DailyTokenUsageChart.tsx",
           "line": 105,
           "column": 14
-        }
-      ]
-    },
-    "de8b8f7b30e30a12": {
-      "source": "即将支持",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 239,
-          "column": 16
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 255,
-          "column": 26
         }
       ]
     },
@@ -4509,7 +4739,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 211,
+          "line": 317,
+          "column": 25
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 407,
           "column": 25
         }
       ]
@@ -4519,6 +4754,11 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
+        {
+          "file": "components/cursor/CodexAuthModal.tsx",
+          "line": 99,
+          "column": 48
+        },
         {
           "file": "components/cursor/GrokAuthModal.tsx",
           "line": 100,
@@ -4677,7 +4917,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 65,
+          "line": 78,
           "column": 15
         }
       ]
@@ -4788,7 +5028,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 194,
+          "line": 300,
           "column": 44
         }
       ]
@@ -4893,18 +5133,6 @@
         }
       ]
     },
-    "fbd779e65571f855": {
-      "source": "按月/按周自动刷新",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 259,
-          "column": 26
-        }
-      ]
-    },
     "fbe8778fa8b9bab5": {
       "source": "需要先初始化本地 CA",
       "kind": "text",
@@ -4968,8 +5196,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 199,
+          "line": 305,
           "column": 63
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 395,
+          "column": 64
         }
       ]
     },
