@@ -2,7 +2,7 @@ import { useState } from "react";
 import { PageContent } from "../components/layout/PageContent";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
-import { openAiIcon, claudeIcon, checkIcon } from "../components/ui/icons";
+import { checkIcon } from "../components/ui/icons";
 import { GrokAuthModal } from "../components/cursor/GrokAuthModal";
 import { useAppStore, appStore } from "../store/appStore";
 import { useMessage } from "../components/ui/message";
@@ -197,13 +197,13 @@ export function OAuthPage() {
               </div>
             </div>
 
-            {/* GitHub Copilot / Codex Provider Card */}
+            {/* Codex / GitHub Copilot Provider Card */}
             <div className={`${styles.card} ${styles.cardDisabled}`}>
               <div className={styles.cardTop}>
                 <div className={styles.providerInfo}>
                   <div className={styles.iconWrap}>🐙</div>
                   <div className={styles.names}>
-                    <strong>GitHub Copilot</strong>
+                    <strong>Codex (GitHub Copilot)</strong>
                     <span>GitHub OAuth Device Flow</span>
                   </div>
                 </div>
@@ -223,69 +223,9 @@ export function OAuthPage() {
                     <span>{t("服务地址")}</span>
                     <span>api.github.com/copilot_internal</span>
                   </div>
-                </div>
-              </div>
-
-              <div className={styles.cardFooter}>
-                <Button disabled>{t("即将推出")}</Button>
-              </div>
-            </div>
-
-            {/* OpenAI / ChatGPT Plus Provider Card */}
-            <div className={`${styles.card} ${styles.cardDisabled}`}>
-              <div className={styles.cardTop}>
-                <div className={styles.providerInfo}>
-                  <div className={styles.iconWrap}>
-                    <Icon icon={openAiIcon} size="1.2em" />
-                  </div>
-                  <div className={styles.names}>
-                    <strong>OpenAI / ChatGPT</strong>
-                    <span>OpenAI OAuth Flow</span>
-                  </div>
-                </div>
-                <span className={`${styles.badge} ${styles.badgeComingSoon}`}>
-                  {t("即将支持")}
-                </span>
-              </div>
-
-              <div className={styles.cardBody}>
-                <p>{t("支持连接 OpenAI 账号与 ChatGPT Plus 订阅额度。")}</p>
-                <div className={styles.metaList}>
                   <div className={styles.metaItem}>
-                    <span>{t("协议类型")}</span>
-                    <span>OpenAI API</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.cardFooter}>
-                <Button disabled>{t("即将推出")}</Button>
-              </div>
-            </div>
-
-            {/* Anthropic Claude Provider Card */}
-            <div className={`${styles.card} ${styles.cardDisabled}`}>
-              <div className={styles.cardTop}>
-                <div className={styles.providerInfo}>
-                  <div className={styles.iconWrap}>
-                    <Icon icon={claudeIcon} size="1.2em" />
-                  </div>
-                  <div className={styles.names}>
-                    <strong>Anthropic Claude</strong>
-                    <span>Claude Console Auth</span>
-                  </div>
-                </div>
-                <span className={`${styles.badge} ${styles.badgeComingSoon}`}>
-                  {t("即将支持")}
-                </span>
-              </div>
-
-              <div className={styles.cardBody}>
-                <p>{t("支持连接 Claude 官方账号与 Pro 订阅额度。")}</p>
-                <div className={styles.metaList}>
-                  <div className={styles.metaItem}>
-                    <span>{t("协议类型")}</span>
-                    <span>Anthropic Messages API</span>
+                    <span>{t("授权方式")}</span>
+                    <span>Device Code Grant (RFC 8628)</span>
                   </div>
                 </div>
               </div>
