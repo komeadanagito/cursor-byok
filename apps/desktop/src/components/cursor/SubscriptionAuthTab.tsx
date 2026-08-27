@@ -1,18 +1,16 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Icon } from "../ui/Icon";
+import { Modal } from "../ui/Modal";
+import { Pagination } from "../ui/Pagination";
 import { TextInput } from "../ui/FormControls";
 import {
-  alertCircleOutlineIcon,
-  checkCircleIcon,
   checkIcon,
-  clockOutlineIcon,
   copyIcon,
   grokIcon,
   openAiIcon,
   refreshIcon,
-  starIcon,
   trashIcon,
 } from "../ui/icons";
 import { GrokAuthModal } from "./GrokAuthModal";
@@ -53,12 +51,14 @@ export function SubscriptionAuthTab({
   const [grokAccounts, setGrokAccounts] = useState<SubscriptionAccount[]>([]);
   const [grokUsage, setGrokUsage] = useState<SubscriptionUsage | null>(null);
   const [grokUsageError, setGrokUsageError] = useState<string | null>(null);
+  const [grokPoolOpen, setGrokPoolOpen] = useState(false);
 
   const [codexModalOpen, setCodexModalOpen] = useState(false);
   const [checkingCodex, setCheckingCodex] = useState(false);
   const [codexAccounts, setCodexAccounts] = useState<SubscriptionAccount[]>([]);
   const [codexUsage, setCodexUsage] = useState<SubscriptionUsage | null>(null);
   const [codexUsageError, setCodexUsageError] = useState<string | null>(null);
+  const [codexPoolOpen, setCodexPoolOpen] = useState(false);
 
   const [deletingAccount, setDeletingAccount] = useState<{ provider: "grok" | "codex"; account: SubscriptionAccount } | null>(null);
   const [clearingCooldown, setClearingCooldown] = useState<"grok" | "codex" | null>(null);
@@ -348,8 +348,8 @@ export function SubscriptionAuthTab({
   return (
     <div className={styles.root}>
       <div className={styles.boardList}>
-        {/* Grok (xAI) 账号管理面板 */}
-        <ProviderAccountPanel
+        {/* Grok (xAI) 精简主卡片 */}
+        <ProviderCard
           provider="grok"
           title="Grok (xAI)"
           subtitle="xAI OAuth 2.0 Device Flow"
@@ -361,18 +361,16 @@ export function SubscriptionAuthTab({
           usageError={grokUsageError}
           loadingUsage={checkingGrok}
           onRefreshUsage={() => void loadGrokUsage()}
-          onActivate={(id) => void handleActivateAccount("grok", id)}
-          onDelete={(acc) => setDeletingAccount({ provider: "grok", account: acc })}
-          onClearCooldown={() => setClearingCooldown("grok")}
-          onOpenModal={() => setGrokModalOpen(true)}
+          onOpenPool={() => setGrokPoolOpen(true)}
+          onOpenLoginModal={() => setGrokModalOpen(true)}
           onImportClick={() => grokImportInput.current?.click()}
           importing={importing === "grok"}
           importInputRef={grokImportInput}
           onImportFiles={(files) => void importCredentialFiles("grok", files)}
         />
 
-        {/* Codex (ChatGPT / OpenAI) 账号管理面板 */}
-        <ProviderAccountPanel
+        {/* Codex (ChatGPT / OpenAI) 精简主卡片 */}
+        <ProviderCard
           provider="codex"
           title="Codex (ChatGPT / OpenAI)"
           subtitle="OpenAI OAuth 2.0 Device Flow"
@@ -384,10 +382,8 @@ export function SubscriptionAuthTab({
           usageError={codexUsageError}
           loadingUsage={checkingCodex}
           onRefreshUsage={() => void loadCodexUsage()}
-          onActivate={(id) => void handleActivateAccount("codex", id)}
-          onDelete={(acc) => setDeletingAccount({ provider: "codex", account: acc })}
-          onClearCooldown={() => setClearingCooldown("codex")}
-          onOpenModal={() => setCodexModalOpen(true)}
+          onOpenPool={() => setCodexPoolOpen(true)}
+          onOpenLoginModal={() => setCodexModalOpen(true)}
           onImportClick={() => codexImportInput.current?.click()}
           importing={importing === "codex"}
           importInputRef={codexImportInput}
@@ -400,6 +396,38 @@ export function SubscriptionAuthTab({
           {children}
         </div>
       )}
+
+      {/* Grok 账号池全屏/大管理面板 */}
+      <AccountPoolModal
+        open={grokPoolOpen}
+        provider="grok"
+        providerName="Grok (xAI)"
+        accounts={grokAccounts}
+        usage={grokUsage}
+        usageError={grokUsageError}
+        onClose={() => setGrokPoolOpen(false)}
+        onActivate={(id) => void handleActivateAccount("grok", id)}
+        onDelete={(acc) => setDeletingAccount({ provider: "grok", account: acc })}
+        onClearCooldown={() => setClearingCooldown("grok")}
+        onAddAccount={() => setGrokModalOpen(true)}
+        onImportClick={() => grokImportInput.current?.click()}
+      />
+
+      {/* Codex 账号池全屏/大管理面板 */}
+      <AccountPoolModal
+        open={codexPoolOpen}
+        provider="codex"
+        providerName="Codex (ChatGPT / OpenAI)"
+        accounts={codexAccounts}
+        usage={codexUsage}
+        usageError={codexUsageError}
+        onClose={() => setCodexPoolOpen(false)}
+        onActivate={(id) => void handleActivateAccount("codex", id)}
+        onDelete={(acc) => setDeletingAccount({ provider: "codex", account: acc })}
+        onClearCooldown={() => setClearingCooldown("codex")}
+        onAddAccount={() => setCodexModalOpen(true)}
+        onImportClick={() => codexImportInput.current?.click()}
+      />
 
       <GrokAuthModal
         open={grokModalOpen}
@@ -449,9 +477,8 @@ function isAccountCooldown(account: SubscriptionAccount): boolean {
   return false;
 }
 
-type PoolTabKey = "ready" | "cooldown" | "error";
-
-function ProviderAccountPanel({
+/** 主页面极简供应商卡片 */
+function ProviderCard({
   provider,
   title,
   subtitle,
@@ -460,13 +487,10 @@ function ProviderAccountPanel({
   accounts,
   activeAccount,
   usage,
-  usageError,
   loadingUsage,
   onRefreshUsage,
-  onActivate,
-  onDelete,
-  onClearCooldown,
-  onOpenModal,
+  onOpenPool,
+  onOpenLoginModal,
   onImportClick,
   importing,
   importInputRef,
@@ -483,50 +507,16 @@ function ProviderAccountPanel({
   usageError: string | null;
   loadingUsage: boolean;
   onRefreshUsage: () => void;
-  onActivate: (accountId: string) => void;
-  onDelete: (account: SubscriptionAccount) => void;
-  onClearCooldown: () => void;
-  onOpenModal: () => void;
+  onOpenPool: () => void;
+  onOpenLoginModal: () => void;
   onImportClick: () => void;
   importing: boolean;
   importInputRef: React.RefObject<HTMLInputElement | null>;
   onImportFiles: (files: FileList | null) => void;
 }) {
   const message = useMessage();
-  const [activeTab, setActiveTab] = useState<PoolTabKey>("ready");
-  const [searchKeyword, setSearchKeyword] = useState("");
-
-  const keyword = searchKeyword.trim().toLowerCase();
-  const filteredAccounts = accounts.filter(
-    (acc) =>
-      !keyword ||
-      acc.display_name.toLowerCase().includes(keyword) ||
-      acc.account_id.toLowerCase().includes(keyword)
-  );
-
-  // 状态三分类
-  const readyAccounts: SubscriptionAccount[] = [];
-  const cooldownAccounts: SubscriptionAccount[] = [];
-  const errorAccounts: SubscriptionAccount[] = [];
-
-  for (const acc of filteredAccounts) {
-    if (acc.active && usageError && !usage) {
-      errorAccounts.push(acc);
-    } else if (isAccountCooldown(acc)) {
-      cooldownAccounts.push(acc);
-    } else {
-      readyAccounts.push(acc);
-    }
-  }
-
-  // 排序
-  readyAccounts.sort((a, b) => {
-    if (a.active) return -1;
-    if (b.active) return 1;
-    return (b.remaining_percent ?? 0) - (a.remaining_percent ?? 0);
-  });
-
-  cooldownAccounts.sort((a, b) => (a.reset_at_ms ?? 0) - (b.reset_at_ms ?? 0));
+  const readyCount = accounts.filter((a) => !isAccountCooldown(a)).length;
+  const cooldownCount = accounts.filter(isAccountCooldown).length;
 
   const copyId = async (text: string) => {
     try {
@@ -537,17 +527,12 @@ function ProviderAccountPanel({
     }
   };
 
-  const displayedList =
-    activeTab === "ready"
-      ? readyAccounts
-      : activeTab === "cooldown"
-        ? cooldownAccounts
-        : errorAccounts;
+  const weekly = usage?.remaining_percent ?? activeAccount?.remaining_percent ?? null;
+  const session = usage?.session_remaining_percent ?? activeAccount?.session_remaining_percent ?? null;
 
   return (
-    <div className={styles.boardCard}>
-      {/* 头部：供应商信息与全局操作按钮 */}
-      <div className={styles.boardHeader}>
+    <div className={styles.card}>
+      <div className={styles.cardTop}>
         <div className={styles.providerInfo}>
           <div className={styles.iconWrap}>{icon}</div>
           <div className={styles.names}>
@@ -571,7 +556,7 @@ function ProviderAccountPanel({
           <Button variant="secondary" size="small" disabled={importing} onClick={onImportClick}>
             {importing ? t("导入中…") : t("批量导入")}
           </Button>
-          <Button variant={connected ? "secondary" : "primary"} size="small" onClick={onOpenModal}>
+          <Button variant={connected ? "secondary" : "primary"} size="small" onClick={onOpenLoginModal}>
             {connected ? t("添加账号") : t("立即登录授权")}
           </Button>
           {connected && (
@@ -582,270 +567,415 @@ function ProviderAccountPanel({
         </div>
       </div>
 
-      {/* 主用账号聚焦仪表盘 */}
-      {connected && activeAccount && (
-        <div className={styles.activeDashboard}>
-          <div className={styles.dashHeader}>
-            <div className={styles.dashActiveTitle}>
-              <Icon icon={starIcon} size="1.1em" className={styles.starGlyph} />
-              <span className={styles.dashLabel}>{t("当前生效主账号")}</span>
-              <strong className={styles.dashName} title={activeAccount.display_name}>
-                {activeAccount.display_name}
-              </strong>
-              <button
-                type="button"
-                className={styles.miniIconBtn}
-                title={t("复制账号 ID")}
-                onClick={() => void copyId(activeAccount.account_id)}
-              >
-                <Icon icon={copyIcon} size="0.95em" />
-              </button>
-            </div>
-
-            <span className={styles.rotationHint}>
-              {provider === "codex"
-                ? t("额度为 0 时自动平滑轮换到下一个可用账号")
-                : t("周额度用尽时自动轮换")}
-            </span>
+      {/* 正在使用的账号单行精炼展示 */}
+      {connected && activeAccount ? (
+        <div className={styles.activeRowBanner}>
+          <div className={styles.activeMeta}>
+            <span className={styles.activeDot} />
+            <span className={styles.activePrefix}>{t("当前使用中:")}</span>
+            <strong className={styles.activeAccountName} title={activeAccount.display_name}>
+              {activeAccount.display_name}
+            </strong>
+            <button
+              type="button"
+              className={styles.miniBtn}
+              title={t("复制账号 ID")}
+              onClick={() => void copyId(activeAccount.account_id)}
+            >
+              <Icon icon={copyIcon} size="0.9em" />
+            </button>
           </div>
 
-          <div className={styles.dashProgressGrid}>
-            {provider === "codex" && usage?.session_remaining_percent !== null && usage?.session_remaining_percent !== undefined && (
-              <div className={styles.dashMeter}>
-                <div className={styles.meterHeader}>
-                  <span>{t("5小时窗口")}</span>
-                  <span className={styles[remainingTone(usage.session_remaining_percent)]}>
-                    {formatPercent(usage.session_remaining_percent)}
-                  </span>
-                </div>
-                <div className={styles.dashTrack}>
+          <div className={styles.activeMeters}>
+            {provider === "codex" && session !== null && session !== undefined && (
+              <div className={styles.compactMeter}>
+                <span className={styles.meterName}>{t("5小时窗口")}</span>
+                <div className={styles.meterTrack}>
                   <div
-                    className={`${styles.dashFill} ${styles[`${remainingTone(usage.session_remaining_percent)}Fill`]}`}
-                    style={{ width: `${Math.max(0, Math.min(100, usage.session_remaining_percent))}%` }}
+                    className={`${styles.meterFill} ${styles[`${remainingTone(session)}Fill`]}`}
+                    style={{ width: `${Math.max(0, Math.min(100, session))}%` }}
                   />
                 </div>
-              </div>
-            )}
-
-            <div className={styles.dashMeter}>
-              <div className={styles.meterHeader}>
-                <span>{t("周额度")}</span>
-                <span className={styles[remainingTone(usage?.remaining_percent ?? null)]}>
-                  {usage?.remaining_percent !== null && usage?.remaining_percent !== undefined
-                    ? formatPercent(usage.remaining_percent)
-                    : t("未查询")}
+                <span className={`${styles.meterVal} ${styles[remainingTone(session)]}`}>
+                  {formatPercent(session)}
                 </span>
               </div>
-              <div className={styles.dashTrack}>
-                <div
-                  className={`${styles.dashFill} ${styles[`${remainingTone(usage?.remaining_percent ?? null)}Fill`]}`}
-                  style={{ width: `${Math.max(0, Math.min(100, usage?.remaining_percent ?? 0))}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 账号池 Tab 栏与搜索 */}
-      {accounts.length > 0 && (
-        <div className={styles.poolNav}>
-          <div className={styles.segmentedTabs}>
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === "ready" ? styles.tabBtnActive : ""}`}
-              onClick={() => setActiveTab("ready")}
-            >
-              <Icon icon={checkCircleIcon} size="1.05em" className={styles.readyIcon} />
-              <span>{t("可用池")}</span>
-              <span className={styles.badgeCount}>{readyAccounts.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === "cooldown" ? styles.tabBtnActive : ""}`}
-              onClick={() => setActiveTab("cooldown")}
-            >
-              <Icon icon={clockOutlineIcon} size="1.05em" className={styles.cooldownIcon} />
-              <span>{t("冷却中")}</span>
-              <span className={styles.badgeCount}>{cooldownAccounts.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === "error" ? styles.tabBtnActive : ""}`}
-              onClick={() => setActiveTab("error")}
-            >
-              <Icon icon={alertCircleOutlineIcon} size="1.05em" className={styles.errorIcon} />
-              <span>{t("异常 / 待排查")}</span>
-              <span className={styles.badgeCount}>{errorAccounts.length}</span>
-            </button>
-          </div>
-
-          <div className={styles.poolNavRight}>
-            {activeTab === "cooldown" && cooldownAccounts.length > 0 && (
-              <Button size="small" variant="secondary" onClick={onClearCooldown}>
-                {t("清空全部冷却账号")}
-              </Button>
             )}
-            <div className={styles.searchWrap}>
-              <TextInput
-                placeholder={t("搜索账号名称 / ID…")}
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Tab 内容区：全宽自适应网格 */}
-      {accounts.length === 0 ? (
-        <div className={styles.emptyBoard}>
-          <p>{t("暂无授权账号，点击上方“立即登录授权”或“批量导入”接入账号池。")}</p>
-        </div>
-      ) : displayedList.length === 0 ? (
-        <div className={styles.emptyTabContent}>
-          <p>
-            {keyword
-              ? t("未找到匹配的账号")
-              : activeTab === "ready"
-                ? t("暂无可用的健康账号")
-                : activeTab === "cooldown"
-                  ? t("当前无冷却账号")
-                  : t("无异常账号")}
-          </p>
-        </div>
-      ) : (
-        <div className={styles.accountGrid}>
-          {displayedList.map((acc) => (
-            <AccountCard
-              key={acc.account_id}
-              account={acc}
-              provider={provider}
-              isActive={acc.active}
-              isCooldown={activeTab === "cooldown"}
-              isError={activeTab === "error"}
-              errorText={usageError || t("授权失效或网络异常")}
-              onActivate={() => onActivate(acc.account_id)}
-              onDelete={() => onDelete(acc)}
-              onCopy={() => void copyId(acc.account_id)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AccountCard({
-  account,
-  provider,
-  isActive,
-  isCooldown,
-  isError,
-  errorText,
-  onActivate,
-  onDelete,
-  onCopy,
-}: {
-  account: SubscriptionAccount;
-  provider: "grok" | "codex";
-  isActive: boolean;
-  isCooldown?: boolean;
-  isError?: boolean;
-  errorText?: string;
-  onActivate: () => void;
-  onDelete: () => void;
-  onCopy: () => void;
-}) {
-  const weekly = account.remaining_percent;
-  const session = account.session_remaining_percent;
-  const tone = remainingTone(weekly);
-
-  const resetTimeStr = account.reset_at_ms
-    ? new Date(account.reset_at_ms).toLocaleString()
-    : null;
-
-  return (
-    <div
-      className={`${styles.accountCard} ${isActive ? styles.activeCard : ""} ${isCooldown ? styles.cooldownCard : ""} ${isError ? styles.errorCard : ""}`}
-    >
-      <div className={styles.accountCardTop}>
-        <div className={styles.accountMainInfo}>
-          {isActive ? (
-            <span className={styles.activeTag}>
-              <Icon icon={starIcon} size="0.9em" />
-              {t("主用中")}
-            </span>
-          ) : (
-            <span className={styles.statusDot} />
-          )}
-          <strong className={styles.accountName} title={account.display_name}>
-            {account.display_name}
-          </strong>
-        </div>
-
-        <div className={styles.cardItemActions}>
-          <button type="button" className={styles.miniIconBtn} title={t("复制账号 ID")} onClick={onCopy}>
-            <Icon icon={copyIcon} size="0.9em" />
-          </button>
-          <button type="button" className={styles.miniIconBtn} title={t("删除账号")} onClick={onDelete}>
-            <Icon icon={trashIcon} size="0.9em" />
-          </button>
-        </div>
-      </div>
-
-      {/* 额度条 */}
-      {!isError ? (
-        <div className={styles.accountProgress}>
-          {provider === "codex" && session !== null && session !== undefined && (
-            <div className={styles.miniMeter}>
-              <div className={styles.meterLabel}>
-                <span>{t("5小时窗口")}</span>
-                <span>{formatPercent(session)}</span>
-              </div>
-              <div className={styles.miniTrack}>
+            <div className={styles.compactMeter}>
+              <span className={styles.meterName}>{t("周额度")}</span>
+              <div className={styles.meterTrack}>
                 <div
-                  className={`${styles.miniFill} ${styles[`${remainingTone(session)}Fill`]}`}
-                  style={{ width: `${Math.max(0, Math.min(100, session))}%` }}
+                  className={`${styles.meterFill} ${styles[`${remainingTone(weekly)}Fill`]}`}
+                  style={{ width: `${Math.max(0, Math.min(100, weekly ?? 0))}%` }}
                 />
               </div>
-            </div>
-          )}
-
-          <div className={styles.miniMeter}>
-            <div className={styles.meterLabel}>
-              <span>{t("周额度")}</span>
-              <span className={styles[tone]}>{weekly !== null ? formatPercent(weekly) : t("未查询")}</span>
-            </div>
-            <div className={styles.miniTrack}>
-              <div
-                className={`${styles.miniFill} ${styles[`${tone}Fill`]}`}
-                style={{ width: `${Math.max(0, Math.min(100, weekly ?? 0))}%` }}
-              />
+              <span className={`${styles.meterVal} ${styles[remainingTone(weekly)]}`}>
+                {weekly !== null ? formatPercent(weekly) : t("未查询")}
+              </span>
             </div>
           </div>
         </div>
-      ) : (
-        <div className={styles.errorBanner}>
-          <Icon icon={alertCircleOutlineIcon} size="1em" />
-          <span>{errorText}</span>
-        </div>
-      )}
+      ) : null}
 
-      <div className={styles.accountCardBottom}>
-        <span className={styles.resetLabel}>
-          {resetTimeStr ? t("重置: {time}", { time: resetTimeStr }) : (account.plan_label || t("标准配额"))}
-        </span>
-        {!isActive && (
-          <button type="button" className={styles.switchBtn} onClick={onActivate}>
-            {t("设为主用")}
-          </button>
+      {/* 底部：账号池状态概览与管理入口 */}
+      <div className={styles.cardBottomBar}>
+        <div className={styles.poolSummary}>
+          {connected ? (
+            <>
+              <span className={styles.summaryItem}>
+                {t("账号池: {count} 个", { count: accounts.length })}
+              </span>
+              <span className={styles.bullet}>•</span>
+              <span className={styles.readyText}>
+                {t("可用 {count}", { count: readyCount })}
+              </span>
+              {cooldownCount > 0 && (
+                <>
+                  <span className={styles.bullet}>•</span>
+                  <span className={styles.cooldownText}>
+                    {t("冷却 {count}", { count: cooldownCount })}
+                  </span>
+                </>
+              )}
+              <span className={styles.rotationText}>
+                {provider === "codex"
+                  ? t("（额度为 0 时自动平滑轮换）")
+                  : t("（周额度用尽时自动轮换）")}
+              </span>
+            </>
+          ) : (
+            <span className={styles.unconnectedHint}>
+              {t("尚未接入账号，点击右上角登录授权或批量导入。")}
+            </span>
+          )}
+        </div>
+
+        {connected && (
+          <Button variant="secondary" size="small" onClick={onOpenPool}>
+            {t("管理账号池 ({count})", { count: accounts.length })}
+          </Button>
         )}
       </div>
     </div>
   );
+}
+
+type TabType = "all" | "ready" | "cooldown" | "error";
+
+/** 全屏/大视图账号池管理器弹窗 */
+function AccountPoolModal({
+  open,
+  provider,
+  providerName,
+  accounts,
+  usageError,
+  onClose,
+  onActivate,
+  onDelete,
+  onClearCooldown,
+  onAddAccount,
+  onImportClick,
+}: {
+  open: boolean;
+  provider: "grok" | "codex";
+  providerName: string;
+  accounts: SubscriptionAccount[];
+  usage: SubscriptionUsage | null;
+  usageError: string | null;
+  onClose: () => void;
+  onActivate: (accountId: string) => void;
+  onDelete: (account: SubscriptionAccount) => void;
+  onClearCooldown: () => void;
+  onAddAccount: () => void;
+  onImportClick: () => void;
+}) {
+  const message = useMessage();
+  const [tab, setTab] = useState<TabType>("all");
+  const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const filterKeyword = keyword.trim().toLowerCase();
+
+  const filtered = useMemo(() => {
+    return accounts.filter((acc) => {
+      if (filterKeyword) {
+        const match =
+          acc.display_name.toLowerCase().includes(filterKeyword) ||
+          acc.account_id.toLowerCase().includes(filterKeyword);
+        if (!match) return false;
+      }
+      if (tab === "ready") return !isAccountCooldown(acc);
+      if (tab === "cooldown") return isAccountCooldown(acc);
+      if (tab === "error") return acc.active && Boolean(usageError);
+      return true;
+    });
+  }, [accounts, filterKeyword, tab, usageError]);
+
+  const readyCount = accounts.filter((a) => !isAccountCooldown(a)).length;
+  const cooldownCount = accounts.filter(isAccountCooldown).length;
+  const errorCount = accounts.filter((a) => a.active && Boolean(usageError)).length;
+
+  const total = filtered.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, pageCount);
+
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const copyId = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      message(t("账号 ID 已复制到剪贴板"));
+    } catch {
+      message(t("复制失败"));
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      wide
+      fullHeight
+      title={t("{provider} 账号池管理", { provider: providerName })}
+      onClose={onClose}
+      closeLabel={t("关闭")}
+    >
+      <div className={styles.modalBody}>
+        {/* 工具条：Tab 过滤、搜索、批量操作 */}
+        <div className={styles.modalToolbar}>
+          <div className={styles.modalTabs}>
+            <button
+              type="button"
+              className={`${styles.mTabBtn} ${tab === "all" ? styles.mTabActive : ""}`}
+              onClick={() => { setTab("all"); setPage(1); }}
+            >
+              {t("全部")} <span className={styles.mTabCount}>{accounts.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.mTabBtn} ${tab === "ready" ? styles.mTabActive : ""}`}
+              onClick={() => { setTab("ready"); setPage(1); }}
+            >
+              {t("可用池")} <span className={styles.mTabCount}>{readyCount}</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.mTabBtn} ${tab === "cooldown" ? styles.mTabActive : ""}`}
+              onClick={() => { setTab("cooldown"); setPage(1); }}
+            >
+              {t("冷却中")} <span className={styles.mTabCount}>{cooldownCount}</span>
+            </button>
+            {errorCount > 0 && (
+              <button
+                type="button"
+                className={`${styles.mTabBtn} ${tab === "error" ? styles.mTabActive : ""}`}
+                onClick={() => { setTab("error"); setPage(1); }}
+              >
+                {t("异常")} <span className={styles.mTabCount}>{errorCount}</span>
+              </button>
+            )}
+          </div>
+
+          <div className={styles.modalActions}>
+            {cooldownCount > 0 && (
+              <Button size="small" variant="secondary" onClick={onClearCooldown}>
+                {t("一键清理冷却账号")}
+              </Button>
+            )}
+            <Button size="small" variant="secondary" onClick={onImportClick}>
+              {t("批量导入")}
+            </Button>
+            <Button size="small" variant="secondary" onClick={onAddAccount}>
+              {t("添加账号")}
+            </Button>
+            <div className={styles.modalSearch}>
+              <TextInput
+                placeholder={t("搜索账号名称 / ID…")}
+                value={keyword}
+                onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 账号高信息密度表格 */}
+        <div className={styles.tableContainer}>
+          {total === 0 ? (
+            <div className={styles.emptyTable}>
+              <p>{t("未找到符合条件的账号")}</p>
+            </div>
+          ) : (
+            <table className={styles.accountTable}>
+              <thead>
+                <tr>
+                  <th style={{ width: 90 }}>{t("状态")}</th>
+                  <th>{t("账号名称 / ID")}</th>
+                  {provider === "codex" && <th style={{ width: 140 }}>{t("5小时窗口")}</th>}
+                  <th style={{ width: 140 }}>{t("周剩余额度")}</th>
+                  <th style={{ width: 170 }}>{t("预计重置时间")}</th>
+                  <th style={{ width: 130, textAlign: "right" }}>{t("操作")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedList.map((acc) => {
+                  const isCool = isAccountCooldown(acc);
+                  const weekly = acc.remaining_percent;
+                  const session = acc.session_remaining_percent;
+                  const resetStr = acc.reset_at_ms
+                    ? new Date(acc.reset_at_ms).toLocaleString()
+                    : acc.plan_label || "--";
+
+                  return (
+                    <tr
+                      key={acc.account_id}
+                      className={`${styles.tableRow} ${acc.active ? styles.activeRow : ""}`}
+                    >
+                      <td>
+                        {acc.active ? (
+                          <span className={styles.tagActive}>{t("主用中")}</span>
+                        ) : isCool ? (
+                          <span className={styles.tagCooldown}>{t("冷却中")}</span>
+                        ) : (
+                          <span className={styles.tagReady}>{t("正常")}</span>
+                        )}
+                      </td>
+
+                      <td>
+                        <div className={styles.cellNameWrap}>
+                          <strong className={styles.rowName} title={acc.display_name}>
+                            {acc.display_name}
+                          </strong>
+                          <button
+                            type="button"
+                            className={styles.miniCopyBtn}
+                            title={t("复制账号 ID")}
+                            onClick={() => void copyId(acc.account_id)}
+                          >
+                            <Icon icon={copyIcon} size="0.85em" />
+                          </button>
+                        </div>
+                      </td>
+
+                      {provider === "codex" && (
+                        <td>
+                          {session !== null && session !== undefined ? (
+                            <div className={styles.tableMeter}>
+                              <div className={styles.tableMeterTrack}>
+                                <div
+                                  className={`${styles.tableMeterFill} ${styles[`${remainingTone(session)}Fill`]}`}
+                                  style={{ width: `${Math.max(0, Math.min(100, session))}%` }}
+                                />
+                              </div>
+                              <span className={styles[remainingTone(session)]}>
+                                {formatPercent(session)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className={styles.textDim}>--</span>
+                          )}
+                        </td>
+                      )}
+
+                      <td>
+                        {weekly !== null ? (
+                          <div className={styles.tableMeter}>
+                            <div className={styles.tableMeterTrack}>
+                              <div
+                                className={`${styles.tableMeterFill} ${styles[`${remainingTone(weekly)}Fill`]}`}
+                                style={{ width: `${Math.max(0, Math.min(100, weekly))}%` }}
+                              />
+                            </div>
+                            <span className={styles[remainingTone(weekly)]}>
+                              {formatPercent(weekly)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className={styles.textDim}>{t("未查询")}</span>
+                        )}
+                      </td>
+
+                      <td>
+                        <span className={styles.textDim}>{resetStr}</span>
+                      </td>
+
+                      <td>
+                        <div className={styles.rowActions}>
+                          {!acc.active && (
+                            <button
+                              type="button"
+                              className={styles.actionBtn}
+                              onClick={() => onActivate(acc.account_id)}
+                            >
+                              {t("设为主用")}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className={styles.actionDeleteBtn}
+                            title={t("删除账号")}
+                            onClick={() => onDelete(acc)}
+                          >
+                            <Icon icon={trashIcon} size="0.9em" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* 底部标准分页 */}
+        {total > 0 && (
+          <div className={styles.modalPagination}>
+            <Pagination
+              page={currentPage}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              total={total}
+              pageSizes={[20, 50, 100]}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function ConnectionBadge({ connected }: { connected: boolean }) {
+  return (
+    <span className={`${styles.badge} ${connected ? styles.badgeConnected : styles.badgeAvailable}`}>
+      {connected ? (
+        <>
+          <Icon icon={checkIcon} size="0.9em" /> {t("已连接")}
+        </>
+      ) : (
+        t("支持登录")
+      )}
+    </span>
+  );
+}
+
+function remainingTone(remaining: number | null): "toneSuccess" | "toneWarn" | "toneDanger" | "toneNeutral" {
+  if (remaining === null) return "toneNeutral";
+  if (remaining > 35) return "toneSuccess";
+  if (remaining > 10) return "toneWarn";
+  return "toneDanger";
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value)}%`;
 }
 
 function importErrorText(error: { name: string; message: string }): string {
@@ -876,31 +1006,6 @@ function firstAccessToken(value: unknown): string | undefined {
     }
   }
   return undefined;
-}
-
-function ConnectionBadge({ connected }: { connected: boolean }) {
-  return (
-    <span className={`${styles.badge} ${connected ? styles.badgeConnected : styles.badgeAvailable}`}>
-      {connected ? (
-        <>
-          <Icon icon={checkIcon} size="0.9em" /> {t("已连接")}
-        </>
-      ) : (
-        t("支持登录")
-      )}
-    </span>
-  );
-}
-
-function remainingTone(remaining: number | null): "toneSuccess" | "toneWarn" | "toneDanger" | "toneNeutral" {
-  if (remaining === null) return "toneNeutral";
-  if (remaining > 35) return "toneSuccess";
-  if (remaining > 10) return "toneWarn";
-  return "toneDanger";
-}
-
-function formatPercent(value: number): string {
-  return `${Math.round(value)}%`;
 }
 
 async function syncDiscoveredModels({

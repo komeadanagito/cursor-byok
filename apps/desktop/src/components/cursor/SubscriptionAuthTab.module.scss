@@ -3,39 +3,39 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .boardList {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
-.boardCard {
+/* 主页面卡片：极致紧凑、干净 */
+.card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 18px;
+  gap: 12px;
+  padding: 16px 18px;
   background: var(--vscode-editor-background);
   border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  transition: border-color 0.2s ease;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     border-color: var(--vscode-focusBorder, rgba(56, 189, 248, 0.4));
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   }
 }
 
-.boardHeader {
+.cardTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
+  gap: 12px;
 }
 
 .providerInfo {
@@ -48,19 +48,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.06));
   flex-shrink: 0;
   color: var(--vscode-foreground);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .names {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 
   span {
     font-size: type.$font-size-xs;
@@ -74,7 +73,7 @@
   gap: 8px;
 
   strong {
-    font-size: type.$font-size-lg;
+    font-size: type.$font-size-base;
     color: var(--vscode-foreground);
     font-weight: 600;
   }
@@ -110,285 +109,42 @@
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-/* 主用账号聚焦仪表盘 (Active Dashboard) */
-.activeDashboard {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  border-radius: 8px;
-}
-
-.dashHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.dashActiveTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.starGlyph {
-  color: #eab308;
-  flex-shrink: 0;
-}
-
-.dashLabel {
-  font-size: type.$font-size-xs;
-  color: var(--vscode-descriptionForeground);
-  flex-shrink: 0;
-}
-
-.dashName {
-  font-size: type.$font-size-base;
-  color: var(--vscode-foreground);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.rotationHint {
-  font-size: type.$font-size-xs;
-  color: var(--vscode-descriptionForeground);
-}
-
-.dashProgressGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
-}
-
-.dashMeter {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.meterHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: type.$font-size-xs;
-  color: var(--vscode-descriptionForeground);
-
-  span:last-child {
-    font-weight: 600;
-  }
-}
-
-.dashTrack {
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.dashFill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-/* 账号池 Tab 栏 (Segmented Tabs) */
-.poolNav {
+/* 正在使用的账号单行精炼 Banner */
+.activeRowBanner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 6px;
+  padding: 8px 12px;
   background: var(--vscode-sideBar-background, rgba(0, 0, 0, 0.2));
-  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
-  border-radius: 8px;
-}
-
-.segmentedTabs {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.15);
-  padding: 3px;
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.05));
   border-radius: 6px;
 }
 
-.tabBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: none;
-  background: transparent;
-  color: var(--vscode-descriptionForeground);
-  font-size: type.$font-size-xs;
-  font-weight: 500;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    color: var(--vscode-foreground);
-    background: rgba(255, 255, 255, 0.05);
-  }
-}
-
-.tabBtnActive {
-  color: var(--vscode-foreground) !important;
-  background: var(--vscode-editor-background, #1e1e1e) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-}
-
-.readyIcon { color: #22c55e; }
-.cooldownIcon { color: #f59e0b; }
-.errorIcon { color: #ef4444; }
-
-.badgeCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.1));
-  color: var(--vscode-badge-foreground, inherit);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.poolNavRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  justify-content: flex-end;
-}
-
-.searchWrap {
-  min-width: 180px;
-  max-width: 260px;
-  flex: 1;
-
-  input {
-    width: 100%;
-    font-size: type.$font-size-xs;
-    padding: 5px 10px;
-  }
-}
-
-/* Tab 内容区：全宽自适应网格 (Account Grid) */
-.accountGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  max-height: 480px;
-  overflow-y: auto;
-  padding-right: 2px;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 3px;
-  }
-}
-
-.emptyTabContent {
-  padding: 36px 16px;
-  text-align: center;
-  font-size: type.$font-size-xs;
-  color: var(--vscode-descriptionForeground);
-  border: 1px dashed var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
-}
-
-.emptyBoard {
-  padding: 36px 20px;
-  text-align: center;
-  border: 1px dashed var(--vscode-widget-border, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
-  color: var(--vscode-descriptionForeground);
-  font-size: type.$font-size-base;
-}
-
-/* 单个账号卡片 (AccountCard) */
-.accountCard {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--vscode-sideBar-background, rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
-  transition: all 0.18s ease;
-
-  &:hover {
-    border-color: var(--vscode-focusBorder, rgba(56, 189, 248, 0.4));
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
-  }
-}
-
-.activeCard {
-  border-color: #22c55e !important;
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.18);
-}
-
-.cooldownCard {
-  opacity: 0.85;
-  border-left: 3px solid #f59e0b;
-}
-
-.errorCard {
-  border-left: 3px solid #ef4444;
-}
-
-.accountCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.accountMainInfo {
+.activeMeta {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
 
-.statusDot {
-  width: 6px;
-  height: 6px;
+.activeDot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
   flex-shrink: 0;
 }
 
-.activeTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.4);
+.activePrefix {
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
   flex-shrink: 0;
 }
 
-.accountName {
+.activeAccountName {
   font-size: type.$font-size-xs;
   color: var(--vscode-foreground);
   font-weight: 500;
@@ -397,19 +153,12 @@
   text-overflow: ellipsis;
 }
 
-.cardItemActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.miniIconBtn {
+.miniBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border-radius: 4px;
   border: none;
@@ -424,61 +173,323 @@
   }
 }
 
-.accountProgress {
+.activeMeters {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.compactMeter {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 
-.miniMeter {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.meterName {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
 }
 
-.meterLabel {
+.meterTrack {
+  width: 70px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.meterVal {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 28px;
+}
+
+/* 底部状态条与管理入口 */
+.cardBottomBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
-  color: var(--vscode-descriptionForeground);
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
 
-  span:last-child {
-    font-weight: 500;
+.poolSummary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
+  flex-wrap: wrap;
+}
+
+.summaryItem {
+  color: var(--vscode-foreground);
+  font-weight: 500;
+}
+
+.bullet {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.readyText {
+  color: #4ade80;
+}
+
+.cooldownText {
+  color: #fbbf24;
+}
+
+.rotationText {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.unconnectedHint {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* ========================================================================= */
+/* 全屏/大视图账号池管理器弹窗 (AccountPoolModal) */
+/* ========================================================================= */
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  min-height: 500px;
+}
+
+.modalToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+}
+
+.modalTabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--vscode-sideBar-background, rgba(0, 0, 0, 0.2));
+  padding: 3px;
+  border-radius: 6px;
+}
+
+.mTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-xs;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: var(--vscode-foreground);
   }
 }
 
-.miniTrack {
+.mTabActive {
+  color: var(--vscode-foreground) !important;
+  background: var(--vscode-editor-background, #1e1e1e) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.mTabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.1));
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.modalActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modalSearch {
+  width: 200px;
+
+  input {
+    width: 100%;
+    font-size: type.$font-size-xs;
+    padding: 4px 8px;
+  }
+}
+
+/* 高信息密度表格 */
+.tableContainer {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  background: var(--vscode-editor-background);
+}
+
+.accountTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: type.$font-size-xs;
+  text-align: left;
+
+  thead {
+    position: sticky;
+    top: 0;
+    background: var(--vscode-sideBar-background, #181818);
+    border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.1));
+    z-index: 2;
+
+    th {
+      padding: 8px 12px;
+      font-weight: 600;
+      color: var(--vscode-descriptionForeground);
+      white-space: nowrap;
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.04));
+    }
+  }
+
+  td {
+    padding: 8px 12px;
+    vertical-align: middle;
+  }
+}
+
+.activeRow {
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.tagActive {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.tagCooldown {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.tagReady {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.cellNameWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+}
+
+.rowName {
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.miniCopyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: var(--vscode-foreground);
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.tableMeter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tableMeterTrack {
+  width: 60px;
   height: 4px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
-.miniFill {
+.tableMeterFill {
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease;
 }
 
-.accountCardBottom {
+.textDim {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.rowActions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  justify-content: flex-end;
+  gap: 6px;
 }
 
-.resetLabel {
-  font-size: 11px;
-  color: var(--vscode-descriptionForeground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.switchBtn {
+.actionBtn {
   font-size: 11px;
   color: var(--vscode-textLink-foreground, #38bdf8);
   background: transparent;
@@ -486,7 +497,6 @@
   padding: 2px 8px;
   border-radius: 4px;
   cursor: pointer;
-  flex-shrink: 0;
   transition: all 0.15s ease;
 
   &:hover {
@@ -495,15 +505,37 @@
   }
 }
 
-.errorBanner {
-  display: flex;
+.actionDeleteBtn {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: #f87171;
-  padding: 4px 8px;
-  background: rgba(239, 68, 68, 0.1);
-  border-radius: 4px;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+}
+
+.emptyTable {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-xs;
+}
+
+.modalPagination {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
 }
 
 /* 颜色色阶 */
