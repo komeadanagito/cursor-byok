@@ -477,6 +477,20 @@ function isAccountCooldown(account: SubscriptionAccount): boolean {
   return false;
 }
 
+function getAccountStatus(
+  account: SubscriptionAccount,
+  usage: SubscriptionUsage | null,
+  usageError: string | null,
+): "error" | "cooldown" | "ready" {
+  if (account.active && usageError && !usage && account.remaining_percent === null) {
+    return "error";
+  }
+  if (isAccountCooldown(account)) {
+    return "cooldown";
+  }
+  return "ready";
+}
+
 /** 主页面极简供应商卡片 */
 function ProviderCard({
   provider,
@@ -669,6 +683,7 @@ function AccountPoolModal({
   provider,
   providerName,
   accounts,
+  usage,
   usageError,
   onClose,
   onActivate,
@@ -698,24 +713,43 @@ function AccountPoolModal({
 
   const filterKeyword = keyword.trim().toLowerCase();
 
-  const filtered = useMemo(() => {
-    return accounts.filter((acc) => {
-      if (filterKeyword) {
-        const match =
-          acc.display_name.toLowerCase().includes(filterKeyword) ||
-          acc.account_id.toLowerCase().includes(filterKeyword);
-        if (!match) return false;
-      }
-      if (tab === "ready") return !isAccountCooldown(acc);
-      if (tab === "cooldown") return isAccountCooldown(acc);
-      if (tab === "error") return acc.active && Boolean(usageError);
-      return true;
-    });
-  }, [accounts, filterKeyword, tab, usageError]);
+  // 严格互斥分类
+  const categorized = useMemo(() => {
+    const ready: SubscriptionAccount[] = [];
+    const cooldown: SubscriptionAccount[] = [];
+    const error: SubscriptionAccount[] = [];
 
-  const readyCount = accounts.filter((a) => !isAccountCooldown(a)).length;
-  const cooldownCount = accounts.filter(isAccountCooldown).length;
-  const errorCount = accounts.filter((a) => a.active && Boolean(usageError)).length;
+    for (const acc of accounts) {
+      const status = getAccountStatus(acc, usage, usageError);
+      if (status === "error") error.push(acc);
+      else if (status === "cooldown") cooldown.push(acc);
+      else ready.push(acc);
+    }
+    return { ready, cooldown, error };
+  }, [accounts, usage, usageError]);
+
+  const readyCount = categorized.ready.length;
+  const cooldownCount = categorized.cooldown.length;
+  const errorCount = categorized.error.length;
+
+  const filtered = useMemo(() => {
+    const sourceList =
+      tab === "ready"
+        ? categorized.ready
+        : tab === "cooldown"
+          ? categorized.cooldown
+          : tab === "error"
+            ? categorized.error
+            : accounts;
+
+    if (!filterKeyword) return sourceList;
+
+    return sourceList.filter(
+      (acc) =>
+        acc.display_name.toLowerCase().includes(filterKeyword) ||
+        acc.account_id.toLowerCase().includes(filterKeyword)
+    );
+  }, [accounts, categorized, filterKeyword, tab]);
 
   const total = filtered.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -839,7 +873,7 @@ function AccountPoolModal({
               </thead>
               <tbody>
                 {paginatedList.map((acc) => {
-                  const isCool = isAccountCooldown(acc);
+                  const status = getAccountStatus(acc, usage, usageError);
                   const weekly = acc.remaining_percent;
                   const session = acc.session_remaining_percent;
                   const resetStr = acc.reset_at_ms
@@ -854,7 +888,9 @@ function AccountPoolModal({
                       <td>
                         {acc.active ? (
                           <span className={styles.tagActive}>{t("主用中")}</span>
-                        ) : isCool ? (
+                        ) : status === "error" ? (
+                          <span className={styles.tagError}>{t("异常")}</span>
+                        ) : status === "cooldown" ? (
                           <span className={styles.tagCooldown}>{t("冷却中")}</span>
                         ) : (
                           <span className={styles.tagReady}>{t("正常")}</span>
