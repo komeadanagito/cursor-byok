@@ -9,6 +9,7 @@ import { CodexAuthModal } from "./CodexAuthModal";
 import { useAppStore, appStore } from "../../store/appStore";
 import { useMessage } from "../ui/message";
 import { api, type Model, type ModelInput, type SubscriptionAccount, type SubscriptionUsage } from "../../api";
+import { contextWindowForModel } from "../../utils/modelContext";
 import styles from "./SubscriptionAuthTab.module.scss";
 
 const GROK_BASE_URL = "https://api.x.ai/v1";
@@ -141,7 +142,7 @@ export function SubscriptionAuthTab({
             use_full_url: false,
             tooltip_data: "xAI Grok",
             openai_endpoint: "/v1/chat/completions",
-            context_window_tokens: 500000,
+            context_window_tokens: null,
             max_completion_tokens: 16384,
           },
         });
@@ -227,7 +228,7 @@ export function SubscriptionAuthTab({
             use_full_url: false,
             tooltip_data: "xAI Grok",
             openai_endpoint: "/v1/chat/completions",
-            context_window_tokens: 500000,
+            context_window_tokens: null,
             max_completion_tokens: 16384,
           },
         });
@@ -657,7 +658,11 @@ async function syncDiscoveredModels({
     custom_headers_enabled: false,
     custom_headers: {},
   });
-  const modelIds = [...new Set(result.models.map((id) => id.trim()).filter(Boolean))];
+  const discovered = result.models
+    .map((model) => ({ id: model.id.trim(), context_window_tokens: model.context_window_tokens }))
+    .filter((model) => model.id);
+  const modelIds = [...new Set(discovered.map((model) => model.id))];
+  const contextById = new Map(discovered.map((model) => [model.id, model.context_window_tokens]));
   if (modelIds.length === 0) {
     throw new Error(t("未从官方接口获取到可用模型。"));
   }
@@ -671,6 +676,11 @@ async function syncDiscoveredModels({
       use_full_url: defaults.use_full_url,
       openai_endpoint: defaults.openai_endpoint,
       tooltip_data: defaults.tooltip_data,
+      context_window_tokens: contextWindowForModel(
+        model.model_id,
+        contextById.get(model.model_id),
+        model.context_window_tokens ?? defaults.context_window_tokens,
+      ),
     });
   }
 
@@ -695,7 +705,11 @@ async function syncDiscoveredModels({
         custom_headers: {},
         anthropic_extra_params_enabled: false,
         anthropic_extra_params: {},
-        context_window_tokens: defaults.context_window_tokens,
+        context_window_tokens: contextWindowForModel(
+          modelId,
+          contextById.get(modelId),
+          defaults.context_window_tokens,
+        ),
         max_completion_tokens: defaults.max_completion_tokens,
         anthropic_max_tokens: null,
         anthropic_thinking_effort: "xhigh",

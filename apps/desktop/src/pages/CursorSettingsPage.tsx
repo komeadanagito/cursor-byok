@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, type Model, type ModelInput } from "../api";
+import { api, type DiscoveredModel, type Model, type ModelInput } from "../api";
 import { CursorCaGate, CursorCaProvider, CursorModelGate, CursorModelProvider } from "../components/cursor/CursorGates";
 import { CursorModelCards } from "../components/cursor/CursorModelCards";
 import { CursorModelEditor, emptyCursorModelDraft, type CursorModelDraft } from "../components/cursor/CursorModelEditor";
@@ -24,7 +24,7 @@ export function CursorSettingsPage() {
   const message = useMessage();
   const [draft, setDraft] = useState<CursorModelDraft | null>(null);
   const [editing, setEditing] = useState<Model | null>(null);
-  const [modelOptions, setModelOptions] = useState<string[]>([]);
+  const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModel[]>([]);
   const [discovering, setDiscovering] = useState(false);
   const [caCommand, setCaCommand] = useState<string | null>(null);
   const [waitingForCaRefresh, setWaitingForCaRefresh] = useState(false);
@@ -47,12 +47,12 @@ export function CursorSettingsPage() {
     const next = emptyCursorModelDraft();
     next.model.sort_order = models.length + 1;
     setEditing(null);
-    setModelOptions([]);
+    setDiscoveredModels([]);
     setDraft(next);
   };
   const openEdit = (model: Model) => {
     setEditing(model);
-    setModelOptions([model.model_id]);
+    setDiscoveredModels([{ id: model.model_id, context_window_tokens: model.context_window_tokens }]);
     setDraft({
       model: modelInput(model),
       openAIExtraParamsText: JSON.stringify(model.openai_extra_params, null, 2),
@@ -72,7 +72,7 @@ export function CursorSettingsPage() {
         custom_headers_enabled: draft.model.custom_headers_enabled,
         custom_headers,
       });
-      setModelOptions([...new Set(result.models)]);
+      setDiscoveredModels(result.models);
     } catch (cause) {
       message(errorText(cause));
     } finally {
@@ -133,7 +133,10 @@ export function CursorSettingsPage() {
     if (!models.length || batchTesting) return;
     setBatchTesting(true);
     try {
-      const results = await Promise.all(models.map((model) => testModel(model, false)));
+      const results = [];
+      for (const model of models) {
+        results.push(await testModel(model, false));
+      }
       const successful = results.filter(Boolean).length;
       const failed = models.length - successful;
       message(failed === 0
@@ -245,7 +248,12 @@ export function CursorSettingsPage() {
         <CursorModelEditor
           draft={draft}
           isEditing={Boolean(editing)}
-          modelOptions={modelOptions}
+          modelOptions={discoveredModels.map((model) => model.id)}
+          contextByModelId={Object.fromEntries(
+            discoveredModels
+              .filter((model) => model.context_window_tokens != null)
+              .map((model) => [model.id, model.context_window_tokens as number]),
+          )}
           discovering={discovering}
           onChange={setDraft}
           onDiscover={() => void discover()}

@@ -1,4 +1,5 @@
 import type { ModelInput, ModelType } from "../../api";
+import { GPT56_DEFAULT_CONTEXT, GPT56_LONG_CONTEXT, isGpt56LongContextModel } from "../../utils/modelContext";
 import { defaultCustomHeadersText } from "../../utils/modelDefaults";
 import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/Checkbox";
@@ -47,10 +48,11 @@ export const emptyCursorModelDraft = (): CursorModelDraft => ({
   anthropicExtraParamsText: "{}",
 });
 
-export function CursorModelEditor({ draft, isEditing = false, modelOptions, discovering, onChange, onDiscover, onGrokAuthorized }: {
+export function CursorModelEditor({ draft, isEditing = false, modelOptions, contextByModelId, discovering, onChange, onDiscover, onGrokAuthorized }: {
   draft: CursorModelDraft;
   isEditing?: boolean;
   modelOptions: string[];
+  contextByModelId?: Record<string, number>;
   discovering: boolean;
   onChange: (draft: CursorModelDraft) => void;
   onDiscover: () => void;
@@ -96,11 +98,31 @@ export function CursorModelEditor({ draft, isEditing = false, modelOptions, disc
           </FormField>
         </div>
 
-        <FormField label={t("模型名称")} hint={t("可以直接输入模型标识，也可以读取接口返回的模型列表。")}> <Combobox value={draft.model.model_id} options={modelOptions} placeholder="gpt-5" append={<Button className={styles.discoverButton} disabled={discovering || !canDiscover} onClick={onDiscover}>{discovering ? t("获取中…") : t("获取模型")}</Button>} onChange={(model_id) => setModel({ model_id, display_name: draft.model.display_name || model_id })} /></FormField>
+        <FormField label={t("模型名称")} hint={t("可以直接输入模型标识，也可以读取接口返回的模型列表。")}> <Combobox value={draft.model.model_id} options={modelOptions} placeholder="gpt-5" append={<Button className={styles.discoverButton} disabled={discovering || !canDiscover} onClick={onDiscover}>{discovering ? t("获取中…") : t("获取模型")}</Button>} onChange={(model_id) => {
+          const next: Partial<ModelInput> = { model_id, display_name: draft.model.display_name || model_id };
+          if (isGpt56LongContextModel(model_id)) {
+            next.context_window_tokens = draft.model.context_window_tokens === GPT56_LONG_CONTEXT ? GPT56_LONG_CONTEXT : GPT56_DEFAULT_CONTEXT;
+          } else if (contextByModelId?.[model_id]) {
+            next.context_window_tokens = contextByModelId[model_id];
+          }
+          setModel(next);
+        }} /></FormField>
         <FormField label={t("显示名称")} hint={t("仅用于界面展示，不会改变发送给模型服务的模型名称。")}> <TextInput value={draft.model.display_name} onChange={(event) => setModel({ display_name: event.target.value })} /></FormField>
         <FormField className={styles.fullWidth} label={t("备注")} hint={t("显示在 Cursor 模型说明中。")}> <TextInput value={draft.model.tooltip_data} onChange={(event) => setModel({ tooltip_data: event.target.value })} /></FormField>
 
-        <FormField label={t("上下文窗口 Token")} hint={t("留空时使用默认值。")}> <TextInput type="number" min={1} step={1} value={draft.model.context_window_tokens ?? ""} onChange={(event) => setModel({ context_window_tokens: numberValue(event.target.value) })} /></FormField>
+        {isGpt56LongContextModel(draft.model.model_id) ? (
+          <FormField label={t("1M 上下文")} hint={t("默认 272K。开启后使用 1M 上下文窗口。")}>
+            <Switch
+              label={t("1M 上下文")}
+              checked={(draft.model.context_window_tokens ?? GPT56_DEFAULT_CONTEXT) >= GPT56_LONG_CONTEXT}
+              onChange={(enabled) => setModel({ context_window_tokens: enabled ? GPT56_LONG_CONTEXT : GPT56_DEFAULT_CONTEXT })}
+            />
+          </FormField>
+        ) : (
+          <FormField label={t("上下文窗口 Token")} hint={t("留空时使用默认值。Grok 可从模型接口读取该值。")}>
+            <TextInput type="number" min={1} step={1} value={draft.model.context_window_tokens ?? ""} onChange={(event) => setModel({ context_window_tokens: numberValue(event.target.value) })} />
+          </FormField>
+        )}
         {draft.model.type === "openai" ? <>
           <FormField label={t("最大输出 Token")} hint={t("留空时使用默认值。")}> <TextInput type="number" min={1} step={1} value={draft.model.max_completion_tokens ?? ""} onChange={(event) => setModel({ max_completion_tokens: numberValue(event.target.value) })} /></FormField>
           <FormField label={t("推理强度")}> <Select ariaLabel={t("推理强度")} value={draft.model.reasoning_effort ?? ""} options={effortOptions(true)} onChange={(value) => setModel({ reasoning_effort: value || null })} /></FormField>

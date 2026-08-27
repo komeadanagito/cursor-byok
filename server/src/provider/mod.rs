@@ -118,15 +118,32 @@ fn apply_chatgpt_codex_body(body: &mut serde_json::Value, request_url: &str) -> 
     if !is_chatgpt_codex_url(request_url) {
         return Ok(());
     }
-    body.as_object_mut()
-        .ok_or_else(|| crate::Error::Provider("provider request body must be an object".into()))?
-        .insert("store".into(), serde_json::Value::Bool(false));
+    let object = body
+        .as_object_mut()
+        .ok_or_else(|| crate::Error::Provider("provider request body must be an object".into()))?;
+    object.insert("store".into(), serde_json::Value::Bool(false));
+    object.retain(|key, _| {
+        matches!(
+            key.as_str(),
+            "model"
+                | "input"
+                | "instructions"
+                | "stream"
+                | "store"
+                | "include"
+                | "tools"
+                | "tool_choice"
+                | "reasoning"
+                | "previous_response_id"
+                | "truncation"
+        )
+    });
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{chatgpt_account_id, is_chatgpt_codex_url};
+    use super::{apply_chatgpt_codex_body, chatgpt_account_id, is_chatgpt_codex_url};
 
     #[test]
     fn chatgpt_codex_url_matches_chatgpt_host() {
@@ -144,5 +161,46 @@ mod tests {
         );
         let token = format!("header.{payload}.sig");
         assert_eq!(chatgpt_account_id(&token).as_deref(), Some("acct-9"));
+    }
+
+    #[test]
+    fn chatgpt_codex_body_drops_unsupported_platform_fields() {
+        let mut body = serde_json::json!({
+            "model": "gpt-5.6-luna",
+            "input": [{"role": "user", "content": "hi"}],
+            "instructions": "",
+            "stream": true,
+            "include": ["reasoning.encrypted_content"],
+            "tools": [],
+            "reasoning": {"effort": "high", "summary": "auto"},
+            "max_output_tokens": 128000,
+            "prompt_cache_key": "cursor-byok",
+            "service_tier": "fast"
+        });
+        apply_chatgpt_codex_body(
+            &mut body,
+            "https://chatgpt.com/backend-api/codex/responses",
+        )
+        .unwrap();
+        let object = body.as_object().unwrap();
+        assert_eq!(object["store"], false);
+        assert_eq!(object["model"], "gpt-5.6-luna");
+        assert!(object.contains_key("reasoning"));
+        assert!(object.contains_key("include"));
+        assert!(!object.contains_key("max_output_tokens"));
+        assert!(!object.contains_key("prompt_cache_key"));
+        assert!(!object.contains_key("service_tier"));
+    }
+
+    #[test]
+    fn chatgpt_codex_body_leaves_platform_responses_unchanged() {
+        let mut body = serde_json::json!({
+            "model": "gpt-5.4",
+            "max_output_tokens": 4096,
+            "prompt_cache_key": "cursor-byok"
+        });
+        apply_chatgpt_codex_body(&mut body, "https://api.openai.com/v1/responses").unwrap();
+        assert_eq!(body["max_output_tokens"], 4096);
+        assert!(body.get("store").is_none());
     }
 }

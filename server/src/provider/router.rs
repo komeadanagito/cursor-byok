@@ -8,7 +8,7 @@ use crate::{
     config::{ProviderConfig, ProviderKind},
     model::{ModelConfig, ModelInvocation, ModelLatency, NewLlmCall, ProviderType},
     store::Store,
-    subscription::{account_exhausted, is_quota_error, SubscriptionKind},
+    subscription::{account_exhausted, apply_subscription_route, is_quota_error, SubscriptionKind},
     Error, Result,
 };
 
@@ -45,8 +45,9 @@ impl Provider for ProviderRouter {
                 .model(&selected)
                 .await?
                 .ok_or_else(|| Error::Provider(format!("unknown model: {selected}")))?;
-            let provider_type = model.provider_type();
-            let request_url = model.request_url()?;
+            let mut provider_type = model.provider_type();
+            let mut request_url = model.request_url()?;
+            apply_subscription_route(&model, &mut request_url, &mut provider_type);
             model.configure(&mut invocation.request.model);
             invocation.request.model.extra_params = model.extra_params().clone();
             invocation.request.model.model_id = model.model_id.clone();
@@ -123,7 +124,10 @@ impl Provider for ProviderRouter {
                     break;
                 }
                 if let Some(error) = failed {
-                    if is_quota_error(&error) && attempts < 7 {
+                    if !is_connectivity_test(&invocation)
+                        && is_quota_error(&error)
+                        && attempts < 7
+                    {
                         if let Some((next_token, next_account)) =
                             switch_subscription_account(&store, &model, account_id.as_deref()).await?
                         {
@@ -174,12 +178,12 @@ async fn resolve_subscription_token(
         {
             return Ok((next.access_token, Some(next.account_id)));
         }
-        return Err(Error::Provider(format!(
-            "{} quota exhausted on all accounts",
-            kind.label()
-        )));
     }
     Ok((account.access_token, Some(account.account_id)))
+}
+
+fn is_connectivity_test(invocation: &ModelInvocation) -> bool {
+    invocation.run_id.starts_with("model-test-")
 }
 
 async fn switch_subscription_account(

@@ -2,10 +2,12 @@ use base64::Engine;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    model::ModelConfig,
+    model::{ModelConfig, ProviderType},
     provider::chatgpt_account_id,
     Error, Result,
 };
+
+pub const CODEX_REQUEST_URL: &str = "https://chatgpt.com/backend-api/codex/responses";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SubscriptionKind {
@@ -40,6 +42,7 @@ impl SubscriptionKind {
         if model.base_url.contains("chatgpt.com")
             || model.tooltip_data.contains("Codex")
             || model.tooltip_data.contains("ChatGPT")
+            || chatgpt_account_id(&model.api_key).is_some()
         {
             return Some(Self::Codex);
         }
@@ -52,6 +55,21 @@ impl SubscriptionKind {
         }
         None
     }
+}
+
+/// Codex ChatGPT tokens are not Platform API keys. Always send them to the
+/// ChatGPT Codex Responses endpoint, even if the stored model still points at
+/// `api.openai.com` Chat Completions.
+pub fn apply_subscription_route(
+    model: &ModelConfig,
+    request_url: &mut String,
+    provider_type: &mut ProviderType,
+) {
+    if SubscriptionKind::from_model(model) != Some(SubscriptionKind::Codex) {
+        return;
+    }
+    *request_url = CODEX_REQUEST_URL.into();
+    *provider_type = ProviderType::OpenAiResponses;
 }
 
 pub fn account_identity(kind: SubscriptionKind, access_token: &str) -> (String, String) {
@@ -99,10 +117,12 @@ pub fn is_quota_error(error: &Error) -> bool {
         || message.contains("usage_limit_reached")
         || message.contains("exceeded your current quota")
         || message.contains("quota_exceeded")
-        || message.contains("rate_limit_reached")
         || message.contains("5-hour")
         || message.contains("5 hour")
-        || (message.contains("429") && (message.contains("quota") || message.contains("usage")))
+        || (message.contains("429")
+            && (message.contains("quota")
+                || message.contains("usage_limit")
+                || message.contains("insufficient")))
 }
 
 fn jwt_payload(token: &str) -> Option<serde_json::Value> {
@@ -287,10 +307,50 @@ fn json_text(value: Option<&serde_json::Value>) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        account_exhausted, account_identity, parse_imported_credentials, window_exhausted,
-        SubscriptionKind,
+        account_exhausted, account_identity, apply_subscription_route, is_quota_error,
+        parse_imported_credentials, window_exhausted, CODEX_REQUEST_URL, SubscriptionKind,
+    };
+    use crate::{
+        model::{ModelConfig, ModelType, ProviderType},
+        Error,
     };
     use base64::Engine;
+
+    fn model_config(base_url: &str, tooltip: &str, api_key: &str, openai_endpoint: &str) -> ModelConfig {
+        ModelConfig {
+            model_hash: "hash".into(),
+            sort_order: 0,
+            display_name: "model".into(),
+            model_type: ModelType::OpenAi,
+            base_url: base_url.into(),
+            use_full_url: false,
+            api_key: api_key.into(),
+            tooltip_data: tooltip.into(),
+            model_id: "gpt-5.4".into(),
+            reasoning_effort: None,
+            openai_endpoint: openai_endpoint.into(),
+            openai_extra_params_enabled: false,
+            openai_extra_params: serde_json::json!({}),
+            custom_headers_enabled: false,
+            custom_headers: serde_json::json!({}),
+            anthropic_extra_params_enabled: false,
+            anthropic_extra_params: serde_json::json!({}),
+            context_window_tokens: None,
+            max_completion_tokens: None,
+            anthropic_max_tokens: None,
+            anthropic_thinking_effort: None,
+            thinking_budget_tokens: None,
+            created_at_ms: 0,
+            updated_at_ms: 0,
+        }
+    }
+
+    fn chatgpt_jwt() -> String {
+        let payload = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(
+            r#"{"https://api.openai.com/auth":{"chatgpt_account_id":"acct-1"}}"#,
+        );
+        format!("header.{payload}.sig")
+    }
 
     #[test]
     fn grok_identity_uses_email_and_subject() {
@@ -314,6 +374,64 @@ mod tests {
         assert!(account_exhausted(Some(80.0), Some(9_999_999), Some(0.0), Some(50), 40));
         assert!(!account_exhausted(Some(80.0), Some(9_999_999), Some(0.0), Some(50), 60));
         assert!(!account_exhausted(Some(80.0), Some(9_999_999), Some(12.0), None, 40));
+    }
+
+    #[test]
+    fn stored_codex_chat_completions_models_route_to_chatgpt_responses() {
+        let model = model_config(
+            "https://api.openai.com/v1",
+            "ChatGPT / OpenAI Codex",
+            "sk-not-a-platform-key",
+            "/v1/chat/completions",
+        );
+        assert_eq!(SubscriptionKind::from_model(&model), Some(SubscriptionKind::Codex));
+        let mut request_url = "https://api.openai.com/v1/chat/completions".into();
+        let mut provider_type = ProviderType::OpenAiChat;
+        apply_subscription_route(&model, &mut request_url, &mut provider_type);
+        assert_eq!(request_url, CODEX_REQUEST_URL);
+        assert_eq!(provider_type, ProviderType::OpenAiResponses);
+    }
+
+    #[test]
+    fn chatgpt_jwt_on_platform_url_is_treated_as_codex() {
+        let model = model_config(
+            "https://api.openai.com",
+            "备注",
+            &chatgpt_jwt(),
+            "/v1/chat/completions",
+        );
+        assert_eq!(SubscriptionKind::from_model(&model), Some(SubscriptionKind::Codex));
+        let mut request_url = "https://api.openai.com/v1/chat/completions".into();
+        let mut provider_type = ProviderType::OpenAiChat;
+        apply_subscription_route(&model, &mut request_url, &mut provider_type);
+        assert_eq!(request_url, CODEX_REQUEST_URL);
+        assert_eq!(provider_type, ProviderType::OpenAiResponses);
+    }
+
+    #[test]
+    fn platform_openai_models_keep_their_stored_route() {
+        let model = model_config(
+            "https://api.openai.com/v1",
+            "备注",
+            "sk-live",
+            "/v1/chat/completions",
+        );
+        assert_eq!(SubscriptionKind::from_model(&model), None);
+        let mut request_url = "https://api.openai.com/v1/chat/completions".into();
+        let mut provider_type = ProviderType::OpenAiChat;
+        apply_subscription_route(&model, &mut request_url, &mut provider_type);
+        assert_eq!(request_url, "https://api.openai.com/v1/chat/completions");
+        assert_eq!(provider_type, ProviderType::OpenAiChat);
+    }
+
+    #[test]
+    fn rate_limit_alone_is_not_quota_exhaustion() {
+        assert!(!is_quota_error(&Error::Provider(
+            "OpenAI Responses 429 Too Many Requests: rate_limit_reached".into(),
+        )));
+        assert!(is_quota_error(&Error::Provider(
+            "usage_limit_reached: 5-hour limit".into(),
+        )));
     }
 
     #[test]

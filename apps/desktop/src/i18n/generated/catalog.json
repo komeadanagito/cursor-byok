@@ -47,7 +47,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 94,
+          "line": 96,
           "column": 52
         }
       ]
@@ -61,7 +61,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 610,
+          "line": 611,
           "column": 37
         }
       ]
@@ -187,12 +187,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 127,
+          "line": 149,
           "column": 18
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 281,
+          "line": 289,
           "column": 73
         }
       ]
@@ -228,7 +228,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 292,
+          "line": 300,
           "column": 89
         }
       ]
@@ -252,7 +252,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 225,
+          "line": 228,
           "column": 16
         }
       ]
@@ -395,12 +395,12 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 240,
+          "line": 243,
           "column": 231
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 243,
+          "line": 246,
           "column": 480
         }
       ]
@@ -412,7 +412,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 528,
+          "line": 529,
           "column": 9
         }
       ]
@@ -424,12 +424,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 580,
+          "line": 581,
           "column": 22
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 595,
+          "line": 596,
           "column": 20
         }
       ]
@@ -453,12 +453,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 114,
+          "line": 136,
           "column": 18
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 291,
+          "line": 299,
           "column": 36
         }
       ]
@@ -482,7 +482,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 240,
+          "line": 243,
           "column": 243
         }
       ]
@@ -518,7 +518,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 99,
+          "line": 101,
           "column": 285
         }
       ]
@@ -530,12 +530,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 84,
+          "line": 86,
           "column": 61
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 84,
+          "line": 86,
           "column": 126
         }
       ]
@@ -552,17 +552,17 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 241,
+          "line": 244,
           "column": 51
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 241,
+          "line": 244,
           "column": 130
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 243,
+          "line": 246,
           "column": 63
         }
       ]
@@ -600,7 +600,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 151,
+          "line": 152,
           "column": 17
         }
       ]
@@ -658,7 +658,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 262,
+          "line": 270,
           "column": 52
         }
       ]
@@ -682,7 +682,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 461,
+          "line": 462,
           "column": 22
         }
       ]
@@ -781,17 +781,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 103,
-          "column": 51
-        },
-        {
-          "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 105,
+          "line": 127,
           "column": 52
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 108,
+          "line": 130,
           "column": 52
         }
       ]
@@ -805,7 +800,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 285,
+          "line": 293,
           "column": 89
         }
       ]
@@ -841,7 +836,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 706,
+          "line": 720,
           "column": 23
         }
       ]
@@ -879,7 +874,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 99,
+          "line": 101,
           "column": 44
         }
       ]
@@ -891,7 +886,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 275,
+          "line": 276,
           "column": 54
         }
       ]
@@ -917,7 +912,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 605,
+          "line": 606,
           "column": 20
         }
       ]
@@ -953,12 +948,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 110,
+          "line": 132,
           "column": 29
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 284,
+          "line": 292,
           "column": 186
         }
       ]
@@ -982,7 +977,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 425,
+          "line": 426,
           "column": 22
         },
         {
@@ -1027,7 +1022,7 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 262,
+          "line": 270,
           "column": 76
         },
         {
@@ -1092,7 +1087,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 100,
+          "line": 110,
           "column": 44
         }
       ]
@@ -1106,7 +1101,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 298,
+          "line": 306,
           "column": 70
         }
       ]
@@ -1130,12 +1125,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 335,
+          "line": 336,
           "column": 39
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 392,
+          "line": 393,
           "column": 40
         }
       ]
@@ -1202,12 +1197,12 @@
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 426,
+          "line": 427,
           "column": 23
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 262,
+          "line": 270,
           "column": 99
         }
       ]
@@ -1219,7 +1214,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 609,
+          "line": 610,
           "column": 20
         }
       ]
@@ -1277,7 +1272,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 283,
+          "line": 291,
           "column": 123
         }
       ]
@@ -1324,7 +1319,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 261,
+          "line": 262,
           "column": 15
         }
       ]
@@ -1376,7 +1371,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 267,
+          "line": 268,
           "column": 11
         }
       ]
@@ -1470,6 +1465,18 @@
         }
       ]
     },
+    "3ca72f79cd30cf1b": {
+      "source": "留空时使用默认值。Grok 可从模型接口读取该值。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 122,
+          "column": 53
+        }
+      ]
+    },
     "3cfae5728b92b334": {
       "source": "Token 用量：{tokens}",
       "kind": "template",
@@ -1554,7 +1561,7 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 259,
+          "line": 267,
           "column": 80
         }
       ]
@@ -1597,7 +1604,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 275,
+          "line": 276,
           "column": 17
         }
       ]
@@ -1707,7 +1714,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 591,
+          "line": 592,
           "column": 20
         }
       ]
@@ -1793,12 +1800,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 103,
-          "column": 27
+          "line": 122,
+          "column": 29
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 284,
+          "line": 292,
           "column": 34
         }
       ]
@@ -1822,7 +1829,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 90,
+          "line": 92,
           "column": 147
         }
       ]
@@ -1834,7 +1841,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 569,
+          "line": 570,
           "column": 20
         }
       ]
@@ -1863,22 +1870,22 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 513,
+          "line": 514,
           "column": 42
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 557,
+          "line": 558,
           "column": 31
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 606,
+          "line": 607,
           "column": 74
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 631,
+          "line": 632,
           "column": 19
         }
       ]
@@ -1890,7 +1897,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 175,
+          "line": 197,
           "column": 41
         }
       ]
@@ -1936,7 +1943,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 177,
+          "line": 178,
           "column": 17
         }
       ]
@@ -1962,7 +1969,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 140,
+          "line": 143,
           "column": 11
         }
       ]
@@ -2034,7 +2041,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 165,
+          "line": 168,
           "column": 47
         }
       ]
@@ -2058,7 +2065,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 241,
+          "line": 244,
           "column": 63
         }
       ]
@@ -2070,17 +2077,17 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 105,
+          "line": 127,
           "column": 29
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 108,
+          "line": 130,
           "column": 29
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 284,
+          "line": 292,
           "column": 83
         }
       ]
@@ -2104,7 +2111,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 101,
+          "line": 111,
           "column": 71
         }
       ]
@@ -2116,7 +2123,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 662,
+          "line": 667,
           "column": 21
         }
       ]
@@ -2181,7 +2188,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelTestResult.tsx",
-          "line": 18,
+          "line": 19,
           "column": 7
         }
       ]
@@ -2193,7 +2200,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 525,
+          "line": 526,
           "column": 51
         }
       ]
@@ -2229,7 +2236,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 180,
+          "line": 181,
           "column": 17
         }
       ]
@@ -2379,7 +2386,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 572,
+          "line": 573,
           "column": 38
         }
       ]
@@ -2415,7 +2422,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 305,
+          "line": 306,
           "column": 19
         }
       ]
@@ -2427,7 +2434,7 @@
       "refs": [
         {
           "file": "api.ts",
-          "line": 395,
+          "line": 400,
           "column": 43
         }
       ]
@@ -2458,7 +2465,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelTestResult.tsx",
-          "line": 20,
+          "line": 21,
           "column": 7
         }
       ]
@@ -2640,7 +2647,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 361,
+          "line": 362,
           "column": 19
         }
       ]
@@ -2654,12 +2661,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 87,
+          "line": 88,
           "column": 15
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 103,
+          "line": 104,
           "column": 15
         }
       ]
@@ -2748,7 +2755,7 @@
       "refs": [
         {
           "file": "api.ts",
-          "line": 390,
+          "line": 395,
           "column": 43
         }
       ]
@@ -2784,7 +2791,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 362,
+          "line": 363,
           "column": 19
         }
       ]
@@ -2796,12 +2803,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 121,
+          "line": 143,
           "column": 18
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 279,
+          "line": 287,
           "column": 67
         }
       ]
@@ -2889,7 +2896,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 148,
+          "line": 149,
           "column": 17
         }
       ]
@@ -2901,7 +2908,7 @@
       "refs": [
         {
           "file": "api.ts",
-          "line": 325,
+          "line": 330,
           "column": 21
         }
       ]
@@ -2913,7 +2920,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 99,
+          "line": 101,
           "column": 297
         }
       ]
@@ -2964,6 +2971,18 @@
         }
       ]
     },
+    "85f7a34367b8e79c": {
+      "source": "所有账号额度已用尽",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CursorModelTestResult.tsx",
+          "line": 43,
+          "column": 61
+        }
+      ]
+    },
     "864597982c308d72": {
       "source": "已开启静默启动",
       "kind": "text",
@@ -2986,7 +3005,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 255,
+          "line": 256,
           "column": 11
         }
       ]
@@ -3061,7 +3080,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 90,
+          "line": 92,
           "column": 117
         }
       ]
@@ -3073,12 +3092,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 152,
+          "line": 174,
           "column": 18
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 230,
+          "line": 233,
           "column": 16
         }
       ]
@@ -3177,7 +3196,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 84,
+          "line": 86,
           "column": 78
         }
       ]
@@ -3194,7 +3213,7 @@
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 242,
+          "line": 245,
           "column": 25
         }
       ]
@@ -3254,7 +3273,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 299,
+          "line": 307,
           "column": 87
         }
       ]
@@ -3302,12 +3321,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 341,
+          "line": 342,
           "column": 34
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 398,
+          "line": 399,
           "column": 35
         }
       ]
@@ -3343,7 +3362,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 262,
+          "line": 270,
           "column": 250
         }
       ]
@@ -3355,7 +3374,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 552,
+          "line": 553,
           "column": 7
         }
       ]
@@ -3449,12 +3468,12 @@
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 109,
+          "line": 131,
           "column": 29
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 109,
+          "line": 131,
           "column": 60
         }
       ]
@@ -3552,7 +3571,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 149,
+          "line": 152,
           "column": 22
         }
       ]
@@ -3699,7 +3718,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 438,
+          "line": 439,
           "column": 13
         }
       ]
@@ -3711,7 +3730,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 243,
+          "line": 246,
           "column": 492
         }
       ]
@@ -3733,7 +3752,7 @@
         },
         {
           "file": "components/cursor/CursorModelTestResult.tsx",
-          "line": 32,
+          "line": 33,
           "column": 86
         }
       ]
@@ -3745,7 +3764,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 91,
+          "line": 93,
           "column": 63
         }
       ]
@@ -3784,7 +3803,7 @@
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 100,
+          "line": 110,
           "column": 27
         }
       ]
@@ -3796,7 +3815,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 600,
+          "line": 601,
           "column": 22
         }
       ]
@@ -3808,7 +3827,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 147,
+          "line": 169,
           "column": 18
         }
       ]
@@ -4043,7 +4062,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelTestResult.tsx",
-          "line": 25,
+          "line": 26,
           "column": 50
         }
       ]
@@ -4067,7 +4086,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 259,
+          "line": 267,
           "column": 103
         }
       ]
@@ -4128,7 +4147,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 141,
+          "line": 144,
           "column": 11
         }
       ]
@@ -4181,12 +4200,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 554,
+          "line": 555,
           "column": 9
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 561,
+          "line": 562,
           "column": 9
         }
       ]
@@ -4255,7 +4274,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 243,
+          "line": 246,
           "column": 51
         }
       ]
@@ -4267,12 +4286,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 106,
+          "line": 128,
           "column": 29
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 106,
+          "line": 128,
           "column": 60
         }
       ]
@@ -4344,7 +4363,7 @@
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 99,
+          "line": 101,
           "column": 27
         }
       ]
@@ -4356,7 +4375,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 424,
+          "line": 425,
           "column": 16
         }
       ]
@@ -4426,7 +4445,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 110,
+          "line": 132,
           "column": 52
         }
       ]
@@ -4455,17 +4474,17 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 556,
+          "line": 557,
           "column": 11
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 563,
+          "line": 564,
           "column": 11
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 572,
+          "line": 573,
           "column": 26
         }
       ]
@@ -4489,7 +4508,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 90,
+          "line": 92,
           "column": 72
         }
       ]
@@ -4542,7 +4561,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 260,
+          "line": 268,
           "column": 47
         }
       ]
@@ -4568,7 +4587,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 304,
+          "line": 305,
           "column": 19
         }
       ]
@@ -4580,12 +4599,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 29,
+          "line": 30,
           "column": 19
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 101,
+          "line": 111,
           "column": 56
         }
       ]
@@ -4611,6 +4630,18 @@
           "file": "components/models/LegacyModelImport.tsx",
           "line": 69,
           "column": 56
+        }
+      ]
+    },
+    "dc57ad4609d4367d": {
+      "source": "默认 272K。开启后使用 1M 上下文窗口。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 114,
+          "column": 48
         }
       ]
     },
@@ -4712,7 +4743,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelTestResult.tsx",
-          "line": 17,
+          "line": 18,
           "column": 7
         }
       ]
@@ -4760,7 +4791,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 161,
+          "line": 164,
           "column": 26
         }
       ]
@@ -4786,7 +4817,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelTestResult.tsx",
-          "line": 28,
+          "line": 29,
           "column": 7
         }
       ]
@@ -4822,7 +4853,7 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 90,
+          "line": 92,
           "column": 56
         }
       ]
@@ -4875,7 +4906,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 610,
+          "line": 611,
           "column": 79
         }
       ]
@@ -4921,12 +4952,12 @@
       "refs": [
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 80,
+          "line": 82,
           "column": 27
         },
         {
           "file": "components/cursor/CursorModelEditor.tsx",
-          "line": 80,
+          "line": 82,
           "column": 57
         }
       ]
@@ -4952,7 +4983,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 262,
+          "line": 263,
           "column": 15
         }
       ]
@@ -5012,7 +5043,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 260,
+          "line": 268,
           "column": 77
         }
       ]
@@ -5036,7 +5067,7 @@
       "refs": [
         {
           "file": "pages/CursorSettingsPage.tsx",
-          "line": 259,
+          "line": 267,
           "column": 53
         }
       ]
@@ -5140,6 +5171,23 @@
         }
       ]
     },
+    "f62ac72e1cb3e814": {
+      "source": "1M 上下文",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 114,
+          "column": 29
+        },
+        {
+          "file": "components/cursor/CursorModelEditor.tsx",
+          "line": 116,
+          "column": 22
+        }
+      ]
+    },
     "f69273dbbebfb3a1": {
       "source": "格式化",
       "kind": "text",
@@ -5159,12 +5207,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 341,
+          "line": 342,
           "column": 46
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 398,
+          "line": 399,
           "column": 47
         }
       ]
@@ -5332,12 +5380,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 335,
+          "line": 336,
           "column": 51
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 392,
+          "line": 393,
           "column": 52
         }
       ]
@@ -5349,7 +5397,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 559,
+          "line": 560,
           "column": 7
         }
       ]

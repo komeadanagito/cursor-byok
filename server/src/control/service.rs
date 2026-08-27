@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, sync::Arc, time::Instant};
+use std::{sync::Arc, time::Instant};
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use futures_util::StreamExt;
@@ -37,7 +37,13 @@ pub struct ControlService {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct DiscoveredModels {
-    pub models: Vec<String>,
+    pub models: Vec<DiscoveredModel>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct DiscoveredModel {
+    pub id: String,
+    pub context_window_tokens: Option<u64>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -650,8 +656,8 @@ async fn discover_models_from_endpoint(
             anthropic_models(client, base_url, api_key, custom_headers).await?
         }
     };
-    models.sort();
-    models.dedup();
+    models.sort_by(|left, right| left.id.cmp(&right.id));
+    models.dedup_by(|left, right| left.id == right.id);
     Ok(DiscoveredModels { models })
 }
 
@@ -687,7 +693,7 @@ async fn openai_models(
     base_url: &str,
     api_key: &str,
     custom_headers: &serde_json::Value,
-) -> Result<Vec<String>> {
+) -> Result<Vec<DiscoveredModel>> {
     let url = openai_models_request_url(base_url)?;
     let mut request = client.get(url.clone());
     if !api_key.is_empty() {
@@ -704,7 +710,7 @@ async fn openai_models(
             "model discovery failed ({status}): {body}"
         )));
     }
-    Ok(model_ids(
+    Ok(discovered_models(
         body.get("data")
             .or_else(|| body.get("models"))
             .unwrap_or(&body),
@@ -716,9 +722,9 @@ async fn anthropic_models(
     base_url: &str,
     api_key: &str,
     custom_headers: &serde_json::Value,
-) -> Result<Vec<String>> {
+) -> Result<Vec<DiscoveredModel>> {
     let mut after_id = None::<String>;
-    let mut found = BTreeSet::new();
+    let mut found = Vec::new();
     loop {
         let mut request = client
             .get(model_discovery_url(base_url)?)
@@ -740,7 +746,7 @@ async fn anthropic_models(
                 "model discovery failed ({status}): {body}"
             )));
         }
-        found.extend(model_ids(body.get("data").unwrap_or(&body)));
+        found.extend(discovered_models(body.get("data").unwrap_or(&body)));
         if body.get("has_more").and_then(serde_json::Value::as_bool) != Some(true) {
             break;
         }
@@ -757,13 +763,19 @@ async fn anthropic_models(
     Ok(found.into_iter().collect())
 }
 
-fn model_ids(value: &serde_json::Value) -> Vec<String> {
+fn discovered_models(value: &serde_json::Value) -> Vec<DiscoveredModel> {
     value
         .as_array()
         .into_iter()
         .flatten()
         .filter_map(|item| match item {
-            serde_json::Value::String(id) => Some(id.clone()),
+            serde_json::Value::String(id) => {
+                let id = id.trim();
+                (!id.is_empty()).then(|| DiscoveredModel {
+                    id: id.to_string(),
+                    context_window_tokens: None,
+                })
+            }
             serde_json::Value::Object(object) => {
                 if object
                     .get("supported_in_api")
@@ -779,18 +791,34 @@ fn model_ids(value: &serde_json::Value) -> Vec<String> {
                 {
                     return None;
                 }
-                object
+                let id = object
                     .get("id")
                     .or_else(|| object.get("name"))
                     .or_else(|| object.get("slug"))
                     .and_then(serde_json::Value::as_str)
                     .map(str::trim)
-                    .filter(|id| !id.is_empty())
-                    .map(ToString::to_string)
+                    .filter(|id| !id.is_empty())?;
+                Some(DiscoveredModel {
+                    id: id.to_string(),
+                    context_window_tokens: json_token_count(object.get("context_window"))
+                        .or_else(|| json_token_count(object.get("context_length")))
+                        .or_else(|| json_token_count(object.get("max_prompt_tokens")))
+                        .or_else(|| json_token_count(object.get("input_token_limit"))),
+                })
             }
             _ => None,
         })
         .collect()
+}
+
+fn json_token_count(value: Option<&serde_json::Value>) -> Option<u64> {
+    let value = value?;
+    value
+        .as_u64()
+        .or_else(|| value.as_i64().and_then(|tokens| u64::try_from(tokens).ok()))
+        .or_else(|| value.as_f64().and_then(|tokens| (tokens > 0.0).then_some(tokens as u64)))
+        .or_else(|| value.as_str().and_then(crate::model::parse_token_count))
+        .filter(|tokens| *tokens > 0)
 }
 
 fn estimate_output_tokens(output: &str) -> u64 {
@@ -1009,7 +1037,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(result.models, vec!["model-a"]);
+        assert_eq!(result.models[0].id, "model-a");
         let (method, uri, headers, body) = requests.recv().await.unwrap();
         assert_eq!(method, axum::http::Method::GET);
         assert_eq!(uri.path(), "/v1/models");
@@ -1035,14 +1063,27 @@ mod tests {
 
     #[test]
     fn model_ids_read_openai_and_codex_listings() {
-        let openai = serde_json::json!([{ "id": "grok-4" }, { "name": "grok-4.20" }]);
-        assert_eq!(super::model_ids(&openai), vec!["grok-4", "grok-4.20"]);
+        let openai = serde_json::json!([
+            { "id": "grok-4", "context_window": 256000 },
+            { "name": "grok-4.20" }
+        ]);
+        let models = super::discovered_models(&openai);
+        assert_eq!(models[0].id, "grok-4");
+        assert_eq!(models[0].context_window_tokens, Some(256_000));
+        assert_eq!(models[1].id, "grok-4.20");
+        assert_eq!(models[1].context_window_tokens, None);
 
         let codex = serde_json::json!([
             { "slug": "gpt-5.4", "supported_in_api": true, "visibility": "list" },
             { "slug": "hidden-model", "supported_in_api": true, "visibility": "hidden" },
             { "slug": "internal-model", "supported_in_api": false, "visibility": "list" }
         ]);
-        assert_eq!(super::model_ids(&codex), vec!["gpt-5.4"]);
+        assert_eq!(
+            super::discovered_models(&codex)
+                .into_iter()
+                .map(|model| model.id)
+                .collect::<Vec<_>>(),
+            vec!["gpt-5.4"]
+        );
     }
 }
