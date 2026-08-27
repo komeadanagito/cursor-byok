@@ -146,24 +146,24 @@ export function SubscriptionAuthTab({
   const handleGrokAuthSuccess = async (accessToken: string, refreshToken?: string | null) => {
     try {
       await api.saveGrokAccount(accessToken, refreshToken);
-      if (grokModels.length === 0) {
-        const synced = await syncDiscoveredModels({
-          accessToken,
-          discoveryUrl: GROK_BASE_URL,
-          existing: grokModels,
-          allModels: models,
-          defaults: {
-            base_url: GROK_BASE_URL,
-            use_full_url: false,
-            tooltip_data: "xAI Grok",
-            openai_endpoint: "/v1/chat/completions",
-            context_window_tokens: null,
-            max_completion_tokens: 16384,
-            reasoning_effort: null,
-            anthropic_max_tokens: null,
-          },
-        });
-        message(t("Grok 账号授权成功，已同步添加 {count} 个官方模型！", { count: synced.created }));
+      const synced = await syncDiscoveredModels({
+        accessToken,
+        discoveryUrl: GROK_BASE_URL,
+        existing: grokModels,
+        allModels: models,
+        defaults: {
+          base_url: GROK_BASE_URL,
+          use_full_url: false,
+          tooltip_data: "xAI Grok",
+          openai_endpoint: "/v1/chat/completions",
+          context_window_tokens: null,
+          max_completion_tokens: 16384,
+          reasoning_effort: null,
+          anthropic_max_tokens: null,
+        },
+      });
+      if (synced.created > 0) {
+        message(t("Grok 账号授权成功，已同步新增 {count} 个官方模型！", { count: synced.created }));
         onSwitchToModels?.();
       } else {
         message(t("Grok 账号已保存，余额为 0 时将自动切换。"));
@@ -177,29 +177,74 @@ export function SubscriptionAuthTab({
   const handleCodexAuthSuccess = async (accessToken: string, refreshToken?: string | null) => {
     try {
       await api.saveCodexAccount(accessToken, refreshToken);
-      if (codexModels.length === 0) {
-        const synced = await syncDiscoveredModels({
-          accessToken,
-          discoveryUrl: CODEX_DISCOVERY_URL,
-          existing: codexModels,
-          allModels: models,
-          defaults: {
-            base_url: CODEX_BASE_URL,
-            use_full_url: true,
-            tooltip_data: "ChatGPT / OpenAI Codex",
-            openai_endpoint: "/v1/responses",
-            context_window_tokens: 272000,
-            max_completion_tokens: 128000,
-            reasoning_effort: null,
-            anthropic_max_tokens: null,
-          },
-        });
-        message(t("ChatGPT / Codex 账号授权成功，已同步添加 {count} 个官方模型！", { count: synced.created }));
+      const synced = await syncDiscoveredModels({
+        accessToken,
+        discoveryUrl: CODEX_DISCOVERY_URL,
+        existing: codexModels,
+        allModels: models,
+        defaults: {
+          base_url: CODEX_BASE_URL,
+          use_full_url: true,
+          tooltip_data: "ChatGPT / OpenAI Codex",
+          openai_endpoint: "/v1/responses",
+          context_window_tokens: 272000,
+          max_completion_tokens: 128000,
+          reasoning_effort: null,
+          anthropic_max_tokens: null,
+        },
+      });
+      if (synced.created > 0) {
+        message(t("ChatGPT / Codex 账号授权成功，已同步新增 {count} 个官方模型！", { count: synced.created }));
         onSwitchToModels?.();
       } else {
         message(t("ChatGPT / Codex 账号已保存，余额为 0 时将自动切换。"));
       }
       await loadCodexAccounts();
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
+
+  const syncProviderModels = async (provider: "grok" | "codex") => {
+    const isCodex = provider === "codex";
+    const account = isCodex ? activeCodex : activeGrok;
+    if (!account) {
+      message(t("请先登录或接入至少一个账号"));
+      return;
+    }
+    try {
+      const synced = await syncDiscoveredModels({
+        accessToken: "oauth",
+        discoveryUrl: isCodex ? CODEX_DISCOVERY_URL : GROK_BASE_URL,
+        existing: isCodex ? codexModels : grokModels,
+        allModels: models,
+        defaults: isCodex
+          ? {
+              base_url: CODEX_BASE_URL,
+              use_full_url: true,
+              tooltip_data: "ChatGPT / OpenAI Codex",
+              openai_endpoint: "/v1/responses",
+              context_window_tokens: 272000,
+              max_completion_tokens: 128000,
+              reasoning_effort: null,
+              anthropic_max_tokens: null,
+            }
+          : {
+              base_url: GROK_BASE_URL,
+              use_full_url: false,
+              tooltip_data: "xAI Grok",
+              openai_endpoint: "/v1/chat/completions",
+              context_window_tokens: null,
+              max_completion_tokens: 16384,
+              reasoning_effort: null,
+              anthropic_max_tokens: null,
+            },
+      });
+      if (synced.created > 0) {
+        message(t("已同步补齐 {count} 个官方模型！", { count: synced.created }));
+      } else {
+        message(t("官方模型列表已是最新，无需新增。"));
+      }
     } catch (cause) {
       message(cause instanceof Error ? cause.message : String(cause));
     }
@@ -361,6 +406,7 @@ export function SubscriptionAuthTab({
           usageError={grokUsageError}
           loadingUsage={checkingGrok}
           onRefreshUsage={() => void loadGrokUsage()}
+          onSyncModels={() => void syncProviderModels("grok")}
           onOpenPool={() => setGrokPoolOpen(true)}
           onOpenLoginModal={() => setGrokModalOpen(true)}
           onImportClick={() => grokImportInput.current?.click()}
@@ -382,6 +428,7 @@ export function SubscriptionAuthTab({
           usageError={codexUsageError}
           loadingUsage={checkingCodex}
           onRefreshUsage={() => void loadCodexUsage()}
+          onSyncModels={() => void syncProviderModels("codex")}
           onOpenPool={() => setCodexPoolOpen(true)}
           onOpenLoginModal={() => setCodexModalOpen(true)}
           onImportClick={() => codexImportInput.current?.click()}
@@ -410,6 +457,7 @@ export function SubscriptionAuthTab({
         onDelete={(acc) => setDeletingAccount({ provider: "grok", account: acc })}
         onClearCooldown={() => setClearingCooldown("grok")}
         onAddAccount={() => setGrokModalOpen(true)}
+        onSyncModels={() => void syncProviderModels("grok")}
         onImportClick={() => grokImportInput.current?.click()}
       />
 
@@ -426,6 +474,7 @@ export function SubscriptionAuthTab({
         onDelete={(acc) => setDeletingAccount({ provider: "codex", account: acc })}
         onClearCooldown={() => setClearingCooldown("codex")}
         onAddAccount={() => setCodexModalOpen(true)}
+        onSyncModels={() => void syncProviderModels("codex")}
         onImportClick={() => codexImportInput.current?.click()}
       />
 
@@ -501,8 +550,10 @@ function ProviderCard({
   accounts,
   activeAccount,
   usage,
+  usageError,
   loadingUsage,
   onRefreshUsage,
+  onSyncModels,
   onOpenPool,
   onOpenLoginModal,
   onImportClick,
@@ -521,6 +572,7 @@ function ProviderCard({
   usageError: string | null;
   loadingUsage: boolean;
   onRefreshUsage: () => void;
+  onSyncModels: () => void;
   onOpenPool: () => void;
   onOpenLoginModal: () => void;
   onImportClick: () => void;
@@ -574,9 +626,14 @@ function ProviderCard({
             {connected ? t("添加账号") : t("立即登录授权")}
           </Button>
           {connected && (
-            <Button variant="secondary" size="small" disabled={loadingUsage} onClick={onRefreshUsage}>
-              <Icon icon={refreshIcon} size="1em" /> {loadingUsage ? t("查询中…") : t("刷新活跃额度")}
-            </Button>
+            <>
+              <Button variant="secondary" size="small" onClick={onSyncModels}>
+                {t("同步官方模型")}
+              </Button>
+              <Button variant="secondary" size="small" disabled={loadingUsage} onClick={onRefreshUsage}>
+                <Icon icon={refreshIcon} size="1em" /> {loadingUsage ? t("查询中…") : t("刷新活跃额度")}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -624,8 +681,8 @@ function ProviderCard({
                   style={{ width: `${Math.max(0, Math.min(100, weekly ?? 0))}%` }}
                 />
               </div>
-              <span className={`${styles.meterVal} ${styles[remainingTone(weekly)]}`}>
-                {weekly !== null ? formatPercent(weekly) : t("未查询")}
+              <span className={`${styles.meterVal} ${styles[usageError ? "toneDanger" : remainingTone(weekly)]}`}>
+                {weekly !== null ? formatPercent(weekly) : usageError ? t("查询异常") : t("未查询")}
               </span>
             </div>
           </div>
@@ -690,6 +747,7 @@ function AccountPoolModal({
   onDelete,
   onClearCooldown,
   onAddAccount,
+  onSyncModels,
   onImportClick,
 }: {
   open: boolean;
@@ -703,6 +761,7 @@ function AccountPoolModal({
   onDelete: (account: SubscriptionAccount) => void;
   onClearCooldown: () => void;
   onAddAccount: () => void;
+  onSyncModels: () => void;
   onImportClick: () => void;
 }) {
   const message = useMessage();
@@ -837,6 +896,9 @@ function AccountPoolModal({
                 {t("一键清理冷却账号")}
               </Button>
             )}
+            <Button size="small" variant="secondary" onClick={onSyncModels}>
+              {t("同步官方模型")}
+            </Button>
             <Button size="small" variant="secondary" onClick={onImportClick}>
               {t("批量导入")}
             </Button>

@@ -383,7 +383,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 964,
+          "line": 1061,
           "column": 9
         }
       ]
@@ -448,7 +448,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 797,
+          "line": 910,
           "column": 30
         }
       ]
@@ -460,12 +460,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 614,
-          "column": 60
+          "line": 685,
+          "column": 85
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 897,
+          "line": 1012,
           "column": 61
         }
       ]
@@ -672,6 +672,20 @@
         }
       ]
     },
+    "1c88d3f0e7f41deb": {
+      "source": "ChatGPT / Codex 账号授权成功，已同步新增 {count} 个官方模型！",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 197,
+          "column": 17
+        }
+      ]
+    },
     "1cb7e646ac883fb2": {
       "source": "代理端口",
       "kind": "text",
@@ -769,7 +783,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 318,
+          "line": 363,
           "column": 13
         }
       ]
@@ -838,6 +852,18 @@
         }
       ]
     },
+    "24078a5351b78fe1": {
+      "source": "请先登录或接入至少一个账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 212,
+          "column": 15
+        }
+      ]
+    },
     "24a0a24864454575": {
       "source": "已存在，跳过",
       "kind": "text",
@@ -869,7 +895,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 299,
+          "line": 344,
           "column": 54
         }
       ]
@@ -895,7 +921,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 843,
+          "line": 958,
           "column": 62
         }
       ]
@@ -960,12 +986,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 447,
+          "line": 496,
           "column": 22
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 462,
+          "line": 511,
           "column": 22
         },
         {
@@ -1113,7 +1139,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 557,
+          "line": 623,
           "column": 26
         }
       ]
@@ -1180,7 +1206,7 @@
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 448,
+          "line": 497,
           "column": 23
         },
         {
@@ -1216,6 +1242,20 @@
           "file": "pages/SettingsPage.tsx",
           "line": 235,
           "column": 27
+        }
+      ]
+    },
+    "36c8d33dac2619c5": {
+      "source": "已同步补齐 {count} 个官方模型！",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 244,
+          "column": 17
         }
       ]
     },
@@ -1290,7 +1330,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 285,
+          "line": 330,
           "column": 15
         }
       ]
@@ -1330,7 +1370,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 291,
+          "line": 336,
           "column": 11
         }
       ]
@@ -1532,7 +1572,7 @@
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 745,
+          "line": 837,
           "column": 19
         },
         {
@@ -1549,12 +1589,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 592,
+          "line": 663,
           "column": 53
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 817,
+          "line": 930,
           "column": 72
         }
       ]
@@ -1595,8 +1635,13 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 778,
+          "line": 888,
           "column": 18
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 954,
+          "column": 62
         }
       ]
     },
@@ -1609,7 +1654,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 299,
+          "line": 344,
           "column": 17
         }
       ]
@@ -1652,7 +1697,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 637,
+          "line": 708,
           "column": 22
         }
       ]
@@ -1721,7 +1766,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 816,
+          "line": 929,
           "column": 24
         }
       ]
@@ -1745,7 +1790,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 818,
+          "line": 931,
           "column": 47
         }
       ]
@@ -1920,7 +1965,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 631,
+          "line": 702,
           "column": 18
         }
       ]
@@ -1954,20 +1999,6 @@
           "file": "components/settings/TabSettingsCard.tsx",
           "line": 60,
           "column": 41
-        }
-      ]
-    },
-    "5088b46be1de4794": {
-      "source": "ChatGPT / Codex 账号授权成功，已同步添加 {count} 个官方模型！",
-      "kind": "template",
-      "placeholders": [
-        "count"
-      ],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 197,
-          "column": 17
         }
       ]
     },
@@ -2223,7 +2254,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 961,
+          "line": 1058,
           "column": 51
         }
       ]
@@ -2235,7 +2266,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 756,
+          "line": 866,
           "column": 16
         },
         {
@@ -2407,7 +2438,7 @@
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 815,
+          "line": 928,
           "column": 46
         }
       ]
@@ -2455,8 +2486,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 564,
-          "column": 82
+          "line": 634,
+          "column": 84
         }
       ]
     },
@@ -2618,7 +2649,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 839,
+          "line": 952,
           "column": 63
         }
       ]
@@ -2654,7 +2685,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 454,
+          "line": 503,
           "column": 15
         }
       ]
@@ -2666,7 +2697,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 763,
+          "line": 873,
           "column": 16
         }
       ]
@@ -2764,12 +2795,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 526,
+          "line": 592,
           "column": 15
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 734,
+          "line": 827,
           "column": 15
         }
       ]
@@ -2781,7 +2812,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 575,
+          "line": 646,
           "column": 52
         }
       ]
@@ -2894,7 +2925,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 644,
+          "line": 715,
           "column": 21
         }
       ]
@@ -2970,20 +3001,6 @@
           "file": "components/settings/AppLifecycleSettingsCard.tsx",
           "line": 124,
           "column": 37
-        }
-      ]
-    },
-    "80a404b952285605": {
-      "source": "Grok 账号授权成功，已同步添加 {count} 个官方模型！",
-      "kind": "template",
-      "placeholders": [
-        "count"
-      ],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 166,
-          "column": 17
         }
       ]
     },
@@ -3106,7 +3123,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 279,
+          "line": 324,
           "column": 11
         }
       ]
@@ -3130,7 +3147,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 913,
+          "line": 1028,
           "column": 32
         }
       ]
@@ -3193,7 +3210,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 455,
+          "line": 504,
           "column": 15
         }
       ]
@@ -3446,12 +3463,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 560,
+          "line": 626,
           "column": 26
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 793,
+          "line": 906,
           "column": 16
         }
       ]
@@ -3571,7 +3588,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 819,
+          "line": 932,
           "column": 47
         }
       ]
@@ -3610,7 +3627,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 463,
+          "line": 512,
           "column": 23
         }
       ]
@@ -4040,7 +4057,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 627,
+          "line": 698,
           "column": 18
         }
       ]
@@ -4309,12 +4326,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 770,
+          "line": 880,
           "column": 16
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 841,
+          "line": 956,
           "column": 65
         }
       ]
@@ -4451,12 +4468,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 582,
+          "line": 653,
           "column": 22
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 855,
+          "line": 970,
           "column": 36
         }
       ]
@@ -4557,12 +4574,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 446,
+          "line": 495,
           "column": 16
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 919,
+          "line": 1034,
           "column": 36
         }
       ]
@@ -4661,8 +4678,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 564,
-          "column": 70
+          "line": 634,
+          "column": 72
         }
       ]
     },
@@ -4716,7 +4733,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 345,
+          "line": 390,
           "column": 13
         }
       ]
@@ -4764,6 +4781,20 @@
           "file": "components/cursor/CursorModelEditor.tsx",
           "line": 186,
           "column": 139
+        }
+      ]
+    },
+    "d7340f8d017c28fc": {
+      "source": "Grok 账号授权成功，已同步新增 {count} 个官方模型！",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 166,
+          "column": 17
         }
       ]
     },
@@ -4880,12 +4911,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 524,
+          "line": 590,
           "column": 15
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 732,
+          "line": 825,
           "column": 15
         }
       ]
@@ -4986,7 +5017,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 649,
+          "line": 720,
           "column": 16
         }
       ]
@@ -4998,7 +5029,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 809,
+          "line": 922,
           "column": 19
         }
       ]
@@ -5221,7 +5252,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 467,
+          "line": 516,
           "column": 13
         }
       ]
@@ -5262,7 +5293,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 643,
+          "line": 714,
           "column": 21
         }
       ]
@@ -5276,7 +5307,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 286,
+          "line": 331,
           "column": 15
         }
       ]
@@ -5353,7 +5384,7 @@
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 820,
+          "line": 933,
           "column": 67
         },
         {
@@ -5406,7 +5437,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 330,
+          "line": 375,
           "column": 13
         }
       ]
@@ -5474,6 +5505,23 @@
         }
       ]
     },
+    "f59e1f2f495cc528": {
+      "source": "同步官方模型",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 631,
+          "column": 18
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 900,
+          "column": 16
+        }
+      ]
+    },
     "f62ac72e1cb3e814": {
       "source": "1M 上下文",
       "kind": "text",
@@ -5498,7 +5546,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 461,
+          "line": 510,
           "column": 16
         }
       ]
@@ -5522,7 +5570,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 560,
+          "line": 626,
           "column": 38
         }
       ]
@@ -5560,7 +5608,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 786,
+          "line": 896,
           "column": 18
         }
       ]
@@ -5572,7 +5620,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 606,
+          "line": 677,
           "column": 51
         }
       ]
@@ -5651,6 +5699,18 @@
         }
       ]
     },
+    "fbae2596faf3ea93": {
+      "source": "查询异常",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 685,
+          "column": 73
+        }
+      ]
+    },
     "fbe8778fa8b9bab5": {
       "source": "需要先初始化本地 CA",
       "kind": "text",
@@ -5714,13 +5774,25 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 557,
+          "line": 623,
           "column": 38
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 790,
+          "line": 903,
           "column": 16
+        }
+      ]
+    },
+    "fda6011ffb1f4493": {
+      "source": "官方模型列表已是最新，无需新增。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 246,
+          "column": 17
         }
       ]
     },
@@ -5781,7 +5853,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 743,
+          "line": 835,
           "column": 14
         }
       ]
@@ -5795,7 +5867,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 656,
+          "line": 727,
           "column": 14
         }
       ]
