@@ -3,24 +3,24 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .boardList {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .boardCard {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 20px;
+  padding: 18px;
   background: var(--vscode-editor-background);
   border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   transition: border-color 0.2s ease;
 
   &:hover {
@@ -33,34 +33,34 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
-  padding-bottom: 14px;
+  gap: 14px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
 }
 
 .providerInfo {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .iconWrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.06));
   flex-shrink: 0;
   color: var(--vscode-foreground);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .names {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 
   span {
     font-size: type.$font-size-xs;
@@ -71,7 +71,7 @@
 .titleRow {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 
   strong {
     font-size: type.$font-size-lg;
@@ -83,7 +83,7 @@
 .headerActions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -110,58 +110,171 @@
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-/* 账号池全局统计与搜索工具条 */
-.poolToolbar {
+/* 主用账号聚焦仪表盘 (Active Dashboard) */
+.activeDashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 8px;
+}
+
+.dashHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dashActiveTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.starGlyph {
+  color: #eab308;
+  flex-shrink: 0;
+}
+
+.dashLabel {
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
+}
+
+.dashName {
+  font-size: type.$font-size-base;
+  color: var(--vscode-foreground);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rotationHint {
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
+}
+
+.dashProgressGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.dashMeter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
+
+  span:last-child {
+    font-weight: 600;
+  }
+}
+
+.dashTrack {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.dashFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* 账号池 Tab 栏 (Segmented Tabs) */
+.poolNav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 6px;
   background: var(--vscode-sideBar-background, rgba(0, 0, 0, 0.2));
-  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
   border-radius: 8px;
 }
 
-.poolStats {
+.segmentedTabs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 3px;
+  border-radius: 6px;
 }
 
-.statPill {
+.tabBtn {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
   font-size: type.$font-size-xs;
   font-weight: 500;
-  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.08));
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: var(--vscode-foreground);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.tabBtnActive {
+  color: var(--vscode-foreground) !important;
+  background: var(--vscode-editor-background, #1e1e1e) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.readyIcon { color: #22c55e; }
+.cooldownIcon { color: #f59e0b; }
+.errorIcon { color: #ef4444; }
+
+.badgeCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.1));
   color: var(--vscode-badge-foreground, inherit);
+  font-size: 11px;
+  font-weight: 600;
 }
 
-.statPillReady {
-  background: rgba(34, 197, 94, 0.12);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-
-.statPillCooldown {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-.statHint {
-  font-size: type.$font-size-xs;
-  color: var(--vscode-descriptionForeground);
-  margin-left: 6px;
+.poolNavRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .searchWrap {
-  min-width: 200px;
-  max-width: 280px;
+  min-width: 180px;
+  max-width: 260px;
   flex: 1;
 
   input {
@@ -171,99 +284,14 @@
   }
 }
 
-/* 看板三列布局 */
-.kanbanColumns {
+/* Tab 内容区：全宽自适应网格 (Account Grid) */
+.accountGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.column {
-  display: flex;
-  flex-direction: column;
-  background: var(--vscode-sideBar-background, rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.columnHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.colTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  strong {
-    font-size: type.$font-size-base;
-    color: var(--vscode-foreground);
-    font-weight: 600;
-  }
-}
-
-.readyDot, .cooldownDot, .errorDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.readyDot { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
-.cooldownDot { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
-.errorDot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
-
-.colHeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.colCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
-  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.1));
-  color: var(--vscode-foreground);
-  font-size: type.$font-size-2xs;
-  font-weight: 600;
-}
-
-.clearBtn {
-  background: transparent;
-  border: none;
-  color: #ef4444;
-  font-size: type.$font-size-2xs;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background 0.15s ease;
-
-  &:hover {
-    background: rgba(239, 68, 68, 0.15);
-  }
-}
-
-.columnBody {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  max-height: 440px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  max-height: 480px;
   overflow-y: auto;
+  padding-right: 2px;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -274,15 +302,17 @@
   }
 }
 
-.emptyCol {
-  padding: 30px 10px;
+.emptyTabContent {
+  padding: 36px 16px;
   text-align: center;
   font-size: type.$font-size-xs;
   color: var(--vscode-descriptionForeground);
+  border: 1px dashed var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
 }
 
 .emptyBoard {
-  padding: 40px 20px;
+  padding: 36px 20px;
   text-align: center;
   border: 1px dashed var(--vscode-widget-border, rgba(255, 255, 255, 0.1));
   border-radius: 8px;
@@ -290,27 +320,27 @@
   font-size: type.$font-size-base;
 }
 
-/* 账号子卡片 (AccountCard) */
+/* 单个账号卡片 (AccountCard) */
 .accountCard {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px;
-  background: var(--vscode-editor-background);
+  padding: 12px 14px;
+  background: var(--vscode-sideBar-background, rgba(255, 255, 255, 0.02));
   border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
 
   &:hover {
     border-color: var(--vscode-focusBorder, rgba(56, 189, 248, 0.4));
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
   }
 }
 
 .activeCard {
   border-color: #22c55e !important;
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.06) 0%, var(--vscode-editor-background) 100%);
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.18);
 }
 
 .cooldownCard {
@@ -336,6 +366,28 @@
   min-width: 0;
 }
 
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.activeTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  flex-shrink: 0;
+}
+
 .accountName {
   font-size: type.$font-size-xs;
   color: var(--vscode-foreground);
@@ -343,18 +395,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.activeBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  background: #22c55e;
-  color: #000;
-  flex-shrink: 0;
 }
 
 .cardItemActions {
@@ -402,18 +442,22 @@
   justify-content: space-between;
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
+
+  span:last-child {
+    font-weight: 500;
+  }
 }
 
 .miniTrack {
-  height: 5px;
-  border-radius: 3px;
+  height: 4px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
 .miniFill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: width 0.3s ease;
 }
 
@@ -427,7 +471,7 @@
 }
 
 .resetLabel {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--vscode-descriptionForeground);
   white-space: nowrap;
   overflow: hidden;
@@ -452,6 +496,9 @@
 }
 
 .errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   color: #f87171;
   padding: 4px 8px;
@@ -459,10 +506,10 @@
   border-radius: 4px;
 }
 
-/* 颜色状态与进度条 */
-.toneSuccess { color: #22c55e; }
-.toneWarn { color: #f59e0b; }
-.toneDanger { color: #ef4444; }
+/* 颜色色阶 */
+.toneSuccess { color: #4ade80; }
+.toneWarn { color: #fbbf24; }
+.toneDanger { color: #f87171; }
 .toneNeutral { color: var(--vscode-descriptionForeground); }
 
 .toneSuccessFill { background: #22c55e; }

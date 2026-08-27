@@ -3,7 +3,18 @@ import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Icon } from "../ui/Icon";
 import { TextInput } from "../ui/FormControls";
-import { checkIcon, copyIcon, grokIcon, openAiIcon, refreshIcon, trashIcon } from "../ui/icons";
+import {
+  alertCircleOutlineIcon,
+  checkCircleIcon,
+  checkIcon,
+  clockOutlineIcon,
+  copyIcon,
+  grokIcon,
+  openAiIcon,
+  refreshIcon,
+  starIcon,
+  trashIcon,
+} from "../ui/icons";
 import { GrokAuthModal } from "./GrokAuthModal";
 import { CodexAuthModal } from "./CodexAuthModal";
 import { useAppStore, appStore } from "../../store/appStore";
@@ -52,9 +63,6 @@ export function SubscriptionAuthTab({
   const [deletingAccount, setDeletingAccount] = useState<{ provider: "grok" | "codex"; account: SubscriptionAccount } | null>(null);
   const [clearingCooldown, setClearingCooldown] = useState<"grok" | "codex" | null>(null);
   const [importing, setImporting] = useState<"grok" | "codex" | null>(null);
-
-  const [grokSearch, setGrokSearch] = useState("");
-  const [codexSearch, setCodexSearch] = useState("");
 
   const grokImportInput = useRef<HTMLInputElement>(null);
   const codexImportInput = useRef<HTMLInputElement>(null);
@@ -340,19 +348,18 @@ export function SubscriptionAuthTab({
   return (
     <div className={styles.root}>
       <div className={styles.boardList}>
-        {/* Grok (xAI) 账号看板 */}
-        <ProviderKanbanBoard
+        {/* Grok (xAI) 账号管理面板 */}
+        <ProviderAccountPanel
           provider="grok"
           title="Grok (xAI)"
           subtitle="xAI OAuth 2.0 Device Flow"
           icon={<Icon icon={grokIcon} size="1.35em" />}
           connected={isGrokConnected}
           accounts={grokAccounts}
+          activeAccount={activeGrok}
           usage={grokUsage}
           usageError={grokUsageError}
           loadingUsage={checkingGrok}
-          searchKeyword={grokSearch}
-          onSearchChange={setGrokSearch}
           onRefreshUsage={() => void loadGrokUsage()}
           onActivate={(id) => void handleActivateAccount("grok", id)}
           onDelete={(acc) => setDeletingAccount({ provider: "grok", account: acc })}
@@ -364,19 +371,18 @@ export function SubscriptionAuthTab({
           onImportFiles={(files) => void importCredentialFiles("grok", files)}
         />
 
-        {/* Codex (ChatGPT / OpenAI) 账号看板 */}
-        <ProviderKanbanBoard
+        {/* Codex (ChatGPT / OpenAI) 账号管理面板 */}
+        <ProviderAccountPanel
           provider="codex"
           title="Codex (ChatGPT / OpenAI)"
           subtitle="OpenAI OAuth 2.0 Device Flow"
           icon={<Icon icon={openAiIcon} size="1.35em" />}
           connected={isCodexConnected}
           accounts={codexAccounts}
+          activeAccount={activeCodex}
           usage={codexUsage}
           usageError={codexUsageError}
           loadingUsage={checkingCodex}
-          searchKeyword={codexSearch}
-          onSearchChange={setCodexSearch}
           onRefreshUsage={() => void loadCodexUsage()}
           onActivate={(id) => void handleActivateAccount("codex", id)}
           onDelete={(acc) => setDeletingAccount({ provider: "codex", account: acc })}
@@ -443,18 +449,19 @@ function isAccountCooldown(account: SubscriptionAccount): boolean {
   return false;
 }
 
-function ProviderKanbanBoard({
+type PoolTabKey = "ready" | "cooldown" | "error";
+
+function ProviderAccountPanel({
   provider,
   title,
   subtitle,
   icon,
   connected,
   accounts,
+  activeAccount,
   usage,
   usageError,
   loadingUsage,
-  searchKeyword,
-  onSearchChange,
   onRefreshUsage,
   onActivate,
   onDelete,
@@ -471,11 +478,10 @@ function ProviderKanbanBoard({
   icon: ReactNode;
   connected: boolean;
   accounts: SubscriptionAccount[];
+  activeAccount?: SubscriptionAccount;
   usage: SubscriptionUsage | null;
   usageError: string | null;
   loadingUsage: boolean;
-  searchKeyword: string;
-  onSearchChange: (keyword: string) => void;
   onRefreshUsage: () => void;
   onActivate: (accountId: string) => void;
   onDelete: (account: SubscriptionAccount) => void;
@@ -487,6 +493,9 @@ function ProviderKanbanBoard({
   onImportFiles: (files: FileList | null) => void;
 }) {
   const message = useMessage();
+  const [activeTab, setActiveTab] = useState<PoolTabKey>("ready");
+  const [searchKeyword, setSearchKeyword] = useState("");
+
   const keyword = searchKeyword.trim().toLowerCase();
   const filteredAccounts = accounts.filter(
     (acc) =>
@@ -495,7 +504,7 @@ function ProviderKanbanBoard({
       acc.account_id.toLowerCase().includes(keyword)
   );
 
-  // 状态三分类：可用池、冷却池（0%）、异常池
+  // 状态三分类
   const readyAccounts: SubscriptionAccount[] = [];
   const cooldownAccounts: SubscriptionAccount[] = [];
   const errorAccounts: SubscriptionAccount[] = [];
@@ -510,7 +519,7 @@ function ProviderKanbanBoard({
     }
   }
 
-  // 排序：可用池活跃账号置顶，其余按剩余额度从高到低；冷却池按重置时间
+  // 排序
   readyAccounts.sort((a, b) => {
     if (a.active) return -1;
     if (b.active) return 1;
@@ -528,9 +537,16 @@ function ProviderKanbanBoard({
     }
   };
 
+  const displayedList =
+    activeTab === "ready"
+      ? readyAccounts
+      : activeTab === "cooldown"
+        ? cooldownAccounts
+        : errorAccounts;
+
   return (
     <div className={styles.boardCard}>
-      {/* 顶部标题与控制栏 */}
+      {/* 头部：供应商信息与全局操作按钮 */}
       <div className={styles.boardHeader}>
         <div className={styles.providerInfo}>
           <div className={styles.iconWrap}>{icon}</div>
@@ -566,147 +582,156 @@ function ProviderKanbanBoard({
         </div>
       </div>
 
-      {/* 账号池全局统计与搜索工具条 */}
-      {accounts.length > 0 && (
-        <div className={styles.poolToolbar}>
-          <div className={styles.poolStats}>
-            <span className={styles.statPill}>
-              {t("总账号: {count}", { count: accounts.length })}
-            </span>
-            <span className={`${styles.statPill} ${styles.statPillReady}`}>
-              {t("🟢 可用: {count}", { count: accounts.filter((a) => !isAccountCooldown(a)).length })}
-            </span>
-            <span className={`${styles.statPill} ${styles.statPillCooldown}`}>
-              {t("⏳ 冷却/耗尽: {count}", { count: accounts.filter(isAccountCooldown).length })}
-            </span>
-            <span className={styles.statHint}>
+      {/* 主用账号聚焦仪表盘 */}
+      {connected && activeAccount && (
+        <div className={styles.activeDashboard}>
+          <div className={styles.dashHeader}>
+            <div className={styles.dashActiveTitle}>
+              <Icon icon={starIcon} size="1.1em" className={styles.starGlyph} />
+              <span className={styles.dashLabel}>{t("当前生效主账号")}</span>
+              <strong className={styles.dashName} title={activeAccount.display_name}>
+                {activeAccount.display_name}
+              </strong>
+              <button
+                type="button"
+                className={styles.miniIconBtn}
+                title={t("复制账号 ID")}
+                onClick={() => void copyId(activeAccount.account_id)}
+              >
+                <Icon icon={copyIcon} size="0.95em" />
+              </button>
+            </div>
+
+            <span className={styles.rotationHint}>
               {provider === "codex"
                 ? t("额度为 0 时自动平滑轮换到下一个可用账号")
                 : t("周额度用尽时自动轮换")}
             </span>
           </div>
 
-          <div className={styles.searchWrap}>
-            <TextInput
-              placeholder={t("搜索账号名称 / ID…")}
-              value={searchKeyword}
-              onChange={(e) => onSearchChange(e.target.value)}
-            />
+          <div className={styles.dashProgressGrid}>
+            {provider === "codex" && usage?.session_remaining_percent !== null && usage?.session_remaining_percent !== undefined && (
+              <div className={styles.dashMeter}>
+                <div className={styles.meterHeader}>
+                  <span>{t("5小时窗口")}</span>
+                  <span className={styles[remainingTone(usage.session_remaining_percent)]}>
+                    {formatPercent(usage.session_remaining_percent)}
+                  </span>
+                </div>
+                <div className={styles.dashTrack}>
+                  <div
+                    className={`${styles.dashFill} ${styles[`${remainingTone(usage.session_remaining_percent)}Fill`]}`}
+                    style={{ width: `${Math.max(0, Math.min(100, usage.session_remaining_percent))}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className={styles.dashMeter}>
+              <div className={styles.meterHeader}>
+                <span>{t("周额度")}</span>
+                <span className={styles[remainingTone(usage?.remaining_percent ?? null)]}>
+                  {usage?.remaining_percent !== null && usage?.remaining_percent !== undefined
+                    ? formatPercent(usage.remaining_percent)
+                    : t("未查询")}
+                </span>
+              </div>
+              <div className={styles.dashTrack}>
+                <div
+                  className={`${styles.dashFill} ${styles[`${remainingTone(usage?.remaining_percent ?? null)}Fill`]}`}
+                  style={{ width: `${Math.max(0, Math.min(100, usage?.remaining_percent ?? 0))}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* 看板三列内容 */}
+      {/* 账号池 Tab 栏与搜索 */}
+      {accounts.length > 0 && (
+        <div className={styles.poolNav}>
+          <div className={styles.segmentedTabs}>
+            <button
+              type="button"
+              className={`${styles.tabBtn} ${activeTab === "ready" ? styles.tabBtnActive : ""}`}
+              onClick={() => setActiveTab("ready")}
+            >
+              <Icon icon={checkCircleIcon} size="1.05em" className={styles.readyIcon} />
+              <span>{t("可用池")}</span>
+              <span className={styles.badgeCount}>{readyAccounts.length}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`${styles.tabBtn} ${activeTab === "cooldown" ? styles.tabBtnActive : ""}`}
+              onClick={() => setActiveTab("cooldown")}
+            >
+              <Icon icon={clockOutlineIcon} size="1.05em" className={styles.cooldownIcon} />
+              <span>{t("冷却中")}</span>
+              <span className={styles.badgeCount}>{cooldownAccounts.length}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`${styles.tabBtn} ${activeTab === "error" ? styles.tabBtnActive : ""}`}
+              onClick={() => setActiveTab("error")}
+            >
+              <Icon icon={alertCircleOutlineIcon} size="1.05em" className={styles.errorIcon} />
+              <span>{t("异常 / 待排查")}</span>
+              <span className={styles.badgeCount}>{errorAccounts.length}</span>
+            </button>
+          </div>
+
+          <div className={styles.poolNavRight}>
+            {activeTab === "cooldown" && cooldownAccounts.length > 0 && (
+              <Button size="small" variant="secondary" onClick={onClearCooldown}>
+                {t("清空全部冷却账号")}
+              </Button>
+            )}
+            <div className={styles.searchWrap}>
+              <TextInput
+                placeholder={t("搜索账号名称 / ID…")}
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 内容区：全宽自适应网格 */}
       {accounts.length === 0 ? (
         <div className={styles.emptyBoard}>
           <p>{t("暂无授权账号，点击上方“立即登录授权”或“批量导入”接入账号池。")}</p>
         </div>
+      ) : displayedList.length === 0 ? (
+        <div className={styles.emptyTabContent}>
+          <p>
+            {keyword
+              ? t("未找到匹配的账号")
+              : activeTab === "ready"
+                ? t("暂无可用的健康账号")
+                : activeTab === "cooldown"
+                  ? t("当前无冷却账号")
+                  : t("无异常账号")}
+          </p>
+        </div>
       ) : (
-        <div className={styles.kanbanColumns}>
-          {/* 列 1：🟢 可用池 */}
-          <div className={`${styles.column} ${styles.columnReady}`}>
-            <div className={styles.columnHeader}>
-              <div className={styles.colTitle}>
-                <span className={styles.readyDot} />
-                <strong>{t("可用池 (Ready)")}</strong>
-              </div>
-              <span className={styles.colCount}>{readyAccounts.length}</span>
-            </div>
-            <div className={styles.columnBody}>
-              {readyAccounts.length === 0 ? (
-                <div className={styles.emptyCol}>
-                  {keyword ? t("无匹配可用账号") : t("暂无可用的健康账号")}
-                </div>
-              ) : (
-                readyAccounts.map((acc) => (
-                  <AccountCard
-                    key={acc.account_id}
-                    account={acc}
-                    provider={provider}
-                    isActive={acc.active}
-                    onActivate={() => onActivate(acc.account_id)}
-                    onDelete={() => onDelete(acc)}
-                    onCopy={() => void copyId(acc.account_id)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* 列 2：⏳ 冷却中 */}
-          <div className={`${styles.column} ${styles.columnCooldown}`}>
-            <div className={styles.columnHeader}>
-              <div className={styles.colTitle}>
-                <span className={styles.cooldownDot} />
-                <strong>{t("冷却中 (0% 待重置)")}</strong>
-              </div>
-              <div className={styles.colHeaderRight}>
-                <span className={styles.colCount}>{cooldownAccounts.length}</span>
-                {cooldownAccounts.length > 0 && (
-                  <button
-                    type="button"
-                    className={styles.clearBtn}
-                    title={t("一键清理所有 0% 冷却账号")}
-                    onClick={onClearCooldown}
-                  >
-                    {t("清空")}
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className={styles.columnBody}>
-              {cooldownAccounts.length === 0 ? (
-                <div className={styles.emptyCol}>
-                  {keyword ? t("无匹配冷却账号") : t("当前无冷却账号")}
-                </div>
-              ) : (
-                cooldownAccounts.map((acc) => (
-                  <AccountCard
-                    key={acc.account_id}
-                    account={acc}
-                    provider={provider}
-                    isActive={acc.active}
-                    isCooldown
-                    onActivate={() => onActivate(acc.account_id)}
-                    onDelete={() => onDelete(acc)}
-                    onCopy={() => void copyId(acc.account_id)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* 列 3：⚠️ 异常/待排查 */}
-          <div className={`${styles.column} ${styles.columnError}`}>
-            <div className={styles.columnHeader}>
-              <div className={styles.colTitle}>
-                <span className={styles.errorDot} />
-                <strong>{t("异常 / 待排查")}</strong>
-              </div>
-              <span className={styles.colCount}>{errorAccounts.length}</span>
-            </div>
-            <div className={styles.columnBody}>
-              {errorAccounts.length === 0 ? (
-                <div className={styles.emptyCol}>
-                  {t("无异常账号")}
-                </div>
-              ) : (
-                errorAccounts.map((acc) => (
-                  <AccountCard
-                    key={acc.account_id}
-                    account={acc}
-                    provider={provider}
-                    isActive={acc.active}
-                    isError
-                    errorText={usageError || t("授权失效或网络异常")}
-                    onActivate={() => onActivate(acc.account_id)}
-                    onDelete={() => onDelete(acc)}
-                    onCopy={() => void copyId(acc.account_id)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
+        <div className={styles.accountGrid}>
+          {displayedList.map((acc) => (
+            <AccountCard
+              key={acc.account_id}
+              account={acc}
+              provider={provider}
+              isActive={acc.active}
+              isCooldown={activeTab === "cooldown"}
+              isError={activeTab === "error"}
+              errorText={usageError || t("授权失效或网络异常")}
+              onActivate={() => onActivate(acc.account_id)}
+              onDelete={() => onDelete(acc)}
+              onCopy={() => void copyId(acc.account_id)}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -743,14 +768,24 @@ function AccountCard({
     : null;
 
   return (
-    <div className={`${styles.accountCard} ${isActive ? styles.activeCard : ""} ${isCooldown ? styles.cooldownCard : ""} ${isError ? styles.errorCard : ""}`}>
+    <div
+      className={`${styles.accountCard} ${isActive ? styles.activeCard : ""} ${isCooldown ? styles.cooldownCard : ""} ${isError ? styles.errorCard : ""}`}
+    >
       <div className={styles.accountCardTop}>
         <div className={styles.accountMainInfo}>
+          {isActive ? (
+            <span className={styles.activeTag}>
+              <Icon icon={starIcon} size="0.9em" />
+              {t("主用中")}
+            </span>
+          ) : (
+            <span className={styles.statusDot} />
+          )}
           <strong className={styles.accountName} title={account.display_name}>
             {account.display_name}
           </strong>
-          {isActive && <span className={styles.activeBadge}>{t("当前使用中")}</span>}
         </div>
+
         <div className={styles.cardItemActions}>
           <button type="button" className={styles.miniIconBtn} title={t("复制账号 ID")} onClick={onCopy}>
             <Icon icon={copyIcon} size="0.9em" />
@@ -793,7 +828,10 @@ function AccountCard({
           </div>
         </div>
       ) : (
-        <div className={styles.errorBanner}>{errorText}</div>
+        <div className={styles.errorBanner}>
+          <Icon icon={alertCircleOutlineIcon} size="1em" />
+          <span>{errorText}</span>
+        </div>
       )}
 
       <div className={styles.accountCardBottom}>

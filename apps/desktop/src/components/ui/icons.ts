@@ -46,3 +46,8 @@ export const windowCloseIcon = icon('<path fill="currentColor" d="M13.46 12L19 1
 export const windowMaximizeIcon = icon('<path fill="currentColor" d="M4 4h16v16H4zm2 4v10h12V8z"/>');
 export const windowMinimizeIcon = icon('<path fill="currentColor" d="M20 14H4v-4h16"/>');
 export const windowRestoreIcon = icon('<path fill="currentColor" d="M4 8h4V4h12v12h-4v4H4zm12 0v6h2V6h-8v2zM6 12v6h8v-6z"/>');
+export const checkCircleIcon = icon('<path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8z"/>'); // mdi:check-circle
+export const clockOutlineIcon = icon('<path fill="currentColor" d="M12 20a8 8 0 0 0 8-8a8 8 0 0 0-8-8a8 8 0 0 0-8 8a8 8 0 0 0 8 8m0-18a10 10 0 0 1 10 10a10 10 0 0 1-10 10A10 10 0 0 1 2 12A10 10 0 0 1 12 2m.5 5v5.25l4.5 2.67l-.75 1.23L11 13V7z"/>'); // mdi:clock-outline
+export const alertCircleOutlineIcon = icon('<path fill="currentColor" d="M11 15h2v2h-2zm0-8h2v6h-2zm1-5C6.47 2 2 6.5 2 12a10 10 0 0 0 10 10a10 10 0 0 0 10-10A10 10 0 0 0 12 2m0 18a8 8 0 0 1-8-8a8 8 0 0 1 8-8a8 8 0 0 1 8 8a8 8 0 0 1-8 8"/>'); // mdi:alert-circle-outline
+export const starIcon = icon('<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21z"/>'); // mdi:star
+
