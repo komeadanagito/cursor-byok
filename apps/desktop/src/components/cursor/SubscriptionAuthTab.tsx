@@ -739,10 +739,27 @@ function AccountPoolModal({
     <Modal
       open={open}
       wide
-      fullHeight
       title={t("{provider} 账号池管理", { provider: providerName })}
       onClose={onClose}
       closeLabel={t("关闭")}
+      secondaryAction={
+        total > pageSize ? (
+          <div className={styles.modalPagination}>
+            <Pagination
+              page={currentPage}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              total={total}
+              pageSizes={[20, 50, 100]}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </div>
+        ) : undefined
+      }
     >
       <div className={styles.modalBody}>
         {/* 工具条：Tab 过滤、搜索、批量操作 */}
@@ -930,24 +947,6 @@ function AccountPoolModal({
             </table>
           )}
         </div>
-
-        {/* 底部标准分页 */}
-        {total > 0 && (
-          <div className={styles.modalPagination}>
-            <Pagination
-              page={currentPage}
-              pageCount={pageCount}
-              pageSize={pageSize}
-              total={total}
-              pageSizes={[20, 50, 100]}
-              onPageChange={setPage}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setPage(1);
-              }}
-            />
-          </div>
-        )}
       </div>
     </Modal>
   );

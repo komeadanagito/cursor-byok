@@ -263,9 +263,7 @@
 .modalBody {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  height: 100%;
-  min-height: 500px;
+  gap: 12px;
 }
 
 .modalToolbar {
@@ -344,7 +342,7 @@
 
 /* 高信息密度表格 */
 .tableContainer {
-  flex: 1;
+  max-height: 460px;
   overflow-y: auto;
   border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
   border-radius: 6px;
