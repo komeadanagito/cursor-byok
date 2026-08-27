@@ -1125,26 +1125,13 @@ async function syncDiscoveredModels({
     custom_headers_enabled: false,
     custom_headers: {},
   });
-  const isCodex = defaults.tooltip_data?.includes("Codex") || defaults.tooltip_data?.includes("ChatGPT");
-  const modelList = [...discovered.models];
-  if (isCodex && !modelList.some((m) => m.id === "gpt-image-2")) {
-    modelList.push({
-      id: "gpt-image-2",
-      context_window_tokens: 32768,
-    });
-  }
   const existingIds = new Set(existing.map((m) => m.model_id));
-  const newDiscovered = modelList.filter((m) => !existingIds.has(m.id));
+  const newDiscovered = discovered.models.filter((m) => !existingIds.has(m.id));
   if (newDiscovered.length === 0) return { created: 0 };
+  const isCodex = defaults.tooltip_data?.includes("Codex") || defaults.tooltip_data?.includes("ChatGPT");
   const nextOrderStart = allModels.length + 1;
   const inputs: ModelInput[] = newDiscovered.map((m, index) => {
-    const isImageModel = m.id === "gpt-image-2";
-    const inferredContext = isImageModel
-      ? 32768
-      : isCodex
-        ? 272000
-        : contextWindowForModel(m.id, m.context_window_tokens, null);
-    const maxCompletion = isImageModel ? 8192 : defaults.max_completion_tokens;
+    const inferredContext = isCodex ? 272000 : contextWindowForModel(m.id, m.context_window_tokens, null);
     return {
       sort_order: nextOrderStart + index,
       display_name: m.id,
@@ -1163,7 +1150,7 @@ async function syncDiscoveredModels({
       anthropic_extra_params_enabled: false,
       anthropic_extra_params: {},
       context_window_tokens: inferredContext,
-      max_completion_tokens: maxCompletion,
+      max_completion_tokens: defaults.max_completion_tokens,
       anthropic_max_tokens: null,
       anthropic_thinking_effort: null,
       thinking_budget_tokens: null,
