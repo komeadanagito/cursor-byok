@@ -12,6 +12,18 @@
         }
       ]
     },
+    "001ed60da6b51632": {
+      "source": "当前使用中",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 752,
+          "column": 62
+        }
+      ]
+    },
     "00929f23850e4ff0": {
       "source": "成功调用：{count}",
       "kind": "template",
@@ -40,6 +52,18 @@
         }
       ]
     },
+    "01b7bc89588d46b1": {
+      "source": "冷却中 (0% 待重置)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 641,
+          "column": 26
+        }
+      ]
+    },
     "01f3e69a5a9b2c9b": {
       "source": "访问模型服务所需的密钥。",
       "kind": "text",
@@ -49,20 +73,6 @@
           "file": "components/cursor/CursorModelEditor.tsx",
           "line": 150,
           "column": 52
-        }
-      ]
-    },
-    "023810003eb4563d": {
-      "source": "{count} 个模型",
-      "kind": "template",
-      "placeholders": [
-        "count"
-      ],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 611,
-          "column": 37
         }
       ]
     },
@@ -95,6 +105,18 @@
           "file": "components/metrics/HomeMetrics.tsx",
           "line": 138,
           "column": 5
+        }
+      ]
+    },
+    "048fdd5aee3cd057": {
+      "source": "无异常账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 691,
+          "column": 20
         }
       ]
     },
@@ -397,25 +419,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 529,
+          "line": 851,
           "column": 9
-        }
-      ]
-    },
-    "110ff21b09a20735": {
-      "source": "本周剩余额度",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 581,
-          "column": 22
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 596,
-          "column": 20
         }
       ]
     },
@@ -469,6 +474,30 @@
           "file": "pages/CursorSettingsPage.tsx",
           "line": 293,
           "column": 211
+        }
+      ]
+    },
+    "1358f5bbb767ddd1": {
+      "source": "搜索账号名称 / ID…",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 591,
+          "column": 28
+        }
+      ]
+    },
+    "139806c3c30cd391": {
+      "source": "未查询",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 785,
+          "column": 89
         }
       ]
     },
@@ -566,6 +595,18 @@
         }
       ]
     },
+    "16e909f7a9feb939": {
+      "source": "暂无授权账号，点击上方“立即登录授权”或“批量导入”接入账号池。",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 602,
+          "column": 15
+        }
+      ]
+    },
     "1813d362a82fd437": {
       "source": "最大化窗口",
       "kind": "text",
@@ -585,8 +626,22 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 152,
+          "line": 161,
           "column": 17
+        }
+      ]
+    },
+    "191ac7e3ea794648": {
+      "source": "🟢 可用: {count}",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 577,
+          "column": 16
         }
       ]
     },
@@ -660,15 +715,15 @@
         }
       ]
     },
-    "1bb1e785ad5a8608": {
-      "source": "当前账号",
+    "1c23fa251d60f531": {
+      "source": "授权失效或网络异常",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 462,
-          "column": 22
+          "line": 701,
+          "column": 46
         }
       ]
     },
@@ -744,6 +799,18 @@
         }
       ]
     },
+    "1ef3de06b32e521b": {
+      "source": "清空",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 652,
+          "column": 22
+        }
+      ]
+    },
     "1f9b46e61efcccb5": {
       "source": "筛选项：{label}，{summary}",
       "kind": "template",
@@ -773,6 +840,18 @@
           "file": "components/cursor/CursorModelEditor.tsx",
           "line": 184,
           "column": 52
+        }
+      ]
+    },
+    "20cb8f923342a938": {
+      "source": "已切换活跃账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 310,
+          "column": 13
         }
       ]
     },
@@ -826,18 +905,6 @@
         }
       ]
     },
-    "22d90780038c3d79": {
-      "source": "保存模型失败",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 720,
-          "column": 23
-        }
-      ]
-    },
     "23e49479e15e6770": {
       "source": "发现新版本 {version}",
       "kind": "template",
@@ -883,7 +950,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 276,
+          "line": 291,
           "column": 54
         }
       ]
@@ -899,18 +966,6 @@
           "file": "components/settings/AppLifecycleSettingsCard.tsx",
           "line": 116,
           "column": 13
-        }
-      ]
-    },
-    "29eaf9859d1a5c77": {
-      "source": "额度重置时间",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 606,
-          "column": 20
         }
       ]
     },
@@ -974,7 +1029,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 426,
+          "line": 413,
+          "column": 22
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 428,
           "column": 22
         },
         {
@@ -1077,6 +1137,18 @@
         }
       ]
     },
+    "2f0a26fc94abbd4c": {
+      "source": "当前无冷却账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 660,
+          "column": 45
+        }
+      ]
+    },
     "2f280a8120c0db12": {
       "source": "仅用于界面展示，不会改变发送给模型服务的模型名称。",
       "kind": "text",
@@ -1122,13 +1194,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 336,
-          "column": 39
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 393,
-          "column": 40
+          "line": 556,
+          "column": 26
         }
       ]
     },
@@ -1194,25 +1261,13 @@
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 427,
+          "line": 414,
           "column": 23
         },
         {
           "file": "pages/CursorSettingsPage.tsx",
           "line": 322,
           "column": 99
-        }
-      ]
-    },
-    "32e5306b774bed42": {
-      "source": "已接入模型",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 610,
-          "column": 20
         }
       ]
     },
@@ -1306,6 +1361,18 @@
         }
       ]
     },
+    "38f5629dd5cdc5da": {
+      "source": "暂无可用的健康账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 618,
+          "column": 45
+        }
+      ]
+    },
     "390d9b7d25066170": {
       "source": "已导入 {count} 个账号：{names}。",
       "kind": "template",
@@ -1316,7 +1383,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 262,
+          "line": 277,
           "column": 15
         }
       ]
@@ -1356,7 +1423,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 268,
+          "line": 283,
           "column": 11
         }
       ]
@@ -1493,6 +1560,18 @@
         }
       ]
     },
+    "3d73d81dcf0885c3": {
+      "source": "额度为 0 时自动平滑轮换到下一个可用账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 584,
+          "column": 19
+        }
+      ]
+    },
     "3d938038d0e4bfc9": {
       "source": "授权码已过期，请重新获取。",
       "kind": "text",
@@ -1563,6 +1642,18 @@
         }
       ]
     },
+    "404bffc7422d1b7b": {
+      "source": "5小时窗口",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 770,
+          "column": 24
+        }
+      ]
+    },
     "4125fc7ba333524c": {
       "source": "默认亮色",
       "kind": "text",
@@ -1601,7 +1692,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 276,
+          "line": 291,
           "column": 17
         }
       ]
@@ -1701,18 +1792,6 @@
           "file": "components/settings/AppLifecycleSettingsCard.tsx",
           "line": 102,
           "column": 17
-        }
-      ]
-    },
-    "4807869c2873960f": {
-      "source": "周额度上限",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 592,
-          "column": 20
         }
       ]
     },
@@ -1848,18 +1927,6 @@
         }
       ]
     },
-    "4beea275de17e02e": {
-      "source": "周额度与剩余额度",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 570,
-          "column": 20
-        }
-      ]
-    },
     "4d0680f9efaef147": {
       "source": "未读",
       "kind": "text",
@@ -1877,30 +1944,15 @@
         }
       ]
     },
-    "4d8c1c5b42830791": {
-      "source": "未知",
+    "4d0f176854817e06": {
+      "source": "异常 / 待排查",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 514,
-          "column": 42
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 558,
-          "column": 31
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 607,
-          "column": 74
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 632,
-          "column": 19
+          "line": 684,
+          "column": 26
         }
       ]
     },
@@ -1957,7 +2009,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 178,
+          "line": 189,
           "column": 17
         }
       ]
@@ -2130,18 +2182,6 @@
         }
       ]
     },
-    "58c2ddf28d3c99dd": {
-      "source": "未从官方接口获取到可用模型。",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 667,
-          "column": 21
-        }
-      ]
-    },
     "59346e82b3dd2998": {
       "source": "TAB 服务地址",
       "kind": "text",
@@ -2226,7 +2266,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 526,
+          "line": 848,
           "column": 51
         }
       ]
@@ -2262,7 +2302,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 181,
+          "line": 192,
           "column": 17
         }
       ]
@@ -2278,6 +2318,20 @@
           "file": "layouts/AppHeader.tsx",
           "line": 31,
           "column": 18
+        }
+      ]
+    },
+    "5f1b88dbe81f7de8": {
+      "source": "⏳ 冷却/耗尽: {count}",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 580,
+          "column": 16
         }
       ]
     },
@@ -2405,18 +2459,6 @@
         }
       ]
     },
-    "637a0d380aecea8e": {
-      "source": "刷新额度",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 573,
-          "column": 38
-        }
-      ]
-    },
     "63c73c4730f4473e": {
       "source": "应用",
       "kind": "text",
@@ -2441,18 +2483,6 @@
         }
       ]
     },
-    "63f35ae6b7e309e5": {
-      "source": "余额为 0 时自动切换",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 306,
-          "column": 19
-        }
-      ]
-    },
     "6478a5f1218c484e": {
       "source": "请在桌面应用中复制到系统剪贴板",
       "kind": "text",
@@ -2462,6 +2492,18 @@
           "file": "api.ts",
           "line": 401,
           "column": 43
+        }
+      ]
+    },
+    "647f46ce55849941": {
+      "source": "刷新活跃额度",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 563,
+          "column": 82
         }
       ]
     },
@@ -2638,6 +2680,20 @@
         }
       ]
     },
+    "6e49a1ce02644d38": {
+      "source": "确定删除账号“{name}”吗？此操作不可撤销。",
+      "kind": "template",
+      "placeholders": [
+        "name"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 420,
+          "column": 15
+        }
+      ]
+    },
     "6e86570183c3cdd0": {
       "source": "当前已是最新版本",
       "kind": "text",
@@ -2664,20 +2720,6 @@
         }
       ]
     },
-    "71a921a0ba55f4f1": {
-      "source": "{count} 个账号，5 小时或周额度用尽时自动切换",
-      "kind": "template",
-      "placeholders": [
-        "count"
-      ],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 362,
-          "column": 19
-        }
-      ]
-    },
     "7243cfa4754224eb": {
       "source": "额度查询失败：{error}",
       "kind": "template",
@@ -2687,12 +2729,12 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 88,
+          "line": 95,
           "column": 15
         },
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 104,
+          "line": 111,
           "column": 15
         }
       ]
@@ -2735,6 +2777,18 @@
           "file": "pages/SettingsPage.tsx",
           "line": 164,
           "column": 16
+        }
+      ]
+    },
+    "753d8bb0da9913ce": {
+      "source": "复制失败",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 527,
+          "column": 15
         }
       ]
     },
@@ -2786,6 +2840,18 @@
         }
       ]
     },
+    "79fec691d63987ac": {
+      "source": "可用池 (Ready)",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 611,
+          "column": 26
+        }
+      ]
+    },
     "7a2229f6a6d330a5": {
       "source": "请在桌面应用中打开终端安装 CA",
       "kind": "text",
@@ -2810,6 +2876,18 @@
         }
       ]
     },
+    "7b4a343618c06cf8": {
+      "source": "无匹配可用账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 618,
+          "column": 30
+        }
+      ]
+    },
     "7ba2d6728fe2531b": {
       "source": "确认清理",
       "kind": "text",
@@ -2819,18 +2897,6 @@
           "file": "pages/SettingsPage.tsx",
           "line": 292,
           "column": 23
-        }
-      ]
-    },
-    "7c571a4145630e1f": {
-      "source": "5 小时或周额度用尽时自动切换",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 363,
-          "column": 19
         }
       ]
     },
@@ -2934,7 +3000,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 149,
+          "line": 158,
           "column": 17
         }
       ]
@@ -3058,7 +3124,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 256,
+          "line": 271,
           "column": 11
         }
       ]
@@ -3072,6 +3138,18 @@
           "file": "components/ui/FormControls.tsx",
           "line": 15,
           "column": 81
+        }
+      ]
+    },
+    "86df916b8f61d453": {
+      "source": "设为主用",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 805,
+          "column": 14
         }
       ]
     },
@@ -3123,6 +3201,18 @@
           "file": "components/metrics/HomeMetrics.tsx",
           "line": 62,
           "column": 19
+        }
+      ]
+    },
+    "87de47ab2dff05d5": {
+      "source": "确定删除此账号吗？",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 421,
+          "column": 15
         }
       ]
     },
@@ -3374,13 +3464,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 342,
-          "column": 34
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 399,
-          "column": 35
+          "line": 559,
+          "column": 26
         }
       ]
     },
@@ -3417,18 +3502,6 @@
           "file": "pages/CursorSettingsPage.tsx",
           "line": 322,
           "column": 250
-        }
-      ]
-    },
-    "94bc3d40defef3e9": {
-      "source": "未授权",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 553,
-          "column": 7
         }
       ]
     },
@@ -3528,6 +3601,30 @@
           "file": "components/cursor/CursorModelEditor.tsx",
           "line": 185,
           "column": 60
+        }
+      ]
+    },
+    "9d0495d5f87d2d9d": {
+      "source": "无匹配冷却账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 660,
+          "column": 30
+        }
+      ]
+    },
+    "9daeab5f1613d1e1": {
+      "source": "清理全部",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 429,
+          "column": 23
         }
       ]
     },
@@ -3749,6 +3846,18 @@
         }
       ]
     },
+    "a5239c2d063bafe7": {
+      "source": "一键清理所有 0% 冷却账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 649,
+          "column": 28
+        }
+      ]
+    },
     "a5fb6189a8ad011d": {
       "source": "打开教程",
       "kind": "text",
@@ -3775,18 +3884,6 @@
           "file": "components/settings/ProxySettingsCard.tsx",
           "line": 75,
           "column": 50
-        }
-      ]
-    },
-    "a6936f8ef1c51235": {
-      "source": "确定删除当前授权账号吗？",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 439,
-          "column": 13
         }
       ]
     },
@@ -3872,18 +3969,6 @@
           "file": "components/cursor/CursorModelEditor.tsx",
           "line": 164,
           "column": 27
-        }
-      ]
-    },
-    "a9e75bba7e2d177f": {
-      "source": "5 小时窗口剩余",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 601,
-          "column": 22
         }
       ]
     },
@@ -4284,23 +4369,6 @@
         }
       ]
     },
-    "bf4cedf76a4ed116": {
-      "source": "查询失败",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 555,
-          "column": 9
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 562,
-          "column": 9
-        }
-      ]
-    },
     "bf57afd709694b55": {
       "source": "概览时间范围",
       "kind": "text",
@@ -4370,6 +4438,18 @@
         }
       ]
     },
+    "c8aebe63b34c6a6b": {
+      "source": "复制账号 ID",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 755,
+          "column": 71
+        }
+      ]
+    },
     "c8c14507b2d37395": {
       "source": "推理强度",
       "kind": "text",
@@ -4396,6 +4476,18 @@
           "file": "pages/CallDetailsPage.tsx",
           "line": 29,
           "column": 26
+        }
+      ]
+    },
+    "c9795fa288df5d56": {
+      "source": "周额度用尽时自动轮换",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 585,
+          "column": 19
         }
       ]
     },
@@ -4466,8 +4558,27 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 425,
+          "line": 412,
           "column": 16
+        },
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 758,
+          "column": 71
+        }
+      ]
+    },
+    "ce6fb3cad7eceb19": {
+      "source": "重置: {time}",
+      "kind": "template",
+      "placeholders": [
+        "time"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 801,
+          "column": 27
         }
       ]
     },
@@ -4565,18 +4676,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 557,
-          "column": 11
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 564,
-          "column": 11
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 573,
-          "column": 26
+          "line": 563,
+          "column": 70
         }
       ]
     },
@@ -4618,6 +4719,20 @@
           "file": "pages/CursorSettingsPage.tsx",
           "line": 298,
           "column": 653
+        }
+      ]
+    },
+    "d442a5f40b1c39e4": {
+      "source": "已清理 {count} 个冷却账号",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 337,
+          "column": 13
         }
       ]
     },
@@ -4720,20 +4835,6 @@
         }
       ]
     },
-    "da95304dacd54a83": {
-      "source": "{count} 个账号，余额为 0 时自动切换",
-      "kind": "template",
-      "placeholders": [
-        "count"
-      ],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 305,
-          "column": 19
-        }
-      ]
-    },
     "daede9881787abe7": {
       "source": "备注",
       "kind": "text",
@@ -4784,6 +4885,18 @@
           "file": "components/models/LegacyModelImport.tsx",
           "line": 69,
           "column": 56
+        }
+      ]
+    },
+    "dc25f32c4eec0b71": {
+      "source": "账号 ID 已复制到剪贴板",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 525,
+          "column": 15
         }
       ]
     },
@@ -4885,6 +4998,20 @@
           "file": "components/settings/ProxySettingsCard.tsx",
           "line": 75,
           "column": 123
+        }
+      ]
+    },
+    "e02f1a4cc94e9fd0": {
+      "source": "总账号: {count}",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 574,
+          "column": 16
         }
       ]
     },
@@ -5053,18 +5180,6 @@
         }
       ]
     },
-    "e62071d313fb90a8": {
-      "source": "0 个",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 611,
-          "column": 79
-        }
-      ]
-    },
     "e67881735f37e5ba": {
       "source": "授权发生错误。",
       "kind": "text",
@@ -5096,6 +5211,18 @@
           "file": "components/CallTable.tsx",
           "line": 82,
           "column": 15
+        }
+      ]
+    },
+    "e794fc028eba5c50": {
+      "source": "确定从账号池中清理所有额度耗尽（0%）的冷却账号吗？",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 433,
+          "column": 13
         }
       ]
     },
@@ -5137,7 +5264,7 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 263,
+          "line": 278,
           "column": 15
         }
       ]
@@ -5255,6 +5382,30 @@
         }
       ]
     },
+    "f0df70b140046350": {
+      "source": "账号已删除",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 322,
+          "column": 13
+        }
+      ]
+    },
+    "f1fa25eddd3c3bd1": {
+      "source": "标准配额",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 801,
+          "column": 92
+        }
+      ]
+    },
     "f2bdc88464c51c2e": {
       "source": "显示 API Key",
       "kind": "text",
@@ -5335,6 +5486,18 @@
         }
       ]
     },
+    "f6326542a042f052": {
+      "source": "清理冷却/耗尽账号",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 427,
+          "column": 16
+        }
+      ]
+    },
     "f69273dbbebfb3a1": {
       "source": "格式化",
       "kind": "text",
@@ -5354,13 +5517,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 342,
-          "column": 46
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 399,
-          "column": 47
+          "line": 559,
+          "column": 38
         }
       ]
     },
@@ -5387,6 +5545,18 @@
           "file": "components/overview/OverviewTimeRangeFilter.tsx",
           "line": 96,
           "column": 19
+        }
+      ]
+    },
+    "f86c91babf05855e": {
+      "source": "周额度",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "components/cursor/SubscriptionAuthTab.tsx",
+          "line": 784,
+          "column": 22
         }
       ]
     },
@@ -5527,25 +5697,8 @@
       "refs": [
         {
           "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 336,
-          "column": 51
-        },
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 393,
-          "column": 52
-        }
-      ]
-    },
-    "fdc1183b68106c4e": {
-      "source": "未激活",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "components/cursor/SubscriptionAuthTab.tsx",
-          "line": 560,
-          "column": 7
+          "line": 556,
+          "column": 38
         }
       ]
     },

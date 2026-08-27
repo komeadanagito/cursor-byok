@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Icon } from "../ui/Icon";
-import { Select } from "../ui/Select";
-import { checkIcon, grokIcon, openAiIcon, trashIcon } from "../ui/icons";
+import { TextInput } from "../ui/FormControls";
+import { checkIcon, copyIcon, grokIcon, openAiIcon, refreshIcon, trashIcon } from "../ui/icons";
 import { GrokAuthModal } from "./GrokAuthModal";
 import { CodexAuthModal } from "./CodexAuthModal";
 import { useAppStore, appStore } from "../../store/appStore";
@@ -42,13 +42,20 @@ export function SubscriptionAuthTab({
   const [grokAccounts, setGrokAccounts] = useState<SubscriptionAccount[]>([]);
   const [grokUsage, setGrokUsage] = useState<SubscriptionUsage | null>(null);
   const [grokUsageError, setGrokUsageError] = useState<string | null>(null);
+
   const [codexModalOpen, setCodexModalOpen] = useState(false);
   const [checkingCodex, setCheckingCodex] = useState(false);
   const [codexAccounts, setCodexAccounts] = useState<SubscriptionAccount[]>([]);
   const [codexUsage, setCodexUsage] = useState<SubscriptionUsage | null>(null);
   const [codexUsageError, setCodexUsageError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<"grok" | "codex" | null>(null);
+
+  const [deletingAccount, setDeletingAccount] = useState<{ provider: "grok" | "codex"; account: SubscriptionAccount } | null>(null);
+  const [clearingCooldown, setClearingCooldown] = useState<"grok" | "codex" | null>(null);
   const [importing, setImporting] = useState<"grok" | "codex" | null>(null);
+
+  const [grokSearch, setGrokSearch] = useState("");
+  const [codexSearch, setCodexSearch] = useState("");
+
   const grokImportInput = useRef<HTMLInputElement>(null);
   const codexImportInput = useRef<HTMLInputElement>(null);
 
@@ -144,6 +151,8 @@ export function SubscriptionAuthTab({
             openai_endpoint: "/v1/chat/completions",
             context_window_tokens: null,
             max_completion_tokens: 16384,
+            reasoning_effort: null,
+            anthropic_max_tokens: null,
           },
         });
         message(t("Grok 账号授权成功，已同步添加 {count} 个官方模型！", { count: synced.created }));
@@ -173,6 +182,8 @@ export function SubscriptionAuthTab({
             openai_endpoint: "/v1/responses",
             context_window_tokens: 272000,
             max_completion_tokens: 128000,
+            reasoning_effort: null,
+            anthropic_max_tokens: null,
           },
         });
         message(t("ChatGPT / Codex 账号授权成功，已同步添加 {count} 个官方模型！", { count: synced.created }));
@@ -230,6 +241,8 @@ export function SubscriptionAuthTab({
             openai_endpoint: "/v1/chat/completions",
             context_window_tokens: null,
             max_completion_tokens: 16384,
+            reasoning_effort: null,
+            anthropic_max_tokens: null,
           },
         });
       }
@@ -246,6 +259,8 @@ export function SubscriptionAuthTab({
             openai_endpoint: "/v1/responses",
             context_window_tokens: 272000,
             max_completion_tokens: 128000,
+            reasoning_effort: null,
+            anthropic_max_tokens: null,
           },
         });
       }
@@ -284,122 +299,94 @@ export function SubscriptionAuthTab({
     }
   };
 
+  const handleActivateAccount = async (provider: "grok" | "codex", accountId: string) => {
+    if (provider === "grok") {
+      await api.activateGrokAccount(accountId);
+      await loadGrokAccounts();
+    } else {
+      await api.activateCodexAccount(accountId);
+      await loadCodexAccounts();
+    }
+    message(t("已切换活跃账号"));
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!deletingAccount) return;
+    const { provider, account } = deletingAccount;
+    if (provider === "grok") {
+      setGrokAccounts(await api.deleteGrokAccount(account.account_id));
+    } else {
+      setCodexAccounts(await api.deleteCodexAccount(account.account_id));
+    }
+    setDeletingAccount(null);
+    message(t("账号已删除"));
+  };
+
+  const handleClearCooldownConfirmed = async () => {
+    if (!clearingCooldown) return;
+    const provider = clearingCooldown;
+    const accounts = provider === "grok" ? grokAccounts : codexAccounts;
+    const cooldownAccounts = accounts.filter(isAccountCooldown);
+    for (const acc of cooldownAccounts) {
+      if (provider === "grok") await api.deleteGrokAccount(acc.account_id);
+      else await api.deleteCodexAccount(acc.account_id);
+    }
+    if (provider === "grok") await loadGrokAccounts();
+    else await loadCodexAccounts();
+    setClearingCooldown(null);
+    message(t("已清理 {count} 个冷却账号", { count: cooldownAccounts.length }));
+  };
+
   return (
     <div className={styles.root}>
-      <div className={styles.grid}>
-        <div className={styles.card}>
-          <div className={styles.cardTop}>
-            <div className={styles.providerInfo}>
-              <div className={styles.iconWrap}><Icon icon={grokIcon} size="1.35em" /></div>
-              <div className={styles.names}>
-                <strong>Grok (xAI)</strong>
-                <span>xAI OAuth 2.0 Device Flow</span>
-              </div>
-            </div>
-            <ConnectionBadge connected={isGrokConnected} />
-          </div>
-          <AccountBar
-            accounts={grokAccounts}
-            hint={
-              grokAccounts.length > 1
-                ? t("{count} 个账号，余额为 0 时自动切换", { count: grokAccounts.length })
-                : t("余额为 0 时自动切换")
-            }
-            onSelect={async (accountId) => {
-              await api.activateGrokAccount(accountId);
-              await loadGrokAccounts();
-            }}
-            onDelete={() => setDeleting("grok")}
-          />
-          <UsageBox
-            connected={isGrokConnected}
-            loading={checkingGrok}
-            usage={grokUsage}
-            error={grokUsageError}
-            modelCount={grokModels.length}
-            onRefresh={() => void loadGrokUsage()}
-          />
-          <div className={styles.cardFooter}>
-            <input
-              ref={grokImportInput}
-              type="file"
-              accept=".json,application/json"
-              multiple
-              hidden
-              onChange={(event) => void importCredentialFiles("grok", event.target.files)}
-            />
-            <Button
-              variant="secondary"
-              disabled={importing !== null}
-              onClick={() => grokImportInput.current?.click()}
-            >
-              {importing === "grok" ? t("导入中…") : t("批量导入")}
-            </Button>
-            <Button
-              variant={isGrokConnected ? "secondary" : "primary"}
-              onClick={() => setGrokModalOpen(true)}
-            >
-              {isGrokConnected ? t("添加账号") : t("立即登录授权")}
-            </Button>
-          </div>
-        </div>
+      <div className={styles.boardList}>
+        {/* Grok (xAI) 账号看板 */}
+        <ProviderKanbanBoard
+          provider="grok"
+          title="Grok (xAI)"
+          subtitle="xAI OAuth 2.0 Device Flow"
+          icon={<Icon icon={grokIcon} size="1.35em" />}
+          connected={isGrokConnected}
+          accounts={grokAccounts}
+          usage={grokUsage}
+          usageError={grokUsageError}
+          loadingUsage={checkingGrok}
+          searchKeyword={grokSearch}
+          onSearchChange={setGrokSearch}
+          onRefreshUsage={() => void loadGrokUsage()}
+          onActivate={(id) => void handleActivateAccount("grok", id)}
+          onDelete={(acc) => setDeletingAccount({ provider: "grok", account: acc })}
+          onClearCooldown={() => setClearingCooldown("grok")}
+          onOpenModal={() => setGrokModalOpen(true)}
+          onImportClick={() => grokImportInput.current?.click()}
+          importing={importing === "grok"}
+          importInputRef={grokImportInput}
+          onImportFiles={(files) => void importCredentialFiles("grok", files)}
+        />
 
-        <div className={styles.card}>
-          <div className={styles.cardTop}>
-            <div className={styles.providerInfo}>
-              <div className={styles.iconWrap}><Icon icon={openAiIcon} size="1.35em" /></div>
-              <div className={styles.names}>
-                <strong>Codex (ChatGPT / OpenAI)</strong>
-                <span>OpenAI OAuth 2.0 Device Flow</span>
-              </div>
-            </div>
-            <ConnectionBadge connected={isCodexConnected} />
-          </div>
-          <AccountBar
-            accounts={codexAccounts}
-            hint={
-              codexAccounts.length > 1
-                ? t("{count} 个账号，5 小时或周额度用尽时自动切换", { count: codexAccounts.length })
-                : t("5 小时或周额度用尽时自动切换")
-            }
-            onSelect={async (accountId) => {
-              await api.activateCodexAccount(accountId);
-              await loadCodexAccounts();
-            }}
-            onDelete={() => setDeleting("codex")}
-          />
-          <UsageBox
-            connected={isCodexConnected}
-            loading={checkingCodex}
-            usage={codexUsage}
-            error={codexUsageError}
-            modelCount={codexModels.length}
-            onRefresh={() => void loadCodexUsage()}
-          />
-          <div className={styles.cardFooter}>
-            <input
-              ref={codexImportInput}
-              type="file"
-              accept=".json,application/json"
-              multiple
-              hidden
-              onChange={(event) => void importCredentialFiles("codex", event.target.files)}
-            />
-            <Button
-              variant="secondary"
-              disabled={importing !== null}
-              onClick={() => codexImportInput.current?.click()}
-            >
-              {importing === "codex" ? t("导入中…") : t("批量导入")}
-            </Button>
-            <Button
-              variant={isCodexConnected ? "secondary" : "primary"}
-              onClick={() => setCodexModalOpen(true)}
-            >
-              {isCodexConnected ? t("添加账号") : t("立即登录授权")}
-            </Button>
-          </div>
-        </div>
+        {/* Codex (ChatGPT / OpenAI) 账号看板 */}
+        <ProviderKanbanBoard
+          provider="codex"
+          title="Codex (ChatGPT / OpenAI)"
+          subtitle="OpenAI OAuth 2.0 Device Flow"
+          icon={<Icon icon={openAiIcon} size="1.35em" />}
+          connected={isCodexConnected}
+          accounts={codexAccounts}
+          usage={codexUsage}
+          usageError={codexUsageError}
+          loadingUsage={checkingCodex}
+          searchKeyword={codexSearch}
+          onSearchChange={setCodexSearch}
+          onRefreshUsage={() => void loadCodexUsage()}
+          onActivate={(id) => void handleActivateAccount("codex", id)}
+          onDelete={(acc) => setDeletingAccount({ provider: "codex", account: acc })}
+          onClearCooldown={() => setClearingCooldown("codex")}
+          onOpenModal={() => setCodexModalOpen(true)}
+          onImportClick={() => codexImportInput.current?.click()}
+          importing={importing === "codex"}
+          importInputRef={codexImportInput}
+          onImportFiles={(files) => void importCredentialFiles("codex", files)}
+        />
       </div>
 
       {children && (
@@ -421,58 +408,404 @@ export function SubscriptionAuthTab({
       />
 
       <ConfirmDialog
-        open={deleting !== null}
+        open={deletingAccount !== null}
         title={t("删除账号")}
         cancelLabel={t("取消")}
         confirmLabel={t("删除")}
-        onCancel={() => setDeleting(null)}
-        onConfirm={() => void (async () => {
-          if (deleting === "grok" && activeGrok) {
-            setGrokAccounts(await api.deleteGrokAccount(activeGrok.account_id));
-          }
-          if (deleting === "codex" && activeCodex) {
-            setCodexAccounts(await api.deleteCodexAccount(activeCodex.account_id));
-          }
-          setDeleting(null);
-        })()}
+        onCancel={() => setDeletingAccount(null)}
+        onConfirm={() => void handleDeleteConfirmed()}
       >
-        <p>{t("确定删除当前授权账号吗？")}</p>
+        <p>
+          {deletingAccount
+            ? t("确定删除账号“{name}”吗？此操作不可撤销。", { name: deletingAccount.account.display_name })
+            : t("确定删除此账号吗？")}
+        </p>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={clearingCooldown !== null}
+        title={t("清理冷却/耗尽账号")}
+        cancelLabel={t("取消")}
+        confirmLabel={t("清理全部")}
+        onCancel={() => setClearingCooldown(null)}
+        onConfirm={() => void handleClearCooldownConfirmed()}
+      >
+        <p>{t("确定从账号池中清理所有额度耗尽（0%）的冷却账号吗？")}</p>
       </ConfirmDialog>
     </div>
   );
 }
 
-function AccountBar({
+function isAccountCooldown(account: SubscriptionAccount): boolean {
+  if (account.limit_reached) return true;
+  if (account.remaining_percent !== null && account.remaining_percent <= 0) return true;
+  if (account.session_remaining_percent !== null && account.session_remaining_percent <= 0) return true;
+  return false;
+}
+
+function ProviderKanbanBoard({
+  provider,
+  title,
+  subtitle,
+  icon,
+  connected,
   accounts,
-  hint,
-  onSelect,
+  usage,
+  usageError,
+  loadingUsage,
+  searchKeyword,
+  onSearchChange,
+  onRefreshUsage,
+  onActivate,
   onDelete,
+  onClearCooldown,
+  onOpenModal,
+  onImportClick,
+  importing,
+  importInputRef,
+  onImportFiles,
 }: {
+  provider: "grok" | "codex";
+  title: string;
+  subtitle: string;
+  icon: ReactNode;
+  connected: boolean;
   accounts: SubscriptionAccount[];
-  hint: string;
-  onSelect: (accountId: string) => void | Promise<void>;
-  onDelete: () => void;
+  usage: SubscriptionUsage | null;
+  usageError: string | null;
+  loadingUsage: boolean;
+  searchKeyword: string;
+  onSearchChange: (keyword: string) => void;
+  onRefreshUsage: () => void;
+  onActivate: (accountId: string) => void;
+  onDelete: (account: SubscriptionAccount) => void;
+  onClearCooldown: () => void;
+  onOpenModal: () => void;
+  onImportClick: () => void;
+  importing: boolean;
+  importInputRef: React.RefObject<HTMLInputElement | null>;
+  onImportFiles: (files: FileList | null) => void;
 }) {
-  if (accounts.length === 0) return null;
-  const active = accounts.find((account) => account.active) ?? accounts[0];
+  const message = useMessage();
+  const keyword = searchKeyword.trim().toLowerCase();
+  const filteredAccounts = accounts.filter(
+    (acc) =>
+      !keyword ||
+      acc.display_name.toLowerCase().includes(keyword) ||
+      acc.account_id.toLowerCase().includes(keyword)
+  );
+
+  // 状态三分类：可用池、冷却池（0%）、异常池
+  const readyAccounts: SubscriptionAccount[] = [];
+  const cooldownAccounts: SubscriptionAccount[] = [];
+  const errorAccounts: SubscriptionAccount[] = [];
+
+  for (const acc of filteredAccounts) {
+    if (acc.active && usageError && !usage) {
+      errorAccounts.push(acc);
+    } else if (isAccountCooldown(acc)) {
+      cooldownAccounts.push(acc);
+    } else {
+      readyAccounts.push(acc);
+    }
+  }
+
+  // 排序：可用池活跃账号置顶，其余按剩余额度从高到低；冷却池按重置时间
+  readyAccounts.sort((a, b) => {
+    if (a.active) return -1;
+    if (b.active) return 1;
+    return (b.remaining_percent ?? 0) - (a.remaining_percent ?? 0);
+  });
+
+  cooldownAccounts.sort((a, b) => (a.reset_at_ms ?? 0) - (b.reset_at_ms ?? 0));
+
+  const copyId = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      message(t("账号 ID 已复制到剪贴板"));
+    } catch {
+      message(t("复制失败"));
+    }
+  };
+
   return (
-    <div className={styles.accountBar}>
-      <div className={styles.accountSelect}>
-        <Select
-          ariaLabel={t("当前账号")}
-          searchable
-          value={active.account_id}
-          options={accounts.map((account) => ({
-            value: account.account_id,
-            label: accountLabel(account),
-          }))}
-          onChange={(accountId) => void onSelect(accountId)}
-        />
+    <div className={styles.boardCard}>
+      {/* 顶部标题与控制栏 */}
+      <div className={styles.boardHeader}>
+        <div className={styles.providerInfo}>
+          <div className={styles.iconWrap}>{icon}</div>
+          <div className={styles.names}>
+            <div className={styles.titleRow}>
+              <strong>{title}</strong>
+              <ConnectionBadge connected={connected} />
+            </div>
+            <span>{subtitle}</span>
+          </div>
+        </div>
+
+        <div className={styles.headerActions}>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json,application/json"
+            multiple
+            hidden
+            onChange={(event) => onImportFiles(event.target.files)}
+          />
+          <Button variant="secondary" size="small" disabled={importing} onClick={onImportClick}>
+            {importing ? t("导入中…") : t("批量导入")}
+          </Button>
+          <Button variant={connected ? "secondary" : "primary"} size="small" onClick={onOpenModal}>
+            {connected ? t("添加账号") : t("立即登录授权")}
+          </Button>
+          {connected && (
+            <Button variant="secondary" size="small" disabled={loadingUsage} onClick={onRefreshUsage}>
+              <Icon icon={refreshIcon} size="1em" /> {loadingUsage ? t("查询中…") : t("刷新活跃额度")}
+            </Button>
+          )}
+        </div>
       </div>
-      <Button size="small" variant="secondary" onClick={onDelete}>
-        <Icon icon={trashIcon} size="1em" />
-      </Button>
-      <span className={styles.accountHint}>{hint}</span>
+
+      {/* 账号池全局统计与搜索工具条 */}
+      {accounts.length > 0 && (
+        <div className={styles.poolToolbar}>
+          <div className={styles.poolStats}>
+            <span className={styles.statPill}>
+              {t("总账号: {count}", { count: accounts.length })}
+            </span>
+            <span className={`${styles.statPill} ${styles.statPillReady}`}>
+              {t("🟢 可用: {count}", { count: accounts.filter((a) => !isAccountCooldown(a)).length })}
+            </span>
+            <span className={`${styles.statPill} ${styles.statPillCooldown}`}>
+              {t("⏳ 冷却/耗尽: {count}", { count: accounts.filter(isAccountCooldown).length })}
+            </span>
+            <span className={styles.statHint}>
+              {provider === "codex"
+                ? t("额度为 0 时自动平滑轮换到下一个可用账号")
+                : t("周额度用尽时自动轮换")}
+            </span>
+          </div>
+
+          <div className={styles.searchWrap}>
+            <TextInput
+              placeholder={t("搜索账号名称 / ID…")}
+              value={searchKeyword}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 看板三列内容 */}
+      {accounts.length === 0 ? (
+        <div className={styles.emptyBoard}>
+          <p>{t("暂无授权账号，点击上方“立即登录授权”或“批量导入”接入账号池。")}</p>
+        </div>
+      ) : (
+        <div className={styles.kanbanColumns}>
+          {/* 列 1：🟢 可用池 */}
+          <div className={`${styles.column} ${styles.columnReady}`}>
+            <div className={styles.columnHeader}>
+              <div className={styles.colTitle}>
+                <span className={styles.readyDot} />
+                <strong>{t("可用池 (Ready)")}</strong>
+              </div>
+              <span className={styles.colCount}>{readyAccounts.length}</span>
+            </div>
+            <div className={styles.columnBody}>
+              {readyAccounts.length === 0 ? (
+                <div className={styles.emptyCol}>
+                  {keyword ? t("无匹配可用账号") : t("暂无可用的健康账号")}
+                </div>
+              ) : (
+                readyAccounts.map((acc) => (
+                  <AccountCard
+                    key={acc.account_id}
+                    account={acc}
+                    provider={provider}
+                    isActive={acc.active}
+                    onActivate={() => onActivate(acc.account_id)}
+                    onDelete={() => onDelete(acc)}
+                    onCopy={() => void copyId(acc.account_id)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 列 2：⏳ 冷却中 */}
+          <div className={`${styles.column} ${styles.columnCooldown}`}>
+            <div className={styles.columnHeader}>
+              <div className={styles.colTitle}>
+                <span className={styles.cooldownDot} />
+                <strong>{t("冷却中 (0% 待重置)")}</strong>
+              </div>
+              <div className={styles.colHeaderRight}>
+                <span className={styles.colCount}>{cooldownAccounts.length}</span>
+                {cooldownAccounts.length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.clearBtn}
+                    title={t("一键清理所有 0% 冷却账号")}
+                    onClick={onClearCooldown}
+                  >
+                    {t("清空")}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className={styles.columnBody}>
+              {cooldownAccounts.length === 0 ? (
+                <div className={styles.emptyCol}>
+                  {keyword ? t("无匹配冷却账号") : t("当前无冷却账号")}
+                </div>
+              ) : (
+                cooldownAccounts.map((acc) => (
+                  <AccountCard
+                    key={acc.account_id}
+                    account={acc}
+                    provider={provider}
+                    isActive={acc.active}
+                    isCooldown
+                    onActivate={() => onActivate(acc.account_id)}
+                    onDelete={() => onDelete(acc)}
+                    onCopy={() => void copyId(acc.account_id)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 列 3：⚠️ 异常/待排查 */}
+          <div className={`${styles.column} ${styles.columnError}`}>
+            <div className={styles.columnHeader}>
+              <div className={styles.colTitle}>
+                <span className={styles.errorDot} />
+                <strong>{t("异常 / 待排查")}</strong>
+              </div>
+              <span className={styles.colCount}>{errorAccounts.length}</span>
+            </div>
+            <div className={styles.columnBody}>
+              {errorAccounts.length === 0 ? (
+                <div className={styles.emptyCol}>
+                  {t("无异常账号")}
+                </div>
+              ) : (
+                errorAccounts.map((acc) => (
+                  <AccountCard
+                    key={acc.account_id}
+                    account={acc}
+                    provider={provider}
+                    isActive={acc.active}
+                    isError
+                    errorText={usageError || t("授权失效或网络异常")}
+                    onActivate={() => onActivate(acc.account_id)}
+                    onDelete={() => onDelete(acc)}
+                    onCopy={() => void copyId(acc.account_id)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountCard({
+  account,
+  provider,
+  isActive,
+  isCooldown,
+  isError,
+  errorText,
+  onActivate,
+  onDelete,
+  onCopy,
+}: {
+  account: SubscriptionAccount;
+  provider: "grok" | "codex";
+  isActive: boolean;
+  isCooldown?: boolean;
+  isError?: boolean;
+  errorText?: string;
+  onActivate: () => void;
+  onDelete: () => void;
+  onCopy: () => void;
+}) {
+  const weekly = account.remaining_percent;
+  const session = account.session_remaining_percent;
+  const tone = remainingTone(weekly);
+
+  const resetTimeStr = account.reset_at_ms
+    ? new Date(account.reset_at_ms).toLocaleString()
+    : null;
+
+  return (
+    <div className={`${styles.accountCard} ${isActive ? styles.activeCard : ""} ${isCooldown ? styles.cooldownCard : ""} ${isError ? styles.errorCard : ""}`}>
+      <div className={styles.accountCardTop}>
+        <div className={styles.accountMainInfo}>
+          <strong className={styles.accountName} title={account.display_name}>
+            {account.display_name}
+          </strong>
+          {isActive && <span className={styles.activeBadge}>{t("当前使用中")}</span>}
+        </div>
+        <div className={styles.cardItemActions}>
+          <button type="button" className={styles.miniIconBtn} title={t("复制账号 ID")} onClick={onCopy}>
+            <Icon icon={copyIcon} size="0.9em" />
+          </button>
+          <button type="button" className={styles.miniIconBtn} title={t("删除账号")} onClick={onDelete}>
+            <Icon icon={trashIcon} size="0.9em" />
+          </button>
+        </div>
+      </div>
+
+      {/* 额度条 */}
+      {!isError ? (
+        <div className={styles.accountProgress}>
+          {provider === "codex" && session !== null && session !== undefined && (
+            <div className={styles.miniMeter}>
+              <div className={styles.meterLabel}>
+                <span>{t("5小时窗口")}</span>
+                <span>{formatPercent(session)}</span>
+              </div>
+              <div className={styles.miniTrack}>
+                <div
+                  className={`${styles.miniFill} ${styles[`${remainingTone(session)}Fill`]}`}
+                  style={{ width: `${Math.max(0, Math.min(100, session))}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className={styles.miniMeter}>
+            <div className={styles.meterLabel}>
+              <span>{t("周额度")}</span>
+              <span className={styles[tone]}>{weekly !== null ? formatPercent(weekly) : t("未查询")}</span>
+            </div>
+            <div className={styles.miniTrack}>
+              <div
+                className={`${styles.miniFill} ${styles[`${tone}Fill`]}`}
+                style={{ width: `${Math.max(0, Math.min(100, weekly ?? 0))}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.errorBanner}>{errorText}</div>
+      )}
+
+      <div className={styles.accountCardBottom}>
+        <span className={styles.resetLabel}>
+          {resetTimeStr ? t("重置: {time}", { time: resetTimeStr }) : (account.plan_label || t("标准配额"))}
+        </span>
+        {!isActive && (
+          <button type="button" className={styles.switchBtn} onClick={onActivate}>
+            {t("设为主用")}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -507,17 +840,6 @@ function firstAccessToken(value: unknown): string | undefined {
   return undefined;
 }
 
-function accountLabel(account: SubscriptionAccount): string {
-  const weekly = account.remaining_percent;
-  const session = account.session_remaining_percent;
-  if (account.provider === "codex" && session != null) {
-    const weeklyLabel = weekly == null ? t("未知") : `${Math.round(weekly)}%`;
-    return `${account.display_name} · 5h ${Math.round(session)}% · ${weeklyLabel}`;
-  }
-  if (weekly == null) return account.display_name;
-  return `${account.display_name} · ${Math.round(weekly)}%`;
-}
-
 function ConnectionBadge({ connected }: { connected: boolean }) {
   return (
     <span className={`${styles.badge} ${connected ? styles.badgeConnected : styles.badgeAvailable}`}>
@@ -532,110 +854,15 @@ function ConnectionBadge({ connected }: { connected: boolean }) {
   );
 }
 
-function UsageBox({
-  connected,
-  loading,
-  usage,
-  error,
-  modelCount,
-  onRefresh,
-}: {
-  connected: boolean;
-  loading: boolean;
-  usage: SubscriptionUsage | null;
-  error: string | null;
-  modelCount: number;
-  onRefresh: () => void;
-}) {
-  const remaining = usage?.remaining_percent ?? null;
-  const tone = remainingTone(remaining);
-  const planText = !connected
-    ? t("未授权")
-    : error && !usage
-      ? t("查询失败")
-      : !usage
-        ? t("查询中…")
-        : usage.plan_label || t("未知");
-  const remainingText = !connected
-    ? t("未激活")
-    : error && remaining === null
-      ? t("查询失败")
-      : remaining === null
-        ? t("查询中…")
-        : formatPercent(remaining);
-  return (
-    <div className={styles.cardBody}>
-      <div className={styles.balanceBox}>
-        <div className={styles.balanceHeader}>
-          <strong>{t("周额度与剩余额度")}</strong>
-          {connected && (
-            <Button size="small" variant="secondary" disabled={loading} onClick={onRefresh}>
-              {loading ? t("查询中…") : t("刷新额度")}
-            </Button>
-          )}
-        </div>
-
-        {connected && remaining !== null && (
-          <div className={styles.progressBarWrap}>
-            <div className={styles.progressBarHeader}>
-              <span>{t("本周剩余额度")}</span>
-              <span className={styles[tone]}>{formatPercent(remaining)}</span>
-            </div>
-            <div className={styles.progressTrack}>
-              <div className={`${styles.progressFill} ${styles[`${tone}Fill`]}`} style={{ width: `${remaining}%` }} />
-            </div>
-          </div>
-        )}
-
-        <div className={styles.balanceList}>
-          <div className={styles.balanceRow}>
-            <span>{t("周额度上限")}</span>
-            <span>{planText}</span>
-          </div>
-          <div className={styles.balanceRow}>
-            <span>{t("本周剩余额度")}</span>
-            <span className={connected && remaining !== null ? styles[tone] : undefined}>{remainingText}</span>
-          </div>
-          {connected && usage?.session_remaining_percent !== null && usage?.session_remaining_percent !== undefined && (
-            <div className={styles.balanceRow}>
-              <span>{t("5 小时窗口剩余")}</span>
-              <span>{formatPercent(usage.session_remaining_percent)}</span>
-            </div>
-          )}
-          <div className={styles.balanceRow}>
-            <span>{t("额度重置时间")}</span>
-            <span>{connected ? formatReset(usage?.reset_at_ms ?? null) : t("未知")}</span>
-          </div>
-          <div className={styles.balanceRow}>
-            <span>{t("已接入模型")}</span>
-            <span>{modelCount > 0 ? t("{count} 个模型", { count: modelCount }) : t("0 个")}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function remainingTone(remaining: number | null): "usageOk" | "usageWarn" | "usageBad" {
-  if (remaining === null) return "usageOk";
-  if (remaining <= 10) return "usageBad";
-  if (remaining <= 30) return "usageWarn";
-  return "usageOk";
+function remainingTone(remaining: number | null): "toneSuccess" | "toneWarn" | "toneDanger" | "toneNeutral" {
+  if (remaining === null) return "toneNeutral";
+  if (remaining > 35) return "toneSuccess";
+  if (remaining > 10) return "toneWarn";
+  return "toneDanger";
 }
 
 function formatPercent(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
-  return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)}%`;
-}
-
-function formatReset(ms: number | null): string {
-  if (!ms) return t("未知");
-  return new Date(ms).toLocaleString();
-}
-
-function modelInputFrom(model: Model): ModelInput {
-  const { model_hash: _hash, created_at_ms: _created, updated_at_ms: _updated, ...input } = model;
-  return input;
+  return `${Math.round(value)}%`;
 }
 
 async function syncDiscoveredModels({
@@ -649,77 +876,47 @@ async function syncDiscoveredModels({
   discoveryUrl: string;
   existing: Model[];
   allModels: Model[];
-  defaults: Pick<ModelInput, "base_url" | "use_full_url" | "tooltip_data" | "openai_endpoint" | "context_window_tokens" | "max_completion_tokens">;
-}): Promise<{ created: number; updated: number }> {
-  const result = await api.discoverModels({
+  defaults: Omit<ModelInput, "display_name" | "model_id" | "api_key" | "sort_order" | "type" | "openai_extra_params_enabled" | "openai_extra_params" | "custom_headers_enabled" | "custom_headers" | "anthropic_extra_params_enabled" | "anthropic_extra_params" | "anthropic_thinking_effort" | "thinking_budget_tokens">;
+}): Promise<{ created: number }> {
+  const discovered = await api.discoverModels({
     type: "openai",
     base_url: discoveryUrl,
     api_key: accessToken,
     custom_headers_enabled: false,
     custom_headers: {},
   });
-  const discovered = result.models
-    .map((model) => ({ id: model.id.trim(), context_window_tokens: model.context_window_tokens }))
-    .filter((model) => model.id);
-  const modelIds = [...new Set(discovered.map((model) => model.id))];
-  const contextById = new Map(discovered.map((model) => [model.id, model.context_window_tokens]));
-  if (modelIds.length === 0) {
-    throw new Error(t("未从官方接口获取到可用模型。"));
-  }
-
-  for (const model of existing) {
-    await appStore.updateCursorModel(model.model_hash, {
-      ...modelInputFrom(model),
-      api_key: accessToken,
+  const existingIds = new Set(existing.map((m) => m.model_id));
+  const newDiscovered = discovered.models.filter((m) => !existingIds.has(m.id));
+  if (newDiscovered.length === 0) return { created: 0 };
+  const nextOrderStart = allModels.length + 1;
+  const inputs: ModelInput[] = newDiscovered.map((m, index) => {
+    const isCodex = defaults.tooltip_data?.includes("Codex") || defaults.tooltip_data?.includes("ChatGPT");
+    const inferredContext = isCodex ? 272000 : contextWindowForModel(m.id, m.context_window_tokens, null);
+    return {
+      sort_order: nextOrderStart + index,
+      display_name: m.id,
       type: "openai",
       base_url: defaults.base_url,
       use_full_url: defaults.use_full_url,
+      api_key: "oauth",
+      tooltip_data: defaults.tooltip_data ?? "Subscription Model",
+      model_id: m.id,
+      reasoning_effort: null,
       openai_endpoint: defaults.openai_endpoint,
-      tooltip_data: defaults.tooltip_data,
-      context_window_tokens: contextWindowForModel(
-        model.model_id,
-        contextById.get(model.model_id),
-        model.context_window_tokens ?? defaults.context_window_tokens,
-      ),
-    });
-  }
-
-  const existingIds = new Set(existing.map((model) => model.model_id));
-  const toCreate = modelIds.filter((modelId) => !existingIds.has(modelId));
-  if (toCreate.length > 0) {
-    const created = await appStore.createModels(
-      toCreate.map((modelId, idx) => ({
-        sort_order: allModels.length + idx + 1,
-        display_name: modelId,
-        type: "openai",
-        base_url: defaults.base_url,
-        use_full_url: defaults.use_full_url,
-        api_key: accessToken,
-        tooltip_data: defaults.tooltip_data,
-        model_id: modelId,
-        reasoning_effort: null,
-        openai_endpoint: defaults.openai_endpoint,
-        openai_extra_params_enabled: false,
-        openai_extra_params: {},
-        custom_headers_enabled: false,
-        custom_headers: {},
-        anthropic_extra_params_enabled: false,
-        anthropic_extra_params: {},
-        context_window_tokens: contextWindowForModel(
-          modelId,
-          contextById.get(modelId),
-          defaults.context_window_tokens,
-        ),
-        max_completion_tokens: defaults.max_completion_tokens,
-        anthropic_max_tokens: null,
-        anthropic_thinking_effort: "xhigh",
-        thinking_budget_tokens: null,
-      })),
-    );
-    if (!created) {
-      throw new Error(t("保存模型失败"));
-    }
-  }
-
-  return { created: toCreate.length, updated: existing.length };
+      openai_extra_params_enabled: false,
+      openai_extra_params: {},
+      custom_headers_enabled: false,
+      custom_headers: {},
+      anthropic_extra_params_enabled: false,
+      anthropic_extra_params: {},
+      context_window_tokens: inferredContext,
+      max_completion_tokens: defaults.max_completion_tokens,
+      anthropic_max_tokens: null,
+      anthropic_thinking_effort: null,
+      thinking_budget_tokens: null,
+    };
+  });
+  await api.createModels(inputs);
+  await appStore.refresh();
+  return { created: inputs.length };
 }

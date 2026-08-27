@@ -3,76 +3,64 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px;
-}
-
-.card {
+.boardList {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 24px;
+}
+
+.boardCard {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  padding: 18px;
+  padding: 20px;
   background: var(--vscode-editor-background);
   border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
-  border-radius: 8px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  transition: border-color 0.2s ease;
 
   &:hover {
-    border-color: var(--vscode-focusBorder);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-color: var(--vscode-focusBorder, rgba(56, 189, 248, 0.4));
   }
 }
 
-.cardDisabled {
-  opacity: 0.75;
-  border-style: dashed;
-
-  &:hover {
-    border-color: var(--vscode-widget-border, rgba(255, 255, 255, 0.15));
-    box-shadow: none;
-  }
-}
-
-.cardTop {
+.boardHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
 }
 
 .providerInfo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .iconWrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.06));
   flex-shrink: 0;
   color: var(--vscode-foreground);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .names {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-
-  strong {
-    font-size: type.$font-size-base;
-    color: var(--vscode-foreground);
-  }
+  gap: 4px;
 
   span {
     font-size: type.$font-size-xs;
@@ -80,11 +68,30 @@
   }
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  strong {
+    font-size: type.$font-size-lg;
+    color: var(--vscode-foreground);
+    font-weight: 600;
+  }
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 999px;
   font-size: type.$font-size-2xs;
   font-weight: 500;
@@ -92,9 +99,9 @@
 }
 
 .badgeAvailable {
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(56, 189, 248, 0.12);
   color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  border: 1px solid rgba(56, 189, 248, 0.25);
 }
 
 .badgeConnected {
@@ -103,159 +110,366 @@
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-.badgeComingSoon {
-  background: rgba(148, 163, 184, 0.15);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-.accountBar {
+/* 账号池全局统计与搜索工具条 */
+.poolToolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.accountSelect {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.accountHint {
-  flex: 0 0 auto;
-  font-size: type.$font-size-2xs;
-  color: var(--vscode-descriptionForeground);
-  white-space: nowrap;
-}
-
-.cardBody {
-  display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
-}
-
-.balanceBox {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
+  padding: 10px 14px;
+  background: var(--vscode-sideBar-background, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.05));
   border-radius: 8px;
 }
 
-.balanceHeader {
+.poolStats {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: type.$font-size-xs;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
-  strong {
-    color: var(--vscode-foreground);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.statPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: type.$font-size-xs;
+  font-weight: 500;
+  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.08));
+  color: var(--vscode-badge-foreground, inherit);
+}
+
+.statPillReady {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.statPillCooldown {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.statHint {
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
+  margin-left: 6px;
+}
+
+.searchWrap {
+  min-width: 200px;
+  max-width: 280px;
+  flex: 1;
+
+  input {
+    width: 100%;
+    font-size: type.$font-size-xs;
+    padding: 5px 10px;
   }
 }
 
-.progressBarWrap {
+/* 看板三列布局 */
+.kanbanColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.column {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 4px 0;
+  background: var(--vscode-sideBar-background, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.progressBarHeader {
+.columnHeader {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: type.$font-size-2xs;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.06));
+  background: rgba(255, 255, 255, 0.02);
+}
 
-  span:first-child {
-    color: var(--vscode-descriptionForeground);
-  }
+.colTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
-  span:last-child {
+  strong {
+    font-size: type.$font-size-base;
+    color: var(--vscode-foreground);
     font-weight: 600;
   }
 }
 
-.progressTrack {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
+.readyDot, .cooldownDot, .errorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.readyDot { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+.cooldownDot { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
+.errorDot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+
+.colHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.1));
+  color: var(--vscode-foreground);
+  font-size: type.$font-size-2xs;
+  font-weight: 600;
+}
+
+.clearBtn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: type.$font-size-2xs;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.15);
+  }
+}
+
+.columnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  max-height: 440px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+}
+
+.emptyCol {
+  padding: 30px 10px;
+  text-align: center;
+  font-size: type.$font-size-xs;
+  color: var(--vscode-descriptionForeground);
+}
+
+.emptyBoard {
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--vscode-widget-border, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-base;
+}
+
+/* 账号子卡片 (AccountCard) */
+.accountCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--vscode-focusBorder, rgba(56, 189, 248, 0.4));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.activeCard {
+  border-color: #22c55e !important;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.06) 0%, var(--vscode-editor-background) 100%);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+}
+
+.cooldownCard {
+  opacity: 0.85;
+  border-left: 3px solid #f59e0b;
+}
+
+.errorCard {
+  border-left: 3px solid #ef4444;
+}
+
+.accountCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.accountMainInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.accountName {
+  font-size: type.$font-size-xs;
+  color: var(--vscode-foreground);
+  font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.progressFill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.3s ease;
+.activeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #22c55e;
+  color: #000;
+  flex-shrink: 0;
 }
 
-.usageOk {
-  color: #4ade80;
+.cardItemActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.usageWarn {
-  color: #fbbf24;
+.miniIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: var(--vscode-foreground);
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
-.usageBad {
-  color: #f87171;
-}
-
-.usageOkFill {
-  background: linear-gradient(90deg, #22c55e, #4ade80);
-}
-
-.usageWarnFill {
-  background: linear-gradient(90deg, #d97706, #fbbf24);
-}
-
-.usageBadFill {
-  background: linear-gradient(90deg, #dc2626, #f87171);
-}
-
-.balanceList {
+.accountProgress {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: type.$font-size-2xs;
 }
 
-.balanceRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-
-  span:first-child {
-    color: var(--vscode-descriptionForeground);
-  }
-
-  span:last-child {
-    color: var(--vscode-foreground);
-    font-weight: 500;
-  }
-}
-
-.cardFooter {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.modelsSection {
+.miniMeter {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 3px;
+}
 
-  > strong {
-    font-size: type.$font-size-base;
-    color: var(--vscode-foreground);
+.meterLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.miniTrack {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.miniFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.accountCardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.resetLabel {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.switchBtn {
+  font-size: 11px;
+  color: var(--vscode-textLink-foreground, #38bdf8);
+  background: transparent;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: #38bdf8;
   }
 }
 
+.errorBanner {
+  font-size: 11px;
+  color: #f87171;
+  padding: 4px 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+}
+
+/* 颜色状态与进度条 */
+.toneSuccess { color: #22c55e; }
+.toneWarn { color: #f59e0b; }
+.toneDanger { color: #ef4444; }
+.toneNeutral { color: var(--vscode-descriptionForeground); }
+
+.toneSuccessFill { background: #22c55e; }
+.toneWarnFill { background: #f59e0b; }
+.toneDangerFill { background: #ef4444; }
+.toneNeutralFill { background: #6b7280; }
+
+.modelsSection {
+  margin-top: 8px;
+}
