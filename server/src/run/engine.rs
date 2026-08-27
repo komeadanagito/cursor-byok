@@ -4,7 +4,10 @@ use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    client::{ClientEvent, ClientPort, CommitBarrier, CommitCause, StateCommitted},
+    client::{
+        ClientCommand, ClientEvent, ClientPort, CommitBarrier, CommitCause, MessageInsertion,
+        StateCommitted,
+    },
     model::{
         CanonicalMessage, MessageContent, Origin, PreparedRun, Role, RunAction, ToolRoundAssistant,
         ToolRoundId, Usage,
@@ -158,6 +161,7 @@ impl RunEngine {
                     calls: round.calls.clone(),
                     recovered_started_at_ms: Some(round.started_at_ms),
                 },
+                Vec::new(),
             )
             .await
             {
@@ -242,21 +246,27 @@ impl RunEngine {
                 &cycle_cancellation,
             );
             tokio::pin!(cycle);
-            let cycle = tokio::select! {
-                    result = &mut cycle => result,
+            let mut pending_insertions = Vec::new();
+            let cycle = loop {
+                tokio::select! {
+                    result = &mut cycle => break result,
                     command = client.commands.recv() => {
                         let message = match command {
-                            Some(crate::client::ClientCommand::RuntimeMessage(message)) => message,
-                            Some(crate::client::ClientCommand::RuntimeEvent(event)) => event.into_message(),
-                            Some(crate::client::ClientCommand::Cancel) => {
+                            Some(ClientCommand::InsertMessages(insertion)) => {
+                                pending_insertions.push(insertion);
+                                continue;
+                            }
+                            Some(ClientCommand::RuntimeMessage(message)) => message,
+                            Some(ClientCommand::RuntimeEvent(event)) => event.into_message(),
+                            Some(ClientCommand::Cancel) => {
                                 cycle_cancellation.cancel();
                                 return (RunOutcome::Cancelled, usage);
                             }
-                            Some(crate::client::ClientCommand::ClientClosed { error }) => {
+                            Some(ClientCommand::ClientClosed { error }) => {
                                 cycle_cancellation.cancel();
                                 return (RunOutcome::Failed(RunFailure::Client(error)), usage);
                             }
-                            Some(crate::client::ClientCommand::ToolResult(_)) => {
+                            Some(ClientCommand::ToolResult(_)) => {
                                 cycle_cancellation.cancel();
                                 return (
                                     RunOutcome::Failed(RunFailure::Protocol(
@@ -284,6 +294,19 @@ impl RunEngine {
                                 }
                             }
                         }
+                        revision = match append_insertions(
+                            &self.store,
+                            prepared,
+                            client,
+                            cancellation,
+                            revision,
+                            std::mem::take(&mut pending_insertions),
+                        )
+                        .await
+                        {
+                            Ok((revision, _)) => revision,
+                            Err(outcome) => return (outcome, usage),
+                        };
                         revision = match append_runtime_message(
                             &self.store,
                             prepared,
@@ -294,11 +317,12 @@ impl RunEngine {
                         )
                         .await
                         {
-                            Ok(revision) => revision,
+                            Ok((revision, _)) => revision,
                             Err(outcome) => return (outcome, usage),
                         };
                         continue 'model;
                     }
+                }
             };
             let cycle = match cycle {
                 Ok(cycle) => cycle,
@@ -413,6 +437,27 @@ impl RunEngine {
                     Ok(revision) => revision,
                     Err(error) => return (RunOutcome::Failed(error.into()), usage),
                 };
+                if !pending_insertions.is_empty() {
+                    let inserted = match append_insertions(
+                        &self.store,
+                        prepared,
+                        client,
+                        cancellation,
+                        revision,
+                        pending_insertions,
+                    )
+                    .await
+                    {
+                        Ok((next, inserted)) => {
+                            revision = next;
+                            inserted
+                        }
+                        Err(outcome) => return (outcome, usage),
+                    };
+                    if inserted {
+                        continue 'model;
+                    }
+                }
                 let (barrier, ready) = CommitBarrier::before_continue();
                 if emit(
                     client,
@@ -453,6 +498,7 @@ impl RunEngine {
                     calls: cycle.calls,
                     recovered_started_at_ms: None,
                 },
+                pending_insertions,
             )
             .await
             {
@@ -683,14 +729,36 @@ fn fallback_summary(messages: &[CanonicalMessage]) -> String {
     )
 }
 
-async fn append_runtime_message(
+pub(super) async fn append_insertions(
+    store: &Store,
+    prepared: &PreparedRun,
+    client: &mut ClientPort,
+    cancellation: &CancellationToken,
+    mut revision: crate::model::RevisionId,
+    insertions: Vec<MessageInsertion>,
+) -> std::result::Result<(crate::model::RevisionId, bool), RunOutcome> {
+    let mut inserted_any = false;
+    for insertion in insertions {
+        for message in insertion.messages {
+            let (next, inserted) =
+                append_runtime_message(store, prepared, client, cancellation, revision, message)
+                    .await?;
+            revision = next;
+            inserted_any |= inserted;
+        }
+        let _ = insertion.delivered.send(());
+    }
+    Ok((revision, inserted_any))
+}
+
+pub(super) async fn append_runtime_message(
     store: &Store,
     prepared: &PreparedRun,
     client: &mut ClientPort,
     cancellation: &CancellationToken,
     revision: crate::model::RevisionId,
     message: CanonicalMessage,
-) -> std::result::Result<crate::model::RevisionId, RunOutcome> {
+) -> std::result::Result<(crate::model::RevisionId, bool), RunOutcome> {
     let event_id = message.runtime_event_id.clone().ok_or_else(|| {
         RunOutcome::Failed(RunFailure::Protocol(
             "runtime message has no event identity".into(),
@@ -706,7 +774,7 @@ async fn append_runtime_message(
         .await
         .map_err(|error| RunOutcome::Failed(error.into()))?;
     if !inserted {
-        return Ok(revision);
+        return Ok((revision, false));
     }
     let (barrier, ready) = CommitBarrier::before_continue();
     emit(
@@ -721,7 +789,7 @@ async fn append_runtime_message(
     .await
     .map_err(|_| client_failure())?;
     wait_for_state_ready(ready, cancellation).await?;
-    Ok(revision)
+    Ok((revision, true))
 }
 
 async fn hydrate_tool_images(

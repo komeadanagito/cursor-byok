@@ -219,8 +219,18 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           mkdir -p tauri-update
-          gh release download "v${VERSION}" --pattern latest.json --dir tauri-update
-          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION}" > tauri-update/release.json
+          release_id=$(
+            gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              --jq ".[] | select(.tag_name == \"v${VERSION}\") | .id"
+          )
+          test -n "${release_id}"
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" > tauri-update/release.json
+          asset_id=$(node -p 'require("./tauri-update/release.json").assets.find(({ name }) => name === "latest.json")?.id ?? ""')
+          test -n "${asset_id}"
+          gh api \
+            -H "Accept: application/octet-stream" \
+            "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}" \
+            > tauri-update/latest.json
           node scripts/release/normalize-tauri-update.mjs \
             --manifest tauri-update/latest.json \
             --release tauri-update/release.json \

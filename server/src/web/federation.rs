@@ -2,6 +2,8 @@ use std::{cmp::Ordering, collections::HashMap};
 
 use futures_util::future::join_all;
 
+use crate::store::Store;
+
 use super::{catalog, SearchEngine, SearchHit};
 
 const RRF_K: f64 = 60.0;
@@ -9,8 +11,14 @@ const MAX_RESULTS: usize = 10;
 
 #[derive(Clone)]
 pub struct WebSearch {
-    client: reqwest::Client,
+    client: SearchClient,
     engines: Vec<SearchEngine>,
+}
+
+#[derive(Clone)]
+enum SearchClient {
+    Managed(Store),
+    Direct(reqwest::Client),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -22,13 +30,20 @@ impl WebSearch {
         Self::with_engines(catalog::engines())
     }
 
+    pub(crate) fn managed(store: Store) -> Self {
+        Self {
+            client: SearchClient::Managed(store),
+            engines: catalog::engines(),
+        }
+    }
+
     pub fn with_engines<I, E>(engines: I) -> Self
     where
         I: IntoIterator<Item = E>,
         E: Into<SearchEngine>,
     {
         Self {
-            client: reqwest::Client::new(),
+            client: SearchClient::Direct(reqwest::Client::new()),
             engines: engines.into_iter().map(Into::into).collect(),
         }
     }
@@ -42,10 +57,16 @@ impl WebSearch {
         if query.is_empty() {
             return Err(SearchError("query is empty".into()));
         }
+        let client = match &self.client {
+            SearchClient::Managed(store) => crate::network::client(store)
+                .await
+                .map_err(|error| SearchError(format!("HTTP client failed: {error}")))?,
+            SearchClient::Direct(client) => client.clone(),
+        };
         let responses = join_all(
             self.engines
                 .iter()
-                .map(|engine| engine.search(&self.client, query)),
+                .map(|engine| engine.search(&client, query)),
         )
         .await;
         let mut merged = HashMap::<String, SearchHit>::new();

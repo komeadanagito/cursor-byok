@@ -118,7 +118,7 @@ export function HomePage() {
     {
       key: "metrics",
       estimatedHeight: 130,
-      content: <HomeMetrics data={metrics} />,
+      content: <HomeMetrics data={metrics} refreshVersion={refreshVersion} />,
     },
 
     {

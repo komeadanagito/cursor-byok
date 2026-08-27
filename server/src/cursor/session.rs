@@ -88,6 +88,23 @@ impl CursorSession {
     }
 
     pub async fn run(mut self) -> Result<()> {
+        let result = self.run_inner().await;
+        if let Err(error) = &result {
+            self.abort_execs().await;
+            let error = match error {
+                Error::Protocol(message) => message.clone(),
+                error => error.to_string(),
+            };
+            let _ = self
+                .core
+                .commands
+                .send(ClientCommand::ClientClosed { error })
+                .await;
+        }
+        result
+    }
+
+    async fn run_inner(&mut self) -> Result<()> {
         if self.context.compacting {
             self.handle.emit(&interaction::summary_started())?;
         }

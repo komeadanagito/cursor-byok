@@ -87,8 +87,15 @@ pub(super) fn project(
             }
             pb::BackgroundTaskKind::Unspecified => unreachable!(),
         };
-        let identity = agent_id.unwrap_or(&completion.task_id);
-        let identity = format!("{}:{identity}", kind.as_str_name());
+        let tool_call_id = completion
+            .tool_call_id
+            .as_deref()
+            .filter(|id| !id.is_empty())
+            .ok_or_else(|| {
+                Error::Protocol("background task completion has no tool_call_id".into())
+            })?;
+        let task_identity = agent_id.unwrap_or(&completion.task_id);
+        let identity = format!("{}:{task_identity}:{tool_call_id}", kind.as_str_name());
         let context = completion_context(completion, kind, agent_id)?;
         if completions
             .insert(identity.clone(), (completion, context))
@@ -305,6 +312,30 @@ mod tests {
 
         assert_eq!(forward.turn_user, reversed.turn_user);
         assert_eq!(forward.context, reversed.context);
+    }
+
+    #[test]
+    fn resumed_subagent_completions_use_the_task_call_as_part_of_their_identity() {
+        let first = project(
+            &pb::BackgroundTaskCompletionAction {
+                completions: vec![completion()],
+            },
+            pb::AgentMode::Multitask as i32,
+        )
+        .unwrap();
+        let mut resumed = completion();
+        resumed.tool_call_id = Some("task-call-2".into());
+        let second = project(
+            &pb::BackgroundTaskCompletionAction {
+                completions: vec![resumed],
+            },
+            pb::AgentMode::Multitask as i32,
+        )
+        .unwrap();
+
+        assert_ne!(first.turn_user.message_id, second.turn_user.message_id);
+        assert!(first.turn_user.message_id.ends_with(":task-call"));
+        assert!(second.turn_user.message_id.ends_with(":task-call-2"));
     }
 
     #[test]

@@ -1,7 +1,10 @@
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    client::{ClientCommand, ClientEvent, ClientPort, CommitBarrier, CommitCause, StateCommitted},
+    client::{
+        ClientCommand, ClientEvent, ClientPort, CommitBarrier, CommitCause, MessageInsertion,
+        StateCommitted,
+    },
     model::{PreparedRun, RevisionId, ToolCall, ToolRoundAssistant, ToolRoundId},
     store::Store,
 };
@@ -22,6 +25,7 @@ pub(super) async fn execute(
     cancellation: &CancellationToken,
     mut revision: RevisionId,
     round: ToolRound,
+    insertions: Vec<MessageInsertion>,
 ) -> std::result::Result<RevisionId, RunOutcome> {
     let ToolRound {
         id: round_id,
@@ -66,7 +70,10 @@ pub(super) async fn execute(
     .await?;
 
     let mut remaining = calls.len();
-    let mut pending_runtime_messages = Vec::new();
+    let mut pending_runtime_messages = insertions
+        .into_iter()
+        .map(PendingRuntimeMessage::Insertion)
+        .collect::<Vec<_>>();
     while remaining > 0 {
         let command = tokio::select! {
             _ = cancellation.cancelled() => return Err(RunOutcome::Cancelled),
@@ -116,10 +123,13 @@ pub(super) async fn execute(
                 }
             }
             Some(ClientCommand::RuntimeEvent(event)) => {
-                pending_runtime_messages.push(event.into_message());
+                pending_runtime_messages.push(PendingRuntimeMessage::Message(event.into_message()));
             }
             Some(ClientCommand::RuntimeMessage(message)) => {
-                pending_runtime_messages.push(message);
+                pending_runtime_messages.push(PendingRuntimeMessage::Message(message));
+            }
+            Some(ClientCommand::InsertMessages(insertion)) => {
+                pending_runtime_messages.push(PendingRuntimeMessage::Insertion(insertion))
             }
             Some(ClientCommand::Cancel) => return Err(RunOutcome::Cancelled),
             Some(ClientCommand::ClientClosed { error }) => {
@@ -128,38 +138,40 @@ pub(super) async fn execute(
             None => return Err(client_failure()),
         }
     }
-    for message in pending_runtime_messages {
-        let event_id = message.runtime_event_id.clone().ok_or_else(|| {
-            RunOutcome::Failed(RunFailure::Protocol(
-                "runtime message has no event identity".into(),
-            ))
-        })?;
-        let (next, inserted) = store
-            .append_message_once(
-                &prepared.conversation_id,
-                &prepared.run_id,
-                revision,
-                &message,
-            )
-            .await
-            .map_err(failed)?;
-        revision = next;
-        if inserted {
-            let (barrier, ready) = CommitBarrier::before_continue();
-            send(
-                client,
-                ClientEvent::StateCommitted(StateCommitted {
-                    revision_id: revision,
-                    tool_round_version: 0,
-                    cause: CommitCause::RuntimeEvent { event_id },
-                    barrier,
-                }),
-            )
-            .await?;
-            super::engine::wait_for_state_ready(ready, cancellation).await?;
+    for pending in pending_runtime_messages {
+        match pending {
+            PendingRuntimeMessage::Message(message) => {
+                revision = super::engine::append_runtime_message(
+                    store,
+                    prepared,
+                    client,
+                    cancellation,
+                    revision,
+                    message,
+                )
+                .await?
+                .0;
+            }
+            PendingRuntimeMessage::Insertion(insertion) => {
+                revision = super::engine::append_insertions(
+                    store,
+                    prepared,
+                    client,
+                    cancellation,
+                    revision,
+                    vec![insertion],
+                )
+                .await?
+                .0;
+            }
         }
     }
     Ok(revision)
+}
+
+enum PendingRuntimeMessage {
+    Message(crate::model::CanonicalMessage),
+    Insertion(MessageInsertion),
 }
 
 async fn send(client: &ClientPort, event: ClientEvent) -> std::result::Result<(), RunOutcome> {

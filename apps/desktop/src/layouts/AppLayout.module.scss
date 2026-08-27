@@ -156,11 +156,14 @@
 
 .actions {
   height: var(--app-toolbar-height);
+  min-width: var(--app-toolbar-height);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding: 2px 2px;
+  justify-content: center;
+  padding: 6px 6px;
   gap: 3px;
+  box-shadow: 0 0px 6px 4px var(--vscode-editor-background);
+  transform: translateX(6px);
 }
 
 .pageActions {

@@ -48,7 +48,11 @@ impl CursorActor {
             let tool_runtime = CursorToolRuntime::default();
             let context_sync =
                 RequestContextSynchronizer::new(handle.clone(), dependencies.store.clone());
-            let tools = ToolDispatcher::with_results(tool_runtime.clone(), results_tx.clone());
+            let tools = ToolDispatcher::with_results(
+                tool_runtime.clone(),
+                results_tx.clone(),
+                dependencies.store.clone(),
+            );
             let mut run_resources = Some((results_rx, runtime_actions_rx, dependencies));
             loop {
                 let command = match receiver.recv().await {
@@ -151,15 +155,39 @@ impl CursorActor {
                                                     context.dynamic_tools.keys().cloned().collect(),
                                                     context.turn_user.clone(),
                                                 );
+                                                if context.background_completion
+                                                    && dependencies
+                                                        .run_registry
+                                                        .insert_messages(
+                                                            &prepared.conversation_id,
+                                                            prepared.initial_messages.clone(),
+                                                        )
+                                                        .await
+                                                {
+                                                    crate::cursor::lifecycle::finish_success(
+                                                        &handle,
+                                                    );
+                                                    let _ = handle
+                                                        .command(CursorCommand::Finished)
+                                                        .await;
+                                                    return;
+                                                }
                                                 let cancellation = handle.cancellation();
                                                 let (port, core) = crate::client::session(256);
+                                                let core_commands = core.commands.clone();
                                                 let actor = RunActor::new(
                                                     dependencies.store.clone(),
                                                     dependencies.provider,
                                                     dependencies.run_registry,
                                                 );
-                                                let core_run =
-                                                    actor.spawn(prepared, port, cancellation).await;
+                                                let core_run = actor
+                                                    .spawn(
+                                                        prepared,
+                                                        port,
+                                                        core_commands,
+                                                        cancellation,
+                                                    )
+                                                    .await;
                                                 let session = CursorSession::new(
                                                     handle.clone(),
                                                     dependencies.store,
@@ -181,7 +209,6 @@ impl CursorActor {
                                                         %error,
                                                         "Cursor session failed"
                                                     );
-                                                    handle.cancel();
                                                     let _ = crate::cursor::lifecycle::fail(
                                                         &handle, &error,
                                                     );
@@ -235,12 +262,14 @@ impl CursorActor {
                                                 {
                                                     continue;
                                                 }
-                                                if tool_runtime.take_exec(close.id).await.is_some()
+                                                match codec::stream_closed(close.id, &tool_runtime)
+                                                    .await
                                                 {
-                                                    results_tx.send_error(crate::Error::Protocol(format!(
-                                                        "Exec stream closed before result for id: {}",
-                                                        close.id
-                                                    )));
+                                                    Ok(Some(completion)) => {
+                                                        results_tx.send(completion)
+                                                    }
+                                                    Ok(None) => {}
+                                                    Err(error) => results_tx.send_error(error),
                                                 }
                                             }
                                             Some(Message::Throw(throw)) => {
@@ -311,13 +340,12 @@ impl CursorActor {
                                     //
                                     // The remaining unimplemented Action variants are
                                     // ShellCommandAction, StartPlanAction,
-                                    // AsyncAskQuestionCompletionAction, CancelSubagentAction,
-                                    // BackgroundShellAction, BackgroundSubagentAction,
+                                    // AsyncAskQuestionCompletionAction, BackgroundShellAction,
+                                    // BackgroundSubagentAction,
                                     // SubscriptionNotificationAction and GoalContinuationAction.
-                                    // CancelSubagentAction must not start an LLM; variants whose wire
-                                    // behavior is not captured yet need evidence before assigning
-                                    // semantics. Every unsupported runtime Action must return an explicit
-                                    // Protocol Error rather than falling through silently.
+                                    // Variants whose wire behavior is not captured yet need evidence
+                                    // before assigning semantics. Every unsupported runtime Action must
+                                    // return an explicit Protocol Error rather than falling through silently.
                                     Some(
                                         pb::agent_client_message::Message::ConversationAction(
                                             action,
@@ -339,6 +367,18 @@ impl CursorActor {
                                                     "InjectContextAction arrived without an active Run"
                                                         .into(),
                                                 ));
+                                            }
+                                        }
+                                        Some(
+                                            pb::conversation_action::Action::CancelSubagentAction(
+                                                action,
+                                            ),
+                                        ) => {
+                                            if let Some(id) = tool_runtime
+                                                .running_task_exec_id(&action.subagent_id)
+                                                .await
+                                            {
+                                                let _ = handle.emit(&codec::abort(id));
                                             }
                                         }
                                         Some(action) => {

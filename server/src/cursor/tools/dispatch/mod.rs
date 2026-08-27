@@ -10,6 +10,7 @@ use std::collections::BTreeMap;
 use crate::{
     cursor::proto::agent::v1 as pb,
     model::ToolCall,
+    store::Store,
     web::{WebFetch, WebSearch},
     Error, Result,
 };
@@ -36,6 +37,7 @@ pub(super) async fn start(
     message_index: usize,
     dynamic_mcp: &BTreeMap<String, pb::McpToolDefinition>,
     context: &ExecContext,
+    store: Option<&Store>,
 ) -> Result<ToolStart> {
     if let Some(definition) = dynamic_mcp.get(&call.name) {
         return exec::start_dynamic(runtime, call, definition, context).await;
@@ -57,7 +59,7 @@ pub(super) async fn start(
         | "generateimage" => interaction::start(runtime, call).await,
         "todowrite" | "updatecurrentstep" => local::start(call, message_index),
         "awaitshell" => await_shell::start(runtime, results, call, context).await,
-        "semblesearch" | "semblefindrelated" => semble::start(results, call),
+        "semblesearch" | "semblefindrelated" => semble::start(results, call, store.cloned()),
         _ => Err(Error::Protocol(format!("unsupported tool: {}", call.name))),
     }
 }

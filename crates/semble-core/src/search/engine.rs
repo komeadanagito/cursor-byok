@@ -35,12 +35,22 @@ static EMBEDDERS: LazyLock<Mutex<HashMap<PathBuf, Arc<StaticEmbedder>>>> =
 
 impl SearchEngine {
     pub fn load_default(config: SembleConfig) -> Result<Self> {
+        let client = reqwest::blocking::Client::builder()
+            .build()
+            .map_err(|error| Error::ModelAsset(error.to_string()))?;
+        Self::load_default_with_client(config, &client)
+    }
+
+    pub fn load_default_with_client(
+        config: SembleConfig,
+        client: &reqwest::blocking::Client,
+    ) -> Result<Self> {
         let model_path = ModelAssets::model_path(&config.cache_dir);
         let cached = { EMBEDDERS.lock().get(&model_path).cloned() };
         let embedder = if let Some(embedder) = cached {
             embedder
         } else {
-            let assets = ModelAssets::ensure(&config.cache_dir)?;
+            let assets = ModelAssets::ensure_with_client(&config.cache_dir, client)?;
             let embedder = Arc::new(StaticEmbedder::load(&assets.model, &assets.tokenizer)?);
             EMBEDDERS
                 .lock()

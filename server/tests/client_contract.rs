@@ -14,6 +14,7 @@ use cursor_server::{
     provider::{FinishReason, ModelEvent},
     run::{RunEngine, RunOutcome},
 };
+use tokio::{sync::oneshot, time::Duration};
 use tokio_util::sync::CancellationToken;
 
 #[tokio::test]
@@ -52,6 +53,86 @@ async fn a_client_without_checkpoint_protocol_runs_the_same_text_loop() {
     }
     assert!(saw_final_commit);
     assert_eq!(run.await.unwrap(), RunOutcome::Completed);
+}
+
+#[tokio::test]
+async fn inserted_messages_wait_for_the_next_model_call_without_interrupting_the_active_call() {
+    let (_directory, store) = fixtures::temp_store().await;
+    let provider = fake_provider::FakeProvider::default();
+    let first_ready = provider.push_gated(vec![
+        ModelEvent::Start {
+            model_call_id: "call-1".into(),
+        },
+        ModelEvent::TextStart,
+        ModelEvent::TextDelta("first answer".into()),
+        ModelEvent::TextEnd,
+        ModelEvent::Done(FinishReason::Stop),
+    ]);
+    provider.push(vec![
+        ModelEvent::Start {
+            model_call_id: "call-2".into(),
+        },
+        ModelEvent::TextStart,
+        ModelEvent::TextDelta("followed up".into()),
+        ModelEvent::TextEnd,
+        ModelEvent::Done(FinishReason::Stop),
+    ]);
+    let prepared = prepared(&store).await;
+    let (port, mut client) = session(32);
+    let commands = client.commands.clone();
+    let engine = RunEngine::new(store, Arc::new(provider.clone()));
+    let run =
+        tokio::spawn(async move { engine.run(prepared, port, CancellationToken::new()).await });
+
+    while provider.requests().is_empty() {
+        if let Ok(Some(ClientEvent::StateCommitted(state))) =
+            tokio::time::timeout(Duration::from_millis(20), client.events.recv()).await
+        {
+            state.barrier.complete(Ok(()));
+        }
+    }
+    let (delivered, mut delivery) = oneshot::channel();
+    commands
+        .send(ClientCommand::InsertMessages(
+            cursor_server::client::MessageInsertion {
+                messages: vec![cursor_server::model::RuntimeEvent {
+                    event_id: "background:finished".into(),
+                    text: "background work finished".into(),
+                }
+                .into_message()],
+                delivered,
+            },
+        ))
+        .await
+        .unwrap();
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), &mut delivery)
+            .await
+            .is_err()
+    );
+
+    first_ready.notify_one();
+    while let Some(event) = client.events.recv().await {
+        match event {
+            ClientEvent::StateCommitted(state) => state.barrier.complete(Ok(())),
+            ClientEvent::Ended(outcome) => {
+                assert_eq!(outcome, RunOutcome::Completed);
+                break;
+            }
+            _ => {}
+        }
+    }
+    assert_eq!(run.await.unwrap(), RunOutcome::Completed);
+    delivery.await.unwrap();
+
+    let requests = provider.requests();
+    assert_eq!(requests.len(), 2);
+    let history = &requests[1].history;
+    assert!(matches!(
+        history[1].role,
+        cursor_server::model::Role::Assistant
+    ));
+    assert_eq!(history[2].message_id, "runtime:background:finished");
 }
 
 #[tokio::test]

@@ -64,9 +64,17 @@ pub async fn update(
 
 pub async fn test(
     State(service): State<ControlService>,
-    Path(model_hash): Path<String>,
+    Path((model_hash, test_id)): Path<(String, String)>,
 ) -> Result<Json<ModelConnectivityResult>> {
-    Ok(Json(service.test_model(&model_hash).await?))
+    Ok(Json(service.test_model(&model_hash, &test_id).await?))
+}
+
+pub async fn cancel(
+    State(service): State<ControlService>,
+    Path((_model_hash, test_id)): Path<(String, String)>,
+) -> Result<StatusCode> {
+    service.cancel_model_test(&test_id);
+    Ok(StatusCode::NO_CONTENT)
 }
 
 pub async fn discover(

@@ -1,75 +1,62 @@
-import { ArcElement, Chart as ChartJS, Tooltip, type ChartOptions, type ScriptableContext } from "chart.js";
-import { useMemo } from "react";
-import { Doughnut } from "react-chartjs-2";
+import type { EChartsCoreOption } from "echarts/core";
+import { useEffect, useMemo, useState } from "react";
+import { EChart } from "../charts/EChart";
 import styles from "./CacheHitRateChart.module.scss";
 
-ChartJS.register(ArcElement, Tooltip);
+const valueColor = "#40c463";
+const trackColor = "rgba(139, 148, 158, 0.20)";
 
-type SegmentRadius = number | {
-  outerStart: number;
-  outerEnd: number;
-  innerStart: number;
-  innerEnd: number;
-};
-
-function chartColor(context: ScriptableContext<"doughnut">) {
-  const styles = getComputedStyle(context.chart.canvas);
-  const variable = context.dataIndex === 0 ? "--cache-hit-value-color" : "--cache-hit-track-color";
-  return styles.getPropertyValue(variable).trim();
-}
-
-function segmentBorderRadius(percentage: number, dataIndex: number): SegmentRadius {
-  const radius = 5;
-
-  if (percentage <= 0) {
-    return dataIndex === 1
-      ? { outerStart: radius, outerEnd: radius, innerStart: radius, innerEnd: radius }
-      : 0;
-  }
-
-  if (percentage >= 100) {
-    return dataIndex === 0
-      ? { outerStart: radius, outerEnd: radius, innerStart: radius, innerEnd: radius }
-      : 0;
-  }
-
-  return dataIndex === 0
-    ? { outerStart: radius, outerEnd: 0, innerStart: radius, innerEnd: 0 }
-    : { outerStart: 0, outerEnd: radius, innerStart: 0, innerEnd: radius };
-}
-
-const options: ChartOptions<"doughnut"> = {
-  responsive: true,
-  maintainAspectRatio: false,
-  cutout: "82%",
-  rotation: -90,
-  circumference: 180,
-  animation: { duration: 450 },
-  events: [],
-  plugins: {
-    legend: { display: false },
-    tooltip: { enabled: false },
-  },
-};
-
-export function CacheHitRateChart({ rate }: { rate: number }) {
+export function CacheHitRateChart({ rate, animationKey = 0 }: { rate: number; animationKey?: number }) {
   const finiteRate = Number.isFinite(rate) ? rate : 0;
   const percentage = Math.max(0, Math.min(100, finiteRate * 100));
+  const [displayedPercentage, setDisplayedPercentage] = useState(0);
   const label = Number.isFinite(rate) ? `${percentage.toFixed(2)}%` : "--";
-  const data = useMemo(() => ({
-    labels: [t("命中"), t("未命中")],
-    datasets: [{
-      data: [percentage, Math.max(0, 100 - percentage)],
-      backgroundColor: chartColor,
-      borderWidth: 0,
-      hoverBorderWidth: 0,
-      selfJoin: false,
-      borderRadius: (context: ScriptableContext<"doughnut">) => segmentBorderRadius(percentage, context.dataIndex),
+
+  useEffect(() => {
+    setDisplayedPercentage(0);
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setDisplayedPercentage(percentage));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [animationKey, percentage]);
+
+  const option = useMemo<EChartsCoreOption>(() => ({
+    animationDuration: 0,
+    animationDurationUpdate: displayedPercentage > 0 ? 1_000 : 0,
+    animationEasing: "cubicOut",
+    animationEasingUpdate: "cubicOut",
+    series: [{
+      type: "gauge",
+      min: 0,
+      max: 100,
+      startAngle: 180,
+      endAngle: 0,
+      center: ["50%", "50%"],
+      radius: "90%",
+      silent: true,
+      pointer: { show: false },
+      progress: {
+        show: true,
+        roundCap: true,
+        width: 11,
+        itemStyle: { color: displayedPercentage > 0 ? valueColor : "transparent" },
+      },
+      axisLine: {
+        roundCap: true,
+        lineStyle: { width: 11, color: [[1, trackColor]] },
+      },
+      axisTick: { show: false },
+      splitLine: { show: false },
+      axisLabel: { show: false },
+      anchor: { show: false },
+      title: { show: false },
+      detail: { show: false },
+      data: [{ value: displayedPercentage }],
     }],
-  }), [percentage]);
+  }), [displayedPercentage]);
 
   return <div className={styles.root} role="img" aria-label={t("缓存命中率 {rate}", { rate: label })}>
-    <Doughnut className={styles.canvas} data={data} options={options} />
+    <EChart className={styles.chart} option={option} />
     <div className={styles.label}>{label}</div>
   </div>;
 }

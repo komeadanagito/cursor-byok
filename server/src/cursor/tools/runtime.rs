@@ -338,6 +338,18 @@ impl CursorToolRuntime {
         ids
     }
 
+    pub async fn running_task_exec_id(&self, call_id: &str) -> Option<u32> {
+        self.execs
+            .lock()
+            .await
+            .iter()
+            .filter_map(|(id, entry)| {
+                (entry.call.call_id == call_id && entry.call.name.eq_ignore_ascii_case("Task"))
+                    .then_some(*id)
+            })
+            .min()
+    }
+
     fn next_id(&self) -> Result<u32> {
         self.next_id
             .fetch_add(1, Ordering::Relaxed)

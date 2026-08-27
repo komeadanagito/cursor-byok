@@ -6,11 +6,13 @@ import styles from "./CursorModelTestResult.module.scss";
 
 export type CursorModelTestState =
   | { status: "success"; result: ModelConnectivityResult }
-  | { status: "error"; error: string };
+  | { status: "error"; error: string }
+  | { status: "cancelled" };
 
 export function CursorModelTestResult({ state, testing = false }: { state?: CursorModelTestState; testing?: boolean }) {
   if (testing) return <div className={`${styles.root} ${styles.testing}`}><span className={styles.summary}>{t("测试中…")}</span></div>;
   if (!state) return <div className={`${styles.root} ${styles.idle}`}><span className={styles.summary}>{t("未测试")}</span></div>;
+  if (state.status === "cancelled") return <div className={`${styles.root} ${styles.idle}`}><span className={styles.summary}>{t("测试已取消")}</span></div>;
 
   const success = state.status === "success";
   const error = success ? "" : displayTestError(state.error);

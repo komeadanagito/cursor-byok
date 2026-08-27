@@ -283,7 +283,9 @@ async fn text_turn_runs_from_bidi_request_through_checkpoint_and_end_stream() {
         .unwrap();
     assert!(messages[0].message_id.starts_with("request-context:"));
     assert_eq!(messages[0].role, Role::User);
-    assert_eq!(messages[1].message_id, "runtime:cursor:user:user");
+    assert!(messages[1]
+        .message_id
+        .starts_with("runtime:cursor:user:user:"));
     assert_eq!(messages[1].role, Role::User);
     assert_eq!(
         messages.len(),

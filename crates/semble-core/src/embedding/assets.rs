@@ -29,24 +29,37 @@ impl ModelAssets {
     }
 
     pub fn ensure(cache_root: &Path) -> Result<Self> {
+        let client = reqwest::blocking::Client::builder()
+            .build()
+            .map_err(|error| Error::ModelAsset(error.to_string()))?;
+        Self::ensure_with_client(cache_root, &client)
+    }
+
+    pub fn ensure_with_client(
+        cache_root: &Path,
+        client: &reqwest::blocking::Client,
+    ) -> Result<Self> {
         let directory = cache_root.join("models/potion-code-16M-v2");
         fs::create_dir_all(&directory).map_err(|error| Error::io(&directory, error))?;
         let model = Self::model_path(cache_root);
         let tokenizer = directory.join("tokenizer.json");
-        ensure_asset(&model, MODEL_URL, MODEL_SHA256)?;
-        ensure_asset(&tokenizer, TOKENIZER_URL, TOKENIZER_SHA256)?;
+        ensure_asset(client, &model, MODEL_URL, MODEL_SHA256)?;
+        ensure_asset(client, &tokenizer, TOKENIZER_URL, TOKENIZER_SHA256)?;
         Ok(Self { model, tokenizer })
     }
 }
 
-fn ensure_asset(path: &Path, url: &str, expected: &str) -> Result<()> {
+fn ensure_asset(
+    client: &reqwest::blocking::Client,
+    path: &Path,
+    url: &str,
+    expected: &str,
+) -> Result<()> {
     if path.is_file() && digest(path)? == expected {
         return Ok(());
     }
     let temporary = path.with_extension(format!("tmp-{}", std::process::id()));
-    let response = reqwest::blocking::Client::builder()
-        .build()
-        .map_err(|error| Error::ModelAsset(error.to_string()))?
+    let response = client
         .get(url)
         .send()
         .and_then(reqwest::blocking::Response::error_for_status)

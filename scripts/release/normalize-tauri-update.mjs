@@ -36,22 +36,26 @@ export function normalizeTauriUpdate(manifest, release, repository, version) {
     throw new Error("updater manifest has no platforms");
   }
 
-  const assetsByApiUrl = new Map();
+  const assetsBySourceUrl = new Map();
   const publicAssetUrls = new Set();
   for (const asset of release.assets ?? []) {
-    if (!asset?.id || !asset?.browser_download_url) continue;
-    assetsByApiUrl.set(
+    if (!asset?.id || !asset?.name) continue;
+    const publicUrl = `https://github.com/${repository}/releases/download/v${version}/${encodeURIComponent(asset.name)}`;
+    assetsBySourceUrl.set(
       `https://api.github.com/repos/${repository}/releases/assets/${asset.id}`,
-      asset.browser_download_url,
+      publicUrl,
     );
-    publicAssetUrls.add(asset.browser_download_url);
+    if (asset.browser_download_url) {
+      assetsBySourceUrl.set(asset.browser_download_url, publicUrl);
+    }
+    publicAssetUrls.add(publicUrl);
   }
 
   for (const [platform, entry] of Object.entries(manifest.platforms)) {
     if (!entry?.signature || !entry?.url) {
       throw new Error(`updater platform ${platform} is missing its URL or signature`);
     }
-    const publicUrl = assetsByApiUrl.get(entry.url) ?? entry.url;
+    const publicUrl = assetsBySourceUrl.get(entry.url) ?? entry.url;
     if (!publicAssetUrls.has(publicUrl)) {
       throw new Error(`updater platform ${platform} references an unknown release asset`);
     }

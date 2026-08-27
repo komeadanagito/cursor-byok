@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use tokio::sync::OnceCell;
 
-use crate::{model::ToolCall, Error, Result};
+use crate::{model::ToolCall, store::Store, Error, Result};
 
 use super::ToolStart;
 use crate::cursor::tools::{
@@ -52,7 +52,11 @@ struct FindRelatedArguments {
     content: ContentSelection,
 }
 
-pub(super) fn start(results: &ToolResultSender, call: &ToolCall) -> Result<ToolStart> {
+pub(super) fn start(
+    results: &ToolResultSender,
+    call: &ToolCall,
+    store: Option<Store>,
+) -> Result<ToolStart> {
     let operation = match super::normalized(&call.name).as_str() {
         "semblesearch" => Operation::Search(serde_json::from_value(call.arguments.clone())?),
         "semblefindrelated" => {
@@ -69,7 +73,7 @@ pub(super) fn start(results: &ToolResultSender, call: &ToolCall) -> Result<ToolS
     let results = results.clone();
     let started_at_ms = now_ms();
     tokio::spawn(async move {
-        let output = execute(operation).await;
+        let output = execute(operation, store).await;
         match result::semble(&call, started_at_ms, output) {
             Ok(completion) => results.send(completion),
             Err(error) => results.send_error(error),
@@ -86,8 +90,8 @@ enum Operation {
     FindRelated(FindRelatedArguments),
 }
 
-async fn execute(operation: Operation) -> std::result::Result<Value, String> {
-    let engine = engine().await.map_err(|error| error.to_string())?;
+async fn execute(operation: Operation, store: Option<Store>) -> std::result::Result<Value, String> {
+    let engine = engine(store).await.map_err(|error| error.to_string())?;
     tokio::task::spawn_blocking(move || match operation {
         Operation::Search(arguments) => engine
             .search(SearchRequest {
@@ -114,14 +118,21 @@ async fn execute(operation: Operation) -> std::result::Result<Value, String> {
     .map_err(|error| error.to_string())
 }
 
-async fn engine() -> Result<Arc<SearchEngine>> {
+async fn engine(store: Option<Store>) -> Result<Arc<SearchEngine>> {
     ENGINE
-        .get_or_try_init(|| async {
-            tokio::task::spawn_blocking(|| SearchEngine::load_default(SembleConfig::default()))
-                .await
-                .map_err(|error| Error::Config(format!("load Semble search engine: {error}")))?
-                .map(Arc::new)
-                .map_err(|error| Error::Config(format!("load Semble search engine: {error}")))
+        .get_or_try_init(|| async move {
+            let builder = match store {
+                Some(store) => crate::network::blocking_client_builder(&store).await?,
+                None => reqwest::blocking::Client::builder().use_native_tls(),
+            };
+            tokio::task::spawn_blocking(move || {
+                let client = builder.build()?;
+                SearchEngine::load_default_with_client(SembleConfig::default(), &client)
+                    .map(Arc::new)
+                    .map_err(|error| Error::Config(format!("load Semble search engine: {error}")))
+            })
+            .await
+            .map_err(|error| Error::Config(format!("load Semble search engine: {error}")))?
         })
         .await
         .cloned()

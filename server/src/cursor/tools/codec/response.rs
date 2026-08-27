@@ -130,6 +130,53 @@ pub async fn client_event(
     Ok(event)
 }
 
+pub async fn stream_closed(id: u32, pending: &CursorToolRuntime) -> Result<Option<ToolCompletion>> {
+    let Some(entry) = pending.take_exec(id).await else {
+        return Ok(None);
+    };
+    let error = "Cursor Exec stream closed before returning a terminal result";
+    if entry.call.name.eq_ignore_ascii_case("Shell") {
+        let command = entry
+            .call
+            .arguments
+            .get("command")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let working_directory = entry
+            .call
+            .arguments
+            .get("working_directory")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        return Ok(Some(result::from_exec(
+            entry,
+            &pb::exec_client_message::Message::ShellResult(pb::ShellResult {
+                result: Some(pb::shell_result::Result::SpawnError(pb::ShellSpawnError {
+                    command,
+                    working_directory,
+                    error: error.into(),
+                })),
+                ..Default::default()
+            }),
+        )?));
+    }
+    let rendered = match &entry.stage {
+        ExecStage::DynamicMcp(definition) => {
+            interaction::render_dynamic_mcp(&entry.call, definition, false)
+        }
+        _ => interaction::render_tool_call(&entry.call, false)?,
+    };
+    Ok(Some(ToolCompletion::from_rendered(
+        &entry.call,
+        entry.started_at_ms,
+        error.into(),
+        true,
+        rendered,
+    )?))
+}
+
 async fn advance_await(
     entry: PendingExec,
     result: &pb::exec_client_message::Message,

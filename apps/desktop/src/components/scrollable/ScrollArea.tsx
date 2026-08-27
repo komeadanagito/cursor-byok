@@ -97,6 +97,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
 
     const hostRef = useRef<HTMLDivElement | null>(null)
     const localViewportRef = useRef<HTMLDivElement | null>(null)
+    const localContentRef = useRef<HTMLDivElement | null>(null)
     const trackRef = useRef<HTMLDivElement | null>(null)
     const thumbRef = useRef<HTMLDivElement | null>(null)
     const dragRef = useRef<{
@@ -107,6 +108,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
 
     const { state, api, metricsRef, scrollToNow } = useScrollableModel({
       viewportRef: localViewportRef,
+      contentRef: localContentRef,
       trackRef,
       thumbRef,
       contentHeight,
@@ -132,7 +134,10 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
     )
 
     const setContentRef = useCallback(
-      (node: HTMLDivElement | null) => assignRef(contentRef, node),
+      (node: HTMLDivElement | null) => {
+        localContentRef.current = node
+        assignRef(contentRef, node)
+      },
       [contentRef]
     )
 

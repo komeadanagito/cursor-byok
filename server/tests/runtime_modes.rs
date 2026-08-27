@@ -19,6 +19,150 @@ use cursor_server::{
 use prost::Message;
 
 #[tokio::test]
+async fn retrying_the_same_edited_input_reuses_its_initial_branch() {
+    let (_directory, store) = fixtures::temp_store().await;
+    let provider = fake_provider::FakeProvider::default();
+    for (call, answer) in [
+        ("model", "answer"),
+        ("model-retry", "retry answer"),
+        ("model-edit", "edited answer"),
+        ("model-context-edit", "context edited answer"),
+    ] {
+        provider.push(vec![
+            ModelEvent::Start {
+                model_call_id: call.into(),
+            },
+            ModelEvent::TextStart,
+            ModelEvent::TextDelta(answer.into()),
+            ModelEvent::TextEnd,
+            ModelEvent::Done(FinishReason::Stop),
+        ]);
+    }
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let registry = CursorSessionRegistry::new(
+        store.clone(),
+        Arc::new(provider.clone()),
+        PromptCompiler::new(assets),
+        Default::default(),
+    );
+
+    for (request_id, text, visible_file) in [
+        ("edited-input", "explain this", "/workspace/src/main.rs"),
+        (
+            "edited-input-retry",
+            "explain this",
+            "/workspace/src/main.rs",
+        ),
+        (
+            "edited-input-changed",
+            "explain the edited version",
+            "/workspace/src/main.rs",
+        ),
+        (
+            "edited-input-context-changed",
+            "explain this",
+            "/workspace/src/edited.rs",
+        ),
+    ] {
+        let handle = registry.get_or_create(request_id).await.unwrap();
+        let mut output = handle.subscribe();
+        let mut request = run_request(references(&store).await);
+        let Some(pb::agent_client_message::Message::RunRequest(run)) = request.message.as_mut()
+        else {
+            unreachable!("run_request always returns a RunRequest")
+        };
+        let Some(pb::conversation_action::Action::UserMessageAction(action)) = run
+            .action
+            .as_mut()
+            .and_then(|action| action.action.as_mut())
+        else {
+            unreachable!("run_request always contains a UserMessageAction")
+        };
+        action
+            .user_message
+            .as_mut()
+            .expect("run_request always contains a UserMessage")
+            .text = text.into();
+        let user = action
+            .user_message
+            .as_mut()
+            .expect("run_request always contains a UserMessage");
+        let Some(pb::invocation_context::Data::IdeState(ide)) = user
+            .selected_context
+            .as_mut()
+            .and_then(|selected| selected.invocation_context.as_mut())
+            .and_then(|invocation| invocation.data.as_mut())
+        else {
+            unreachable!("run_request always contains IDE state")
+        };
+        ide.visible_files[0].path = visible_file.into();
+        handle
+            .command(CursorCommand::Append {
+                seqno: 0,
+                message: Box::new(request),
+            })
+            .await
+            .unwrap();
+        let mut seqno = 1;
+        loop {
+            let frame = tokio::time::timeout(std::time::Duration::from_secs(5), output.recv())
+                .await
+                .unwrap()
+                .expect("retry must finish without closing the stream early");
+            let (flags, payload) = connect::decode_frames(&frame).unwrap().pop().unwrap();
+            if flags & connect::END_STREAM_FLAG != 0 {
+                let end = serde_json::from_slice::<serde_json::Value>(&payload).unwrap();
+                assert_eq!(end, serde_json::json!({}));
+                break;
+            }
+            let message = pb::AgentServerMessage::decode(payload).unwrap();
+            if let Some(pb::agent_server_message::Message::KvServerMessage(kv)) = message.message {
+                handle
+                    .command(CursorCommand::Append {
+                        seqno,
+                        message: Box::new(kv_ack(kv.id)),
+                    })
+                    .await
+                    .unwrap();
+                seqno += 1;
+            }
+        }
+    }
+
+    let requests = provider.requests();
+    assert_eq!(requests.len(), 4);
+    assert_eq!(requests[1].history, requests[0].history);
+    assert_eq!(requests[2].history.len(), requests[0].history.len());
+    assert_ne!(
+        requests[2].history.last().unwrap().message_id,
+        requests[0].history.last().unwrap().message_id
+    );
+    let ProjectedContent::Parts(parts) = &requests[2].history.last().unwrap().content else {
+        panic!("edited runtime message must use typed parts")
+    };
+    let [ContentPart::Text { text }] = parts.as_slice() else {
+        panic!("this fixture has no images")
+    };
+    assert!(text.contains("<user_query>\nexplain the edited version\n</user_query>"));
+    assert_ne!(
+        requests[3].history.last().unwrap().message_id,
+        requests[0].history.last().unwrap().message_id
+    );
+    let ProjectedContent::Parts(parts) = &requests[3].history.last().unwrap().content else {
+        panic!("context-edited runtime message must use typed parts")
+    };
+    let [ContentPart::Text { text }] = parts.as_slice() else {
+        panic!("this fixture has no images")
+    };
+    assert!(text.contains("/workspace/src/edited.rs"));
+}
+
+#[tokio::test]
 async fn unchanged_request_context_is_not_repeated_and_preserves_the_provider_prefix() {
     let (_directory, store) = fixtures::temp_store().await;
     let first_references = references(&store).await;
@@ -115,10 +259,9 @@ async fn unchanged_request_context_is_not_repeated_and_preserves_the_provider_pr
     let [ContentPart::Text { text: context_text }] = context_parts.as_slice() else {
         panic!("request context message must contain one text part")
     };
-    assert_eq!(
-        request.history[1].message_id,
-        "runtime:cursor:user:wire-user"
-    );
+    assert!(request.history[1]
+        .message_id
+        .starts_with("runtime:cursor:user:wire-user:"));
     assert!(!request.prompt.instructions.contains("workspace rule"));
     assert!(!request.prompt.instructions.contains("<mcp_meta_tools>"));
     let ProjectedContent::Parts(parts) = &request.history[1].content else {

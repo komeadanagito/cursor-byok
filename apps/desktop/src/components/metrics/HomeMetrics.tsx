@@ -71,7 +71,7 @@ function InfoTooltip({ content }: { content: string }) {
   </>;
 }
 
-export function HomeMetrics({ data }: { data: HomeMetricsData }) {
+export function HomeMetrics({ data, refreshVersion = 0 }: { data: HomeMetricsData; refreshVersion?: number }) {
   const inputTokens = Math.max(0, data.promptTokens - data.cacheReadTokens - data.cacheWriteTokens);
   const outputTokens = Math.max(0, data.tokenUsage - data.promptTokens);
   const defaultCacheHitRate = calculateRate(data.cacheReadTokens, data.cacheReadTokens + inputTokens);
@@ -148,7 +148,7 @@ export function HomeMetrics({ data }: { data: HomeMetricsData }) {
     <section className={styles.root} aria-label={t("调用统计")}>
       <article className={styles.metric}>
         <div className={styles.label}>{t("缓存命中率")}<InfoTooltip content={cacheTooltip} /></div>
-        <CacheHitRateChart rate={defaultCacheHitRate ?? 0} />
+        <CacheHitRateChart rate={defaultCacheHitRate ?? 0} animationKey={refreshVersion} />
       </article>
       <article className={styles.metric}>
         <div className={styles.label}>{t("LLM 调用")}<InfoTooltip content={callsTooltip} /></div>

@@ -14,6 +14,8 @@ use reqwest::{
 use tokio::{net::lookup_host, time::timeout};
 use url::{Host, Url};
 
+use crate::store::Store;
+
 const MAX_RESPONSE_SIZE: usize = 5 * 1024 * 1024;
 const MAX_REDIRECTS: usize = 5;
 const FETCH_TIMEOUT: Duration = Duration::from_secs(30);
@@ -38,12 +40,27 @@ enum NetworkPolicy {
 #[derive(Clone)]
 pub struct WebFetch {
     network: NetworkPolicy,
+    client: FetchClient,
+}
+
+#[derive(Clone)]
+enum FetchClient {
+    Managed(Store),
+    Direct,
 }
 
 impl WebFetch {
     pub fn built_in() -> Self {
         Self {
             network: NetworkPolicy::PublicOnly,
+            client: FetchClient::Direct,
+        }
+    }
+
+    pub(crate) fn managed(store: Store) -> Self {
+        Self {
+            network: NetworkPolicy::PublicOnly,
+            client: FetchClient::Managed(store),
         }
     }
 
@@ -51,6 +68,7 @@ impl WebFetch {
     pub(crate) fn for_test() -> Self {
         Self {
             network: NetworkPolicy::Any,
+            client: FetchClient::Direct,
         }
     }
 
@@ -111,7 +129,13 @@ impl WebFetch {
             return Err(failure("URL resolves to a non-public address"));
         }
 
-        let mut builder = reqwest::Client::builder()
+        let builder = match &self.client {
+            FetchClient::Managed(store) => crate::network::client_builder(store)
+                .await
+                .map_err(|error| failure(format!("HTTP client failed: {error}")))?,
+            FetchClient::Direct => reqwest::Client::builder().use_native_tls(),
+        };
+        let mut builder = builder
             .redirect(Policy::none())
             .connect_timeout(Duration::from_secs(10));
         if domain {

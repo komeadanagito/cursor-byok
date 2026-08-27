@@ -363,7 +363,8 @@ export const api = {
   importV0049Models: () => request<LegacyModelImportResult>("/models/import-v0049", { method: "POST" }),
   updateModel: (hash: string, model: ModelInput) => request<Model>(`/models/${hash}`, { method: "PUT", body: JSON.stringify(model) }),
   deleteModel: (hash: string) => request<void>(`/models/${hash}`, { method: "DELETE" }),
-  testModel: (hash: string) => request<ModelConnectivityResult>(`/models/${hash}/test`, { method: "POST" }),
+  testModel: (hash: string, testId: string, signal?: AbortSignal) => request<ModelConnectivityResult>(`/models/${hash}/test/${encodeURIComponent(testId)}`, { method: "POST", signal }),
+  cancelModelTest: (hash: string, testId: string) => request<void>(`/models/${hash}/test/${encodeURIComponent(testId)}`, { method: "DELETE" }),
   startGrokDeviceAuth: (clientId?: string) => request<GrokDeviceCodeResponse>("/auth/grok/device-code", { method: "POST", body: JSON.stringify({ client_id: clientId }) }),
   pollGrokDeviceAuth: (deviceCode: string, clientId?: string) => request<GrokTokenPollResponse>("/auth/grok/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode, client_id: clientId }) }),
   startCodexDeviceAuth: (clientId?: string) => request<CodexDeviceCodeResponse>("/auth/codex/device-code", { method: "POST", body: JSON.stringify({ client_id: clientId }) }),
@@ -386,8 +387,8 @@ export const api = {
       params.set("end_ms", String(filter.endMs));
       if (filter.modelHashes?.length) params.set("model_hashes", JSON.stringify(filter.modelHashes));
     }
-    const query = params.size ? `?${params}` : "";
-    return request<Overview>(`/overview${query}`);
+    const query = params.toString();
+    return request<Overview>(`/overview${query ? `?${query}` : ""}`);
   },
   cursorHarness: () => request<CursorHarnessStatus>("/harness/cursor/status"),
   initializeCursorCa: () => request<CursorHarnessStatus>("/harness/cursor/ca/initialize", { method: "POST" }),

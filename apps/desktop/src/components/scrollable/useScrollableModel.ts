@@ -33,6 +33,7 @@ export interface ScrollMetrics extends ScrollAreaState {
 
 interface UseScrollableModelOptions {
   viewportRef: RefObject<HTMLDivElement | null>
+  contentRef: RefObject<HTMLDivElement | null>
   trackRef: RefObject<HTMLDivElement | null>
   thumbRef: RefObject<HTMLDivElement | null>
   contentHeight?: number
@@ -131,6 +132,7 @@ function applyThumbStyle(
 export function useScrollableModel(options: UseScrollableModelOptions) {
   const {
     viewportRef,
+    contentRef,
     trackRef,
     thumbRef,
     contentHeight,
@@ -319,28 +321,30 @@ export function useScrollableModel(options: UseScrollableModelOptions) {
 
   useEffect(() => {
     const element = viewportRef.current
+    const content = contentRef.current
     const track = trackRef.current
-    if (!element || !track) return
+    if (!element || !content || !track) return
 
     const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) {
+      const viewportEntry = entries.find((entry) => entry.target === element)
+      if (viewportEntry) {
         onViewportResizeRef.current?.({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
+          width: viewportEntry.contentRect.width,
+          height: viewportEntry.contentRect.height,
         })
       }
       snapshot(false)
     })
 
     resizeObserver.observe(element)
+    resizeObserver.observe(content)
     resizeObserver.observe(track)
     snapshot(false)
 
     return () => {
       resizeObserver.disconnect()
     }
-  }, [snapshot, trackRef, viewportRef])
+  }, [contentRef, snapshot, trackRef, viewportRef])
 
   useEffect(() => {
     snapshot(false)

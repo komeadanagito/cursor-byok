@@ -1,4 +1,9 @@
-use std::{sync::Arc, time::Instant};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+    time::Instant,
+};
+
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use futures_util::StreamExt;
@@ -33,14 +38,15 @@ pub struct ControlService {
     store: Store,
     cursor_harness: CursorHarness,
     provider: Arc<dyn Provider>,
+    model_tests: Arc<Mutex<BTreeMap<String, CancellationToken>>>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct DiscoveredModels {
     pub models: Vec<DiscoveredModel>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct DiscoveredModel {
     pub id: String,
     pub context_window_tokens: Option<u64>,
@@ -148,6 +154,7 @@ impl ControlService {
             cursor_harness: CursorHarness::new(store.clone())?,
             store,
             provider,
+            model_tests: Arc::new(Mutex::new(BTreeMap::new())),
         })
     }
 
@@ -253,7 +260,46 @@ impl ControlService {
         self.store.update_model(model_hash, input).await
     }
 
-    pub async fn test_model(&self, model_hash: &str) -> Result<ModelConnectivityResult> {
+    pub async fn test_model(
+        &self,
+        model_hash: &str,
+        test_id: &str,
+    ) -> Result<ModelConnectivityResult> {
+        let cancellation = CancellationToken::new();
+        let cancellation = {
+            let mut tests = self
+                .model_tests
+                .lock()
+                .expect("model test registry mutex poisoned");
+            tests
+                .entry(test_id.to_owned())
+                .or_insert_with(|| cancellation.clone())
+                .clone()
+        };
+        let result = self.run_model_test(model_hash, cancellation).await;
+        self.model_tests
+            .lock()
+            .expect("model test registry mutex poisoned")
+            .remove(test_id);
+        result
+    }
+
+    pub fn cancel_model_test(&self, test_id: &str) {
+        let cancellation = {
+            let mut tests = self
+                .model_tests
+                .lock()
+                .expect("model test registry mutex poisoned");
+            tests.entry(test_id.to_owned()).or_default().clone()
+        };
+        cancellation.cancel();
+    }
+
+    async fn run_model_test(
+        &self,
+        model_hash: &str,
+        cancellation: CancellationToken,
+    ) -> Result<ModelConnectivityResult> {
         const TEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(45);
         const TEST_PROMPT: &str = "Output the numbers 1 through 120 separated by a single space. No commas, no newlines, no explanation.";
 
@@ -265,12 +311,11 @@ impl ControlService {
         let mut model = ModelSpec::new(model_hash);
         configured.configure(&mut model);
         model.max_output_tokens = Some(configured.max_output_tokens().unwrap_or(65_536));
-        let test_id = format!("model-test-{}", uuid::Uuid::new_v4());
-        let call_id = test_id.clone();
+        let call_id = format!("model-test-{}", uuid::Uuid::new_v4());
         let invocation = ModelInvocation {
-            call_id: test_id.clone(),
-            run_id: test_id.clone(),
-            conversation_id: test_id,
+            call_id: call_id.clone(),
+            run_id: call_id.clone(),
+            conversation_id: call_id.clone(),
             provider_call_index: 0,
             request: ModelRequest {
                 prompt: PromptSpec {
@@ -287,7 +332,6 @@ impl ControlService {
                 }],
             },
         };
-        let cancellation = CancellationToken::new();
         let started = Instant::now();
         let mut first_text_at = None;
         let mut output_tokens = None;
@@ -314,6 +358,9 @@ impl ControlService {
                     ModelEvent::Done(_) => finished = true,
                     _ => {}
                 }
+            }
+            if cancellation.is_cancelled() {
+                return Err(Error::Cancelled);
             }
             if !finished {
                 return Err(Error::Protocol(
@@ -669,23 +716,77 @@ fn model_discovery_url(base_url: &str) -> Result<Url> {
             "model request URL must contain a host".into(),
         ));
     }
-    url.set_path("/v1/models");
+    // 在现有路径上追加，而不是整段替换：多数编程套餐的 API 挂在子路径下
+    // （/api/anthropic、/coding、/api/paas/v4 等），直接 set_path("/v1/models")
+    // 会把这些前缀吃掉，发现请求必然 404
+    let path = url.path().trim_end_matches('/');
+    let last = path.rsplit('/').next().unwrap_or("");
+    let versioned = last.len() > 1
+        && last.starts_with('v')
+        && last[1..].bytes().all(|byte| byte.is_ascii_digit());
+    let new_path = if let Some(parent) = path.strip_suffix("/chat/completions") {
+        // 完整请求 URL：剥掉端点段（chat/completions 是两段），换成 models
+        format!("{parent}/models")
+    } else if let Some(parent) = path
+        .strip_suffix("/responses")
+        .or_else(|| path.strip_suffix("/messages"))
+        .or_else(|| path.strip_suffix("/completions"))
+    {
+        format!("{parent}/models")
+    } else if path.is_empty() {
+        "/v1/models".to_string()
+    } else if versioned {
+        // 已带版本段（/v1、/api/v3、/api/paas/v4）：只补 models
+        format!("{path}/models")
+    } else {
+        format!("{path}/v1/models")
+    };
+    url.set_path(&new_path);
     url.set_query(None);
     url.set_fragment(None);
     Ok(url)
 }
 
-fn openai_models_request_url(base_url: &str) -> Result<Url> {
-    let url = Url::parse(base_url)
+fn model_discovery_urls(base_url: &str) -> Result<Vec<Url>> {
+    let mut configured = Url::parse(base_url)
         .map_err(|error| Error::Config(format!("invalid model request URL: {error}")))?;
-    if url
+    if configured
         .host_str()
         .is_some_and(|host| host.eq_ignore_ascii_case("chatgpt.com"))
     {
-        return Url::parse("https://chatgpt.com/backend-api/codex/models?client_version=1.0.0")
-            .map_err(|error| Error::Config(format!("invalid Codex models URL: {error}")));
+        return Ok(vec![Url::parse("https://chatgpt.com/backend-api/codex/models?client_version=1.0.0")
+            .map_err(|error| Error::Config(format!("invalid Codex models URL: {error}")))?]);
     }
-    model_discovery_url(base_url)
+    let path = configured.path().trim_end_matches('/');
+    let tail = path.rsplit('/').next().unwrap_or_default();
+    if matches!(tail.to_ascii_lowercase().as_str(), "model" | "models") {
+        configured.set_query(None);
+        configured.set_fragment(None);
+        return Ok(vec![configured]);
+    }
+
+    let primary = model_discovery_url(base_url)?;
+    let versioned = tail.len() > 1
+        && tail.starts_with('v')
+        && tail[1..].bytes().all(|byte| byte.is_ascii_digit());
+    let complete_request_url = [
+        "/chat/completions",
+        "/responses",
+        "/messages",
+        "/completions",
+    ]
+    .iter()
+    .any(|suffix| path.to_ascii_lowercase().ends_with(suffix));
+    if versioned || complete_request_url {
+        return Ok(vec![primary]);
+    }
+
+    let Some(prefix) = primary.path().strip_suffix("/v1/models") else {
+        return Ok(vec![primary]);
+    };
+    let mut fallback = primary.clone();
+    fallback.set_path(&format!("{prefix}/models"));
+    Ok(vec![primary, fallback])
 }
 
 async fn openai_models(
@@ -694,7 +795,22 @@ async fn openai_models(
     api_key: &str,
     custom_headers: &serde_json::Value,
 ) -> Result<Vec<DiscoveredModel>> {
-    let url = openai_models_request_url(base_url)?;
+    let mut last_error = None;
+    for url in model_discovery_urls(base_url)? {
+        match openai_models_at(client, url, api_key, custom_headers).await {
+            Ok(models) => return Ok(models),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(last_error.unwrap_or_else(|| Error::Provider("no model discovery URL available".into())))
+}
+
+async fn openai_models_at(
+    client: &reqwest::Client,
+    url: Url,
+    api_key: &str,
+    custom_headers: &serde_json::Value,
+) -> Result<Vec<DiscoveredModel>> {
     let mut request = client.get(url.clone());
     if !api_key.is_empty() {
         request = request.bearer_auth(api_key);
@@ -723,11 +839,27 @@ async fn anthropic_models(
     api_key: &str,
     custom_headers: &serde_json::Value,
 ) -> Result<Vec<DiscoveredModel>> {
+    let mut last_error = None;
+    for url in model_discovery_urls(base_url)? {
+        match anthropic_models_at(client, url, api_key, custom_headers).await {
+            Ok(models) => return Ok(models),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(last_error.unwrap_or_else(|| Error::Provider("no model discovery URL available".into())))
+}
+
+async fn anthropic_models_at(
+    client: &reqwest::Client,
+    url: Url,
+    api_key: &str,
+    custom_headers: &serde_json::Value,
+) -> Result<Vec<DiscoveredModel>> {
     let mut after_id = None::<String>;
     let mut found = Vec::new();
     loop {
         let mut request = client
-            .get(model_discovery_url(base_url)?)
+            .get(url.clone())
             .query(&[("limit", "100")])
             .header("anthropic-version", "2023-06-01");
         if !api_key.is_empty() {
@@ -862,15 +994,113 @@ mod tests {
     use tokio_util::sync::CancellationToken;
 
     use crate::{
-        model::{ModelConfigInput, ModelInvocation, ModelType, ProjectedContent},
+        model::{ModelConfig, ModelConfigInput, ModelInvocation, ModelType, ProjectedContent},
         provider::{FinishReason, ModelEvent, Provider, ProviderStream},
         store::Store,
     };
 
-    use super::ControlService;
+    use super::{model_discovery_url, model_discovery_urls, ControlService};
+
+    #[test]
+    fn model_discovery_url_appends_to_path() {
+        let cases = [
+            (
+                "https://api.deepseek.com",
+                "https://api.deepseek.com/v1/models",
+            ),
+            (
+                "https://open.bigmodel.cn/api/anthropic",
+                "https://open.bigmodel.cn/api/anthropic/v1/models",
+            ),
+            (
+                "https://api.kimi.com/coding",
+                "https://api.kimi.com/coding/v1/models",
+            ),
+            (
+                "https://api.moonshot.cn/v1",
+                "https://api.moonshot.cn/v1/models",
+            ),
+            (
+                "https://ark.cn-beijing.volces.com/api/v3",
+                "https://ark.cn-beijing.volces.com/api/v3/models",
+            ),
+            (
+                "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+                "https://open.bigmodel.cn/api/coding/paas/v4/models",
+            ),
+        ];
+        for (base, expected) in cases {
+            assert_eq!(
+                model_discovery_url(base).unwrap().as_str(),
+                expected,
+                "base: {base}"
+            );
+        }
+    }
+
+    #[test]
+    fn model_discovery_urls_fall_back_without_a_version() {
+        let cases = [
+            (
+                "https://opencode.ai/zen/go/v1",
+                vec!["https://opencode.ai/zen/go/v1/models"],
+            ),
+            (
+                "https://opencode.ai/zen/go",
+                vec![
+                    "https://opencode.ai/zen/go/v1/models",
+                    "https://opencode.ai/zen/go/models",
+                ],
+            ),
+            (
+                "https://api.example.com/openai/v1/models",
+                vec!["https://api.example.com/openai/v1/models"],
+            ),
+        ];
+        for (base, expected) in cases {
+            let actual = model_discovery_urls(base)
+                .unwrap()
+                .into_iter()
+                .map(|url| url.to_string())
+                .collect::<Vec<_>>();
+            assert_eq!(actual, expected, "base: {base}");
+        }
+    }
+
+    #[tokio::test]
+    async fn openai_model_discovery_uses_the_unversioned_fallback() {
+        let app = axum::Router::new().route(
+            "/proxy/models",
+            axum::routing::get(|| async {
+                axum::Json(serde_json::json!({ "data": [{ "id": "model-a" }] }))
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+
+        let models = super::openai_models(
+            &reqwest::Client::new(),
+            &format!("http://{address}/proxy"),
+            "secret",
+            &serde_json::json!({}),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            models.into_iter().map(|m| m.id).collect::<Vec<_>>(),
+            vec!["model-a"]
+        );
+        server.abort();
+    }
 
     struct TestProvider {
         invocation: Arc<Mutex<Option<ModelInvocation>>>,
+    }
+
+    struct CancellationProvider {
+        started: Arc<tokio::sync::Notify>,
     }
 
     impl Provider for TestProvider {
@@ -896,17 +1126,23 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn connectivity_test_uses_the_configured_llm_provider() {
-        let directory = tempfile::tempdir().unwrap();
-        let store = Store::connect(&format!(
-            "sqlite://{}",
-            directory.path().join("control.db").display()
-        ))
-        .await
-        .unwrap();
-        let invocation = Arc::new(Mutex::new(None));
-        let model = store
+    impl Provider for CancellationProvider {
+        fn stream(
+            &self,
+            _invocation: ModelInvocation,
+            cancellation: CancellationToken,
+        ) -> ProviderStream {
+            let started = self.started.clone();
+            Box::pin(async_stream::try_stream! {
+                started.notify_one();
+                cancellation.cancelled().await;
+                if false { yield ModelEvent::TextStart; }
+            })
+        }
+    }
+
+    async fn create_test_model(store: &Store) -> ModelConfig {
+        store
             .create_model(&ModelConfigInput {
                 model_id: "reasoning-model".into(),
                 display_name: "Reasoning Model".into(),
@@ -931,7 +1167,20 @@ mod tests {
                 thinking_budget_tokens: None,
             })
             .await
-            .unwrap();
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn connectivity_test_uses_the_configured_llm_provider() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            directory.path().join("control.db").display()
+        ))
+        .await
+        .unwrap();
+        let invocation = Arc::new(Mutex::new(None));
+        let model = create_test_model(&store).await;
         let service = ControlService::new(
             store,
             Arc::new(TestProvider {
@@ -940,7 +1189,10 @@ mod tests {
         )
         .unwrap();
 
-        let result = service.test_model(&model.model_hash).await.unwrap();
+        let result = service
+            .test_model(&model.model_hash, "test-id")
+            .await
+            .unwrap();
 
         assert_eq!(result.output, "OK");
         assert_eq!(result.output_tokens, 2);
@@ -962,6 +1214,42 @@ mod tests {
         ));
     }
 
+    #[tokio::test]
+    async fn connectivity_test_can_be_cancelled() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            directory.path().join("cancel.db").display()
+        ))
+        .await
+        .unwrap();
+        let model = create_test_model(&store).await;
+        let started = Arc::new(tokio::sync::Notify::new());
+        let service = ControlService::new(
+            store,
+            Arc::new(CancellationProvider {
+                started: started.clone(),
+            }),
+        )
+        .unwrap();
+        let running_service = service.clone();
+        let model_hash = model.model_hash.clone();
+        let task =
+            tokio::spawn(
+                async move { running_service.test_model(&model_hash, "cancel-test").await },
+            );
+
+        started.notified().await;
+        service.cancel_model_test("cancel-test");
+
+        assert!(matches!(task.await.unwrap(), Err(crate::Error::Cancelled)));
+        assert!(!service
+            .model_tests
+            .lock()
+            .unwrap()
+            .contains_key("cancel-test"));
+    }
+
     #[test]
     fn connectivity_output_token_estimate_handles_words_and_empty_text() {
         assert_eq!(super::estimate_output_tokens("1 2 3"), 3);
@@ -969,12 +1257,12 @@ mod tests {
     }
 
     #[test]
-    fn model_discovery_url_uses_only_the_provider_origin() {
+    fn model_discovery_url_keeps_provider_path_prefix() {
         assert_eq!(
             super::model_discovery_url("https://example.com:8443/arbitrary/v1/chat/completions")
                 .unwrap()
                 .as_str(),
-            "https://example.com:8443/v1/models"
+            "https://example.com:8443/arbitrary/v1/models"
         );
     }
 
@@ -1003,7 +1291,7 @@ mod tests {
 
         let (sender, mut requests) = tokio::sync::mpsc::unbounded_channel();
         let app = axum::Router::new()
-            .route("/v1/models", axum::routing::get(models))
+            .route("/custom/models", axum::routing::get(models))
             .with_state(sender);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
@@ -1040,7 +1328,8 @@ mod tests {
         assert_eq!(result.models[0].id, "model-a");
         let (method, uri, headers, body) = requests.recv().await.unwrap();
         assert_eq!(method, axum::http::Method::GET);
-        assert_eq!(uri.path(), "/v1/models");
+        // /custom/responses 剥掉端点段后是 /custom，发现地址为 /custom/models
+        assert_eq!(uri.path(), "/custom/models");
         assert!(body.is_empty());
         assert!(headers.get(axum::http::header::USER_AGENT).is_none());
         assert_eq!(headers.get("x-tenant").unwrap(), "tenant-a");
@@ -1054,8 +1343,8 @@ mod tests {
     #[test]
     fn chatgpt_codex_discovery_uses_backend_models_endpoint() {
         assert_eq!(
-            super::openai_models_request_url("https://chatgpt.com/backend-api/codex")
-                .unwrap()
+            super::model_discovery_urls("https://chatgpt.com/backend-api/codex")
+                .unwrap()[0]
                 .as_str(),
             "https://chatgpt.com/backend-api/codex/models?client_version=1.0.0"
         );

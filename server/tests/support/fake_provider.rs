@@ -10,11 +10,15 @@ use cursor_server::{
     provider::{ModelEvent, Provider, ProviderStream},
     Error,
 };
-use futures_util::stream;
+use futures_util::{stream, StreamExt};
 use tokio_util::sync::CancellationToken;
 
 enum FakeResponse {
     Events(Vec<Result<ModelEvent, Error>>),
+    Gated {
+        ready: Arc<tokio::sync::Notify>,
+        events: Vec<Result<ModelEvent, Error>>,
+    },
     Pending,
 }
 
@@ -43,6 +47,17 @@ impl FakeProvider {
             .unwrap()
             .push_back(FakeResponse::Pending);
     }
+    pub fn push_gated(&self, events: Vec<ModelEvent>) -> Arc<tokio::sync::Notify> {
+        let ready = Arc::new(tokio::sync::Notify::new());
+        self.responses
+            .lock()
+            .unwrap()
+            .push_back(FakeResponse::Gated {
+                ready: ready.clone(),
+                events: events.into_iter().map(Ok).collect(),
+            });
+        ready
+    }
     pub fn requests(&self) -> Vec<ModelRequest> {
         self.requests.lock().unwrap().clone()
     }
@@ -63,6 +78,13 @@ impl Provider for FakeProvider {
             .expect("fake response configured");
         match events {
             FakeResponse::Events(events) => Box::pin(stream::iter(events)),
+            FakeResponse::Gated { ready, events } => Box::pin(
+                stream::once(async move {
+                    ready.notified().await;
+                    events
+                })
+                .flat_map(stream::iter),
+            ),
             FakeResponse::Pending => Box::pin(stream::pending()),
         }
     }

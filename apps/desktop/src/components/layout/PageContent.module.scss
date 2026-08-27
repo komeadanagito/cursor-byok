@@ -15,8 +15,8 @@
   top: var(--app-content-top);
   left: max(var(--app-page-padding), calc((100% - var(--app-page-max-width)) / 2));
   margin: 0;
-  padding-left: 10px;
-  font-size: type.$font-size-lg;
+  padding-left:0;
+  font-size: type.$font-size-xxl;
   font-weight: bolder;
   transform: translateY(-150%);
   -webkit-user-select: none;

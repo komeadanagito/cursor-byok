@@ -10,6 +10,7 @@ use crate::{
         proto::agent::v1 as pb,
     },
     model::{CanonicalMessage, MessageContent, Origin, Role},
+    store::BlobId,
     Error, Result,
 };
 
@@ -80,12 +81,66 @@ pub async fn compile(
     compiler: &PromptCompiler,
     blobs: &BlobSynchronizer,
 ) -> Result<CanonicalMessage> {
-    let time = Time::now(
+    let timestamp = Time::now(
         request_context
             .env
             .as_ref()
             .map(|env| env.time_zone.as_str()),
-    )?;
+    )?
+    .timestamp;
+    compile_with_timestamp(
+        event_id,
+        mode,
+        user,
+        request_context,
+        action_context,
+        timestamp,
+        compiler,
+        blobs,
+    )
+    .await
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) async fn user_event_id(
+    input_id: &str,
+    mode: Mode,
+    user: &pb::UserMessage,
+    request_context: &pb::RequestContext,
+    action_context: &str,
+    projected_request_context: Option<&MessageContent>,
+    compiler: &PromptCompiler,
+    blobs: &BlobSynchronizer,
+) -> Result<String> {
+    let runtime = compile_with_timestamp(
+        "identity".into(),
+        mode,
+        user,
+        request_context,
+        action_context,
+        String::new(),
+        compiler,
+        blobs,
+    )
+    .await?;
+    let semantic = serde_json::to_vec(&(projected_request_context, runtime.content))?;
+    Ok(format!(
+        "{input_id}:{}",
+        BlobId::digest(&semantic).to_base64()
+    ))
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn compile_with_timestamp(
+    event_id: String,
+    mode: Mode,
+    user: &pb::UserMessage,
+    request_context: &pb::RequestContext,
+    action_context: &str,
+    timestamp: String,
+    compiler: &PromptCompiler,
+    blobs: &BlobSynchronizer,
+) -> Result<CanonicalMessage> {
     let mut values = BTreeMap::from([
         ("OPEN_FILES", section(open_files(user))),
         (
@@ -98,7 +153,7 @@ pub async fn compile(
             ),
         ),
         ("ACTION_CONTEXT", section(action_context.to_string())),
-        ("TIMESTAMP", time.timestamp),
+        ("TIMESTAMP", timestamp),
         ("USER_QUERY", user.text.clone()),
         ("DEBUG_SERVER_ENDPOINT", String::new()),
         ("DEBUG_LOG_PATH", String::new()),

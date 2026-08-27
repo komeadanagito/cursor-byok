@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type DiscoveredModel, type Model, type ModelInput } from "../api";
 import { CursorCaGate, CursorCaProvider, CursorModelGate, CursorModelProvider } from "../components/cursor/CursorGates";
-import { CursorModelCards } from "../components/cursor/CursorModelCards";
+import { CursorModelCards, cursorModelGroups, type CursorModelGrouping } from "../components/cursor/CursorModelCards";
 import { CursorModelEditor, emptyCursorModelDraft, type CursorModelDraft } from "../components/cursor/CursorModelEditor";
 import { CursorModelTestResult, type CursorModelTestState } from "../components/cursor/CursorModelTestResult";
 import { SubscriptionAuthTab, isSubscriptionModel } from "../components/cursor/SubscriptionAuthTab";
@@ -33,7 +33,19 @@ export function CursorSettingsPage() {
   const [modelTestResults, setModelTestResults] = useState<Map<string, CursorModelTestState>>(() => new Map());
   const [savingAndTesting, setSavingAndTesting] = useState(false);
   const [batchTesting, setBatchTesting] = useState(false);
+  const [grouping, setGrouping] = useState<CursorModelGrouping>("flat");
+  const activeModelTests = useRef(new Map<string, { testId: string; controller: AbortController; cancelling: boolean }>());
   const caReady = cursorHarness?.ca === "ready";
+  const providerGroups = cursorModelGroups(models, "provider");
+  const typeGroups = cursorModelGroups(models, "type");
+  const canGroupByProvider = providerGroups.length > 1;
+  const canGroupByType = typeGroups.length > 1;
+
+  useEffect(() => {
+    if ((grouping === "provider" && !canGroupByProvider) || (grouping === "type" && !canGroupByType)) {
+      setGrouping("flat");
+    }
+  }, [canGroupByProvider, canGroupByType, grouping]);
 
   useEffect(() => {
     if (caCommand) void api.copyCursorText(caCommand);
@@ -95,19 +107,45 @@ export function CursorSettingsPage() {
       message(errorText(cause));
     }
   };
-  const testModel = async (model: Model, notify = true) => {
+  const cancelModelTest = async (modelHash: string) => {
+    const active = activeModelTests.current.get(modelHash);
+    if (!active || active.cancelling) return;
+    active.cancelling = true;
+    try {
+      await api.cancelModelTest(modelHash, active.testId);
+      active.controller.abort();
+    } catch (cause) {
+      active.cancelling = false;
+      message(t("取消测试失败：{error}", { error: errorText(cause) }), { duration: 5000 });
+    }
+  };
+  const cancelAllModelTests = async () => {
+    await Promise.all([...activeModelTests.current.keys()].map((modelHash) => cancelModelTest(modelHash)));
+  };
+  const testModel = async (model: Model, notify = true): Promise<"success" | "failure" | "cancelled"> => {
+    if (activeModelTests.current.has(model.model_hash)) {
+      await cancelModelTest(model.model_hash);
+      return "cancelled";
+    }
+    const active = { testId: crypto.randomUUID(), controller: new AbortController(), cancelling: false };
+    activeModelTests.current.set(model.model_hash, active);
     setTestingModelHashes((current) => new Set(current).add(model.model_hash));
     try {
-      const result = await api.testModel(model.model_hash);
+      const result = await api.testModel(model.model_hash, active.testId, active.controller.signal);
       setModelTestResults((current) => new Map(current).set(model.model_hash, { status: "success", result }));
       if (notify) message(t("模型 {model} 连通性测试成功（{duration} ms）", { model: model.display_name, duration: result.duration_ms }));
-      return true;
+      return "success";
     } catch (cause) {
+      if (active.cancelling || active.controller.signal.aborted) {
+        setModelTestResults((current) => new Map(current).set(model.model_hash, { status: "cancelled" }));
+        return "cancelled";
+      }
       const error = errorText(cause);
       setModelTestResults((current) => new Map(current).set(model.model_hash, { status: "error", error }));
       if (notify) message(t("连通性测试失败：{error}", { error }), { duration: 5000 });
-      return false;
+      return "failure";
     } finally {
+      if (activeModelTests.current.get(model.model_hash) === active) activeModelTests.current.delete(model.model_hash);
       setTestingModelHashes((current) => {
         const next = new Set(current);
         next.delete(model.model_hash);
@@ -117,32 +155,33 @@ export function CursorSettingsPage() {
   };
   const saveAndTest = async () => {
     setSavingAndTesting(true);
+    let saved: Model | null = null;
     try {
-      const saved = await persist();
-      if (!saved) return;
-      setEditing(saved);
-      await testModel(saved);
-      await appStore.refresh();
+      saved = await persist();
     } catch (cause) {
       message(errorText(cause));
     } finally {
       setSavingAndTesting(false);
     }
+    if (!saved) return;
+    setEditing(saved);
+    await testModel(saved);
+    await appStore.refresh();
   };
   const testAllModels = async () => {
     if (!models.length || batchTesting) return;
     setBatchTesting(true);
     try {
-      const results = [];
-      for (const model of models) {
-        results.push(await testModel(model, false));
-      }
-      const successful = results.filter(Boolean).length;
-      const failed = models.length - successful;
-      message(failed === 0
-        ? t("全部 {count} 个模型连通性测试成功", { count: models.length })
-        : t("连通性测试完成：成功 {successful}，失败 {failed}", { successful, failed }),
-      { duration: failed === 0 ? 2400 : 5000 });
+      const results = await Promise.all(models.map((model) => testModel(model, false)));
+      const successful = results.filter((result) => result === "success").length;
+      const failed = results.filter((result) => result === "failure").length;
+      const cancelled = results.filter((result) => result === "cancelled").length;
+      message(cancelled > 0
+        ? t("连通性测试已取消：成功 {successful}，失败 {failed}", { successful, failed })
+        : failed === 0
+          ? t("全部 {count} 个模型连通性测试成功", { count: models.length })
+          : t("连通性测试完成：成功 {successful}，失败 {failed}", { successful, failed }),
+      { duration: failed === 0 && cancelled === 0 ? 2400 : 5000 });
     } finally {
       setBatchTesting(false);
     }
@@ -174,7 +213,8 @@ export function CursorSettingsPage() {
 
   const customList = <CursorModelCards
     models={customModels}
-    disabled={testingModelHashes.size > 0 || cursorBusy || batchTesting}
+    grouping={grouping}
+    disabled={cursorBusy}
     testingModelHashes={testingModelHashes}
     testResults={modelTestResults}
     onTest={(model) => void testModel(model)}
@@ -187,7 +227,8 @@ export function CursorSettingsPage() {
   const subscriptionList = subscriptionModels.length > 0 ? (
     <CursorModelCards
       models={subscriptionModels}
-      disabled={testingModelHashes.size > 0 || cursorBusy || batchTesting}
+      grouping={grouping}
+      disabled={cursorBusy}
       testingModelHashes={testingModelHashes}
       testResults={modelTestResults}
       onTest={(model) => void testModel(model)}
@@ -237,13 +278,24 @@ export function CursorSettingsPage() {
   />;
 
   const editorTestState = editing ? modelTestResults.get(editing.model_hash) : undefined;
-  const editorTesting = savingAndTesting || Boolean(editing && testingModelHashes.has(editing.model_hash));
+  const editorTesting = Boolean(editing && testingModelHashes.has(editing.model_hash));
+  const activeGroups = grouping === "provider" ? providerGroups : typeGroups;
+  const estimatedModelHeight = grouping === "flat"
+    ? Math.max(380, Math.ceil(models.length / 3) * 196)
+    : Math.max(380, activeGroups.reduce((height, group) => height + Math.ceil(group.models.length / 3) * 196 + 34, 0) + Math.max(0, activeGroups.length - 1) * 20);
 
   return <>
-    {models.length > 0 && <PageActions position="left"><button type="button" className={controls.secondary} disabled={cursorBusy || testingModelHashes.size > 0 || batchTesting} onClick={() => void testAllModels()}>{batchTesting ? t("测试中…") : t("一键测试")}</button></PageActions>}
+    {models.length > 0 && <PageActions position="left">
+      <div className={styles.groupActions} role="group" aria-label={t("操作")}>
+        <button type="button" aria-pressed={grouping === "flat"} onClick={() => setGrouping("flat")}>{t("默认平铺")}</button>
+        {canGroupByProvider && <button type="button" aria-pressed={grouping === "provider"} onClick={() => setGrouping("provider")}>{t("按供应商")}</button>}
+        {canGroupByType && <button type="button" aria-pressed={grouping === "type"} onClick={() => setGrouping("type")}>{t("按类型")}</button>}
+        <button type="button" disabled={cursorBusy || (!batchTesting && testingModelHashes.size > 0)} onClick={() => void (batchTesting ? cancelAllModelTests() : testAllModels())}>{batchTesting ? t("取消全部测试") : t("一键测试")}</button>
+      </div>
+    </PageActions>}
     <PageActions><TooltipTrigger label={caReady ? t("添加模型") : t("请先初始化 CA")}><button className={controls.iconButton} aria-label={t("添加模型")} disabled={!caReady || cursorBusy} onClick={openNew}><Icon icon={addIcon} size="1.1em" /></button></TooltipTrigger></PageActions>
-    <PageContent title={t("Cursor 配置")} sections={[{ key: "cursor-settings", estimatedHeight: Math.max(380, Math.ceil(models.length / 3) * 196), content }]} />
-    <Modal open={draft !== null} title={editing ? t("编辑模型") : t("添加模型")} banner={draft && (editorTesting || editorTestState) ? <CursorModelTestResult state={editorTestState} testing={editorTesting} /> : undefined} busy={cursorBusy || savingAndTesting} onClose={() => setDraft(null)} onSubmit={() => void save()} secondaryAction={<button type="button" className={controls.secondary} disabled={cursorBusy || savingAndTesting} onClick={() => void saveAndTest()}>{savingAndTesting ? t("测试中…") : t("保存并测试")}</button>}>
+    <PageContent title={t("Cursor 配置")} sections={[{ key: "cursor-settings", estimatedHeight: estimatedModelHeight, content }]} />
+    <Modal fullHeight open={draft !== null} title={editing ? t("编辑模型") : t("添加模型")} banner={draft && (editorTesting || editorTestState) ? <CursorModelTestResult state={editorTestState} testing={editorTesting} /> : undefined} busy={cursorBusy || savingAndTesting} onClose={() => { if (editing && editorTesting) void cancelModelTest(editing.model_hash); setDraft(null); setEditing(null); }} onSubmit={() => void save()} secondaryAction={<button type="button" className={controls.secondary} disabled={cursorBusy || savingAndTesting} onClick={() => void (editorTesting && editing ? cancelModelTest(editing.model_hash) : saveAndTest())}>{savingAndTesting ? t("处理中…") : editorTesting ? t("取消测试") : t("保存并测试")}</button>}>
       {draft && <>
         <CursorModelEditor
           draft={draft}

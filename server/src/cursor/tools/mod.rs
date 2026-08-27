@@ -17,6 +17,7 @@ mod tests;
 
 use crate::{
     model::{CanonicalMessage, MessageContent, Role, ToolCall},
+    store::Store,
     web::{WebFetch, WebSearch},
     Error, Result,
 };
@@ -32,6 +33,7 @@ pub struct ToolDispatcher {
     results: ToolResultSender,
     search: WebSearch,
     fetch: WebFetch,
+    store: Option<Store>,
     edit_schedule: Arc<Mutex<EditSchedule>>,
 }
 
@@ -55,15 +57,27 @@ pub enum ClientToolEvent {
 impl ToolDispatcher {
     pub fn new(runtime: CursorToolRuntime) -> Self {
         let (results, _) = result::tool_result_channel();
-        Self::with_results(runtime, results)
-    }
-
-    pub fn with_results(runtime: CursorToolRuntime, results: ToolResultSender) -> Self {
         Self {
             runtime,
             results,
             search: WebSearch::built_in(),
             fetch: WebFetch::built_in(),
+            store: None,
+            edit_schedule: Arc::new(Mutex::new(EditSchedule::default())),
+        }
+    }
+
+    pub fn with_results(
+        runtime: CursorToolRuntime,
+        results: ToolResultSender,
+        store: Store,
+    ) -> Self {
+        Self {
+            runtime,
+            results,
+            search: WebSearch::managed(store.clone()),
+            fetch: WebFetch::managed(store.clone()),
+            store: Some(store),
             edit_schedule: Arc::new(Mutex::new(EditSchedule::default())),
         }
     }
@@ -165,6 +179,7 @@ impl ToolDispatcher {
             message_index,
             dynamic_mcp,
             context,
+            self.store.as_ref(),
         )
         .await?;
         messages.extend(started.messages);

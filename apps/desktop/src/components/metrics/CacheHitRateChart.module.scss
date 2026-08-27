@@ -1,18 +1,22 @@
 @use "../../styles/typography" as type;
 
 .root {
-  --cache-hit-track-color: color-mix(in srgb, var(--vscode-foreground) 12%, transparent);
-  --cache-hit-value-color: var(--vscode-gitDecoration-addedResourceForeground, #4ade80);
   position: relative;
-  width: 132px;
+  width: 200px;
+  max-width: 100%;
   height: 82px;
+  overflow: hidden;
   align-self: center;
   flex: 0 0 auto;
 }
 
-.canvas {
-  width: 100% !important;
-  height: 100% !important;
+.chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 140px;
+  pointer-events: none;
 }
 
 .label {

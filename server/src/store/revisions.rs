@@ -58,6 +58,38 @@ impl Store {
         self.load_revision_messages(RevisionId(revision_id)).await
     }
 
+    pub async fn match_revision_prefix(
+        &self,
+        conversation_id: &ConversationId,
+        base_revision_id: RevisionId,
+        additions: &[CanonicalMessage],
+    ) -> Result<(RevisionId, usize)> {
+        let mut revision = base_revision_id;
+        let mut messages = self.load_revision_messages(revision).await?;
+        for (index, addition) in additions.iter().enumerate() {
+            messages.push(addition.clone());
+            let digest = message_digest(&messages)?;
+            let child = sqlx::query_scalar::<_, i64>(
+                "SELECT revision_id FROM conversation_revisions
+                 WHERE conversation_id = ? AND parent_revision_id = ? AND state_digest = ?",
+            )
+            .bind(conversation_id.as_str())
+            .bind(revision.0)
+            .bind(digest.as_slice())
+            .fetch_optional(&self.pool)
+            .await?
+            .map(RevisionId);
+            let Some(child) = child else {
+                return Ok((revision, index));
+            };
+            if self.load_revision_messages(child).await? != messages {
+                return Ok((revision, index));
+            }
+            revision = child;
+        }
+        Ok((revision, additions.len()))
+    }
+
     pub async fn import_revision(
         &self,
         conversation_id: &ConversationId,

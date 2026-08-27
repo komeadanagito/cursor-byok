@@ -1,5 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { init, Rect, type ElementEvent } from "zrender";
+import type { Locale } from "../../i18n/runtime";
+import { useI18n } from "../../i18n/store";
 import { Tooltip, type TooltipAnchor } from "../ui/Tooltip";
 import styles from "./ContributionCalendarChart.module.scss";
 
@@ -54,8 +56,6 @@ const CALENDAR_CONFIG = {
   axisLabelGap: 8,
   axisLabelWidth: 28,
 } as const;
-const tokenFormatter = new Intl.NumberFormat("zh-CN");
-
 function parseDate(date: string) {
   return new Date(`${date}T00:00:00Z`);
 }
@@ -72,9 +72,10 @@ function isCellExtra(value: unknown): value is CellExtra {
   return typeof value === "object" && value !== null && (value as CellExtra).kind === "calendar-cell";
 }
 
-function buildCalendarLayout(data: ContributionDay[]) {
+function buildCalendarLayout(data: ContributionDay[], locale: Locale) {
   if (data.length === 0) return null;
 
+  const monthFormatter = new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" });
   const maximum = Math.max(1, ...data.map(({ tokens }) => tokens));
   const firstDate = parseDate(data[0].date);
   const calendarStart = new Date(firstDate.getTime() - mondayIndex(firstDate) * DAY_IN_MS);
@@ -88,20 +89,22 @@ function buildCalendarLayout(data: ContributionDay[]) {
   const monthTicks = cells.reduce<Array<{ key: string; text: string; column: number }>>((ticks, cell) => {
     const date = parseDate(cell.date);
     const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
-    if (ticks.at(-1)?.key !== key) ticks.push({ key, text: `${date.getUTCMonth() + 1}月`, column: cell.column });
+    if (ticks.at(-1)?.key !== key) ticks.push({ key, text: monthFormatter.format(date), column: cell.column });
     return ticks;
   }, []);
   return { cells, columnCount, monthTicks };
 }
 
 export function ContributionCalendarChart({ data }: ContributionCalendarChartProps) {
+  const { locale } = useI18n();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<ReturnType<typeof buildCalendarLayout>>(null);
   const scheduleDrawRef = useRef<() => void>(() => undefined);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [axisLabels, setAxisLabels] = useState<AxisLabel[]>([]);
-  const layout = useMemo(() => buildCalendarLayout(data), [data]);
+  const layout = useMemo(() => buildCalendarLayout(data, locale), [data, locale]);
+  const tokenFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
   layoutRef.current = layout;
 
   useLayoutEffect(() => {

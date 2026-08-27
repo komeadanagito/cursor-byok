@@ -41,6 +41,7 @@ pub struct CursorRunContext {
     pub dynamic_tools: BTreeMap<String, pb::McpToolDefinition>,
     pub checkpoint_prompt: PromptSpec,
     pub compacting: bool,
+    pub background_completion: bool,
 }
 
 pub(crate) struct PrepareDependencies<'a> {
@@ -123,7 +124,7 @@ pub(crate) async fn prepare(
         mode: mode_number,
         mut turn_user,
         action_context,
-        event_id,
+        mut event_id,
         input_id,
         starts_turn,
         compacting,
@@ -172,14 +173,43 @@ pub(crate) async fn prepare(
         }
         Some(_) | None => store.ensure_conversation(&conversation_id).await?,
     };
-    let base_revision_id = match input_id {
+    let base_revision_id = match input_id.as_deref() {
         Some(input_id) => {
             store
-                .anchor_input(&conversation_id, &input_id, proposed_base_revision_id)
+                .anchor_input(&conversation_id, input_id, proposed_base_revision_id)
                 .await?
         }
         None => proposed_base_revision_id,
     };
+    let mut projected_user_context = if input_id.is_some() && !compacting && !background_completion
+    {
+        runtime::compile_request_context(
+            "identity",
+            &request_context,
+            base_messages.as_deref().unwrap_or_default(),
+        )?
+    } else {
+        None
+    };
+    if event_id.is_none() {
+        if let (Some(input_id), Some(user)) = (input_id.as_deref(), turn_user.as_ref()) {
+            event_id = Some(
+                runtime::user_event_id(
+                    input_id,
+                    checkpoint_mode,
+                    user,
+                    &request_context,
+                    &action_context,
+                    projected_user_context
+                        .as_ref()
+                        .map(|message| &message.content),
+                    compiler,
+                    blob_sync,
+                )
+                .await?,
+            );
+        }
+    }
     let existing_runtime = match event_id.as_deref() {
         Some(event_id) => {
             store
@@ -193,6 +223,10 @@ pub(crate) async fn prepare(
             let message_id = format!("request-context:{event_id}");
             match store.message(&conversation_id, &message_id).await? {
                 Some(message) => Some(message),
+                None if input_id.is_some() => projected_user_context.take().map(|mut message| {
+                    message.message_id = message_id;
+                    message
+                }),
                 None => runtime::compile_request_context(
                     event_id,
                     &request_context,
@@ -202,7 +236,7 @@ pub(crate) async fn prepare(
         }
         _ => None,
     };
-    let initial_messages = if compacting {
+    let mut initial_messages = if compacting {
         Vec::new()
     } else {
         match (turn_user.clone(), event_id) {
@@ -256,6 +290,10 @@ pub(crate) async fn prepare(
             }
         }
     };
+    let (base_revision_id, reused) = store
+        .match_revision_prefix(&conversation_id, base_revision_id, &initial_messages)
+        .await?;
+    initial_messages.drain(..reused);
     let action = if compacting {
         RunAction::Compact
     } else if starts_turn {
@@ -310,6 +348,7 @@ pub(crate) async fn prepare(
                 .collect(),
             checkpoint_prompt,
             compacting,
+            background_completion,
         },
     ))
 }
@@ -434,13 +473,13 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
                     .filter(|text| !text.is_empty())
                     .cloned(),
             );
-            let event_id = format!("cursor:user:{}", user.message_id);
+            let input_id = format!("cursor:user:{}", user.message_id);
             Ok(ActionProjection {
                 mode,
                 turn_user: Some(user.clone()),
                 action_context: context.join("\n\n"),
-                event_id: Some(event_id.clone()),
-                input_id: Some(event_id),
+                event_id: None,
+                input_id: Some(input_id),
                 starts_turn: true,
                 compacting: false,
                 background_completion: false,
@@ -703,7 +742,7 @@ mod tests {
     }
 
     #[test]
-    fn queued_messages_reusing_a_request_id_keep_distinct_runtime_identities() {
+    fn queued_messages_keep_distinct_input_anchors_until_runtime_identity_is_compiled() {
         let request = |message_id: &str| pb::AgentRunRequest {
             action: Some(pb::ConversationAction {
                 action: Some(pb::conversation_action::Action::UserMessageAction(
@@ -725,9 +764,11 @@ mod tests {
         let first = action(&request("message-one")).unwrap();
         let second = action(&request("message-two")).unwrap();
 
-        assert_eq!(first.event_id.as_deref(), Some("cursor:user:message-one"));
-        assert_eq!(second.event_id.as_deref(), Some("cursor:user:message-two"));
-        assert_ne!(first.event_id, second.event_id);
+        assert_eq!(first.event_id, None);
+        assert_eq!(second.event_id, None);
+        assert_eq!(first.input_id.as_deref(), Some("cursor:user:message-one"));
+        assert_eq!(second.input_id.as_deref(), Some("cursor:user:message-two"));
+        assert_ne!(first.input_id, second.input_id);
     }
 
     #[test]

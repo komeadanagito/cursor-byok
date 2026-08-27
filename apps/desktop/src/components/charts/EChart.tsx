@@ -1,11 +1,11 @@
-import { BarChart, LineChart } from "echarts/charts";
+import { BarChart, GaugeChart, LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent } from "echarts/components";
 import { getInstanceByDom, init, use, type EChartsCoreOption } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef, type MouseEventHandler } from "react";
 import styles from "./EChart.module.scss";
 
-use([BarChart, LineChart, GridComponent, LegendComponent, MarkLineComponent, TooltipComponent, CanvasRenderer]);
+use([BarChart, GaugeChart, LineChart, GridComponent, LegendComponent, MarkLineComponent, TooltipComponent, CanvasRenderer]);
 
 type EChartProps = {
   option: EChartsCoreOption;

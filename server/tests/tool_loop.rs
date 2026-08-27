@@ -564,6 +564,36 @@ async fn empty_exec_client_message_is_not_a_terminal_result() {
 }
 
 #[tokio::test]
+async fn exec_stream_close_without_a_terminal_result_becomes_a_tool_error() {
+    let pending = CursorToolRuntime::default();
+    let mut shell = call("call-1", "Shell");
+    shell.arguments = json!({"command": "git status"});
+    let id = pending.reserve_exec(&shell, &exec_context()).await.unwrap();
+
+    let completion = codec::stream_closed(id, &pending)
+        .await
+        .unwrap()
+        .expect("a running Exec should complete when its stream closes");
+
+    assert_eq!(completion.result().call_id, "call-1");
+    assert!(completion.result().is_error);
+    assert_eq!(
+        completion.result().content,
+        "Cursor Exec stream closed before returning a terminal result"
+    );
+    let Some(pb::tool_call::Tool::ShellToolCall(shell)) = &completion.tool_call().tool else {
+        panic!("expected typed Shell completion")
+    };
+    assert!(matches!(
+        shell.result.as_ref().and_then(|result| result.result.as_ref()),
+        Some(pb::shell_result::Result::SpawnError(error))
+            if error.error == "Cursor Exec stream closed before returning a terminal result"
+    ));
+    assert!(pending.exec_call(id).await.is_none());
+    assert!(codec::stream_closed(id, &pending).await.unwrap().is_none());
+}
+
+#[tokio::test]
 async fn tool_success_is_not_inferred_from_debug_text() {
     let pending = CursorToolRuntime::default();
     let mut write = call("call-1", "Write");

@@ -2,7 +2,12 @@ use std::sync::Arc;
 
 use tokio_util::sync::CancellationToken;
 
-use crate::{client::ClientPort, model::PreparedRun, provider::Provider, store::Store};
+use crate::{
+    client::{ClientCommand, ClientPort},
+    model::PreparedRun,
+    provider::Provider,
+    store::Store,
+};
 
 use super::{RunEngine, RunOutcome, RunRegistry};
 
@@ -26,6 +31,7 @@ impl RunActor {
         &self,
         prepared: PreparedRun,
         client: ClientPort,
+        commands: tokio::sync::mpsc::Sender<ClientCommand>,
         cancellation: CancellationToken,
     ) -> tokio::task::JoinHandle<RunOutcome> {
         let run_id = prepared.run_id.clone();
@@ -35,6 +41,7 @@ impl RunActor {
                 conversation_id.clone(),
                 run_id.clone(),
                 cancellation.clone(),
+                commands,
             )
             .await;
         let actor = self.clone();

@@ -165,8 +165,8 @@ pub fn api_router(service: ControlService) -> Router {
             put(models::update).delete(models::remove),
         )
         .route(
-            "/__byok-api__/api/models/{model_hash}/test",
-            post(models::test),
+            "/__byok-api__/api/models/{model_hash}/test/{test_id}",
+            post(models::test).delete(models::cancel),
         )
         .route("/__byok-api__/api/llm-calls", get(calls::list))
         .route("/__byok-api__/api/llm-calls/{call_id}", get(calls::detail))

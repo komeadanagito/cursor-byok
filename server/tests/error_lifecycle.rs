@@ -160,7 +160,7 @@ async fn runtime_protocol_failure_returns_connect_error_end_stream_and_closes() 
     )
     .unwrap();
     let registry = CursorSessionRegistry::new(
-        store,
+        store.clone(),
         Arc::new(provider),
         PromptCompiler::new(assets),
         Default::default(),
@@ -248,6 +248,29 @@ async fn runtime_protocol_failure_returns_connect_error_end_stream_and_closes() 
             .await
             .unwrap(),
         None
+    );
+
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(1);
+    let (status, failure_summary) = loop {
+        let row: (String, Option<String>) =
+            sqlx::query_as("SELECT status, failure_summary FROM runs WHERE cursor_request_id = ?")
+                .bind("protocol-failed-request")
+                .fetch_one(store.pool())
+                .await
+                .unwrap();
+        if row.0 != "running" {
+            break row;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "Run remained running after the Cursor session failed"
+        );
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    };
+    assert_eq!(status, "failed");
+    assert_eq!(
+        failure_summary.as_deref(),
+        Some("unknown ExecClientMessage id: 1001")
     );
 }
 
