@@ -90,6 +90,9 @@ function resolveAntigravityModel(modelId: string): string {
   }
 
   // 2. Canonical Antigravity-Manager mapping for aliases
+  if (lower === "gemini-4-argon") {
+    return "gemini-4-argon-medium";
+  }
   if (
     lower === "claude-3-7-sonnet" || lower === "claude-3-5-sonnet" || lower === "claude-sonnet-4-5"
   ) {
@@ -237,6 +240,9 @@ function convertToCloudCodeContents(
       for (const call of msg.toolCalls) {
         parts.push({
           functionCall: {
+            // CloudCode 把 functionCall 转成 Anthropic 的 tool_use,tool_use.id 必填,
+            // 回放时必须带回同一 callId;functionResponse 也要用同一 id 对应 tool_result。
+            id: call.callId,
             name: call.name,
             args: typeof call.arguments === "object" && call.arguments !== null
               ? call.arguments
@@ -255,6 +261,7 @@ function convertToCloudCodeContents(
         parts: [
           {
             functionResponse: {
+              id: msg.callId,
               name: msg.name || "function",
               response: { result: msg.content },
             },

@@ -73,8 +73,8 @@ Deno.test("provider parses usage metadata including cachedContentTokenCount as c
   const result = await antigravityProvider.invoke(
     {
       model: {
-        id: "gemini-3.7-flash-medium",
-        displayName: "Gemini 3.7 Flash Medium",
+        id: "gemini-4-argon-medium",
+        displayName: "Gemini 4 Argon Medium",
         privateData: {},
       },
       resource: snapshot({
@@ -112,7 +112,7 @@ Deno.test("provider parses usage metadata including cachedContentTokenCount as c
   assert(!("x-client-request-id" in requestHeaders), "request-id header was reused as cache key");
   const body = JSON.parse(requestBody) as Record<string, unknown>;
   assertEquals(body.project, "test-project-123");
-  assertEquals(body.model, "gemini-3.7-flash-medium");
+  assertEquals(body.model, "gemini-4-argon-medium");
   assert(!("sessionId" in body), "unsupported sessionId field was sent");
   assert(!("conversationId" in body), "unsupported conversationId field was sent");
 
@@ -136,6 +136,79 @@ Deno.test("provider parses usage metadata including cachedContentTokenCount as c
     },
     { type: "done", reason: "stop" },
   ]);
+});
+
+Deno.test("provider replays tool calls with callId so Anthropic tool_use blocks keep their id", async () => {
+  let requestBody = "";
+
+  const result = await antigravityProvider.invoke(
+    {
+      model: {
+        id: "claude-sonnet-5-5-medium",
+        displayName: "Claude Sonnet 5.5 (Medium)",
+        privateData: {},
+      },
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: {
+        ...request(),
+        messages: [
+          { role: "user", content: [{ type: "text", text: "Weather in Paris?" }] },
+          {
+            role: "assistant",
+            text: "Checking.",
+            thinking: "",
+            replayState: null,
+            toolCalls: [{
+              index: 0,
+              callId: "call_42",
+              name: "get_weather",
+              arguments: { city: "Paris" },
+            }],
+          },
+          {
+            role: "tool",
+            callId: "call_42",
+            name: "get_weather",
+            content: "sunny",
+            isError: false,
+            parts: [],
+          },
+        ],
+      },
+    },
+    { emit: () => {} },
+    context({
+      stream: (_url, init) => {
+        requestBody = init?.body ?? "";
+        return {
+          status: 200,
+          headers: {},
+          lines: sse([
+            'data: {"response":{"candidates":[{"content":{"parts":[{"text":"It is sunny."}]}}]}}',
+            'data: {"response":{"candidates":[{"finishReason":"STOP"}]}}',
+          ]),
+        };
+      },
+    }),
+  );
+
+  assertEquals(result, { status: "completed" });
+  const body = JSON.parse(requestBody) as {
+    request: { contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> };
+  };
+  const functionCall = body.request.contents[1].parts[1] as {
+    functionCall: { id: string; name: string };
+  };
+  assertEquals(functionCall.functionCall.id, "call_42");
+  const functionResponse = body.request.contents[2].parts[0] as {
+    functionResponse: { id: string; name: string };
+  };
+  assertEquals(functionResponse.functionResponse.id, "call_42");
 });
 
 Deno.test("isQuotaError identifies rate limits and quota exhaustion", () => {
