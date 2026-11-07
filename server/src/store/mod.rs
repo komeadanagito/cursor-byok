@@ -6,6 +6,7 @@ mod cursor_traces;
 mod input_anchors;
 mod legacy_config;
 mod llm_calls;
+mod maintenance;
 mod messages;
 mod migrations;
 mod models;

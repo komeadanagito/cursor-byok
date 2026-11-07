@@ -268,6 +268,9 @@ impl PluginWorker {
                 "--allow-read={}",
                 self.inner.loader.sdk_dir().display()
             ))
+            // 插件用 Deno.osRelease() 还原客户端运行时的系统版本指纹;
+            // 只放开这一个 sys 能力,不暴露主机名等其它机器信息。
+            .arg("--allow-sys=osRelease")
             .arg(format!(
                 "--import-map={}",
                 self.inner.loader.import_map().display()

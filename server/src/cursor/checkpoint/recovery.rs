@@ -44,6 +44,10 @@ impl CheckpointBuilder {
                 format!("cursor-root:{}:{ordinal}", id.to_base64()),
             )?);
         }
+        // Cursor can hand back a root list that still carries an abandoned
+        // pending tool round. Canonical history has to be well-formed before it
+        // is persisted, so settle the pairs here rather than at projection time.
+        crate::model::settle_tool_pairs(&mut messages);
         Ok(messages)
     }
 }

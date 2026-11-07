@@ -12,11 +12,6 @@ use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
-use super::ads::{
-    AdDismissalInput, AdRuntime, ADS_ENDPOINT, APP_VERSION_HEADER, DEVICE_ID_HEADER,
-    DISABLED_AD_IDS_HEADER, LANGUAGE_HEADER, OS_HEADER,
-};
-
 use crate::{
     local_app::CursorHarness,
     model::{
@@ -205,6 +200,105 @@ impl ControlService {
             .await
     }
 
+    pub async fn migration_export(&self) -> Result<super::migration::MigrationFile> {
+        use super::migration::{MigrationFile, MigrationPluginResources, FORMAT, VERSION};
+
+        let models = self
+            .store
+            .models()
+            .await?
+            .iter()
+            .map(crate::model::ModelConfigInput::from)
+            .collect();
+        let mut plugin_resources = Vec::new();
+        for plugin in self.plugins.plugins().await {
+            for resource in &plugin.resources {
+                let value = self
+                    .plugins
+                    .export_resources(&plugin.id, &resource.resource_type)
+                    .await?;
+                let accounts = value
+                    .get("accounts")
+                    .and_then(serde_json::Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                if accounts.is_empty() {
+                    continue;
+                }
+                plugin_resources.push(MigrationPluginResources {
+                    plugin_id: plugin.id.clone(),
+                    resource_type: resource.resource_type.clone(),
+                    accounts,
+                });
+            }
+        }
+        Ok(MigrationFile {
+            format: FORMAT.into(),
+            version: VERSION,
+            app_version: self.app_version.clone(),
+            exported_at_ms: chrono::Utc::now().timestamp_millis(),
+            models,
+            plugin_resources,
+        })
+    }
+
+    /// Applies an exported file. Duplicate models are skipped so importing onto
+    /// a machine that is already partly configured is safe to repeat.
+    pub async fn migration_import(
+        &self,
+        file: super::migration::MigrationFile,
+    ) -> Result<super::migration::MigrationResult> {
+        use super::migration::{MigrationResult, FORMAT, VERSION};
+
+        if file.format != FORMAT {
+            return Err(Error::Config(format!(
+                "not a {FORMAT} file: {}",
+                file.format
+            )));
+        }
+        if file.version > VERSION {
+            return Err(Error::Config(format!(
+                "migration file version {} is newer than this app supports ({VERSION})",
+                file.version
+            )));
+        }
+        let models_total = file.models.len();
+        let models_added = self.store.create_models_if_missing(&file.models).await?;
+        let mut resources_added = 0;
+        let mut resources_updated = 0;
+        let mut warnings = Vec::new();
+        for group in &file.plugin_resources {
+            // Feed the accounts back through the plugin's own import parser,
+            // so the destination applies the same validation as a hand import.
+            let files = serde_json::json!([{
+                "name": format!("{}-{}.json", group.plugin_id, group.resource_type),
+                "content": serde_json::to_string(&serde_json::json!({"accounts": group.accounts}))?,
+            }]);
+            match self
+                .plugins
+                .import_resources(&group.plugin_id, &group.resource_type, files)
+                .await
+            {
+                Ok(response) => {
+                    resources_added += response.added;
+                    resources_updated += response.updated;
+                    warnings.extend(response.warnings);
+                    if let Some(error) = response.model_sync_error {
+                        warnings.push(format!("{}: {error}", group.plugin_id));
+                    }
+                }
+                Err(error) => warnings.push(format!("{}: {error}", group.plugin_id)),
+            }
+        }
+        Ok(MigrationResult {
+            models_added,
+            models_total,
+            resources_added,
+            resources_updated,
+            warnings,
+        })
+    }
+
     pub async fn plugin_export_resources(
         &self,
         plugin_id: &str,
@@ -280,69 +374,6 @@ impl ControlService {
 
     pub fn cancel_plugin_runtime_initialization(&self) -> PluginRuntimeStatus {
         self.plugin_runtime.cancel_initialization()
-    }
-
-    pub(super) async fn ads(
-        &self,
-        disabled_ad_ids: Option<&str>,
-        language: &str,
-    ) -> Result<AdRuntime> {
-        let client = self.clients.default_client().await?;
-        let installation_id = self.store.installation_id().await?;
-        let mut request = client
-            .get(ADS_ENDPOINT)
-            .header(DEVICE_ID_HEADER, installation_id)
-            .header(OS_HEADER, std::env::consts::OS)
-            .header(APP_VERSION_HEADER, &self.app_version)
-            .header(LANGUAGE_HEADER, language)
-            .timeout(std::time::Duration::from_secs(60));
-        if let Some(disabled_ad_ids) = disabled_ad_ids.filter(|value| !value.is_empty()) {
-            request = request.header(DISABLED_AD_IDS_HEADER, disabled_ad_ids);
-        }
-        let response = request.send().await?;
-        let status = response.status();
-        if !status.is_success() {
-            let message = response.text().await.unwrap_or_default();
-            return Err(Error::Provider(format!(
-                "advertisement service failed ({status}): {}",
-                message.chars().take(200).collect::<String>()
-            )));
-        }
-        let mut runtime = response.json::<AdRuntime>().await?.into_menu_slots()?;
-        runtime.cache_images(&client).await;
-        Ok(runtime)
-    }
-
-    pub(super) async fn dismiss_ad(&self, ad_id: &str, input: &AdDismissalInput) -> Result<()> {
-        let client = self.clients.default_client().await?;
-        let installation_id = self.store.installation_id().await?;
-        let mut endpoint = Url::parse(ADS_ENDPOINT).map_err(|error| {
-            Error::Config(format!("advertisement endpoint is invalid: {error}"))
-        })?;
-        endpoint.set_query(None);
-        endpoint
-            .path_segments_mut()
-            .map_err(|_| Error::Config("advertisement endpoint cannot contain an ad id".into()))?
-            .push(ad_id)
-            .push("dismissals");
-        let response = client
-            .post(endpoint)
-            .header(DEVICE_ID_HEADER, installation_id)
-            .header(OS_HEADER, std::env::consts::OS)
-            .header(APP_VERSION_HEADER, &self.app_version)
-            .json(input)
-            .timeout(std::time::Duration::from_secs(5))
-            .send()
-            .await?;
-        let status = response.status();
-        if !status.is_success() {
-            let message = response.text().await.unwrap_or_default();
-            return Err(Error::Provider(format!(
-                "advertisement dismissal failed ({status}): {}",
-                message.chars().take(200).collect::<String>()
-            )));
-        }
-        Ok(())
     }
 
     pub async fn models(&self) -> Result<Vec<ModelConfig>> {

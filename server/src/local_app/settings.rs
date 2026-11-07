@@ -6,12 +6,14 @@ use serde_json::Value;
 use crate::{Error, Result};
 
 const NO_PROXY_KEY: &str = "http.noProxy";
-const KEYS: [&str; 5] = [
+const REMOTE_INFERENCE_ROUTE: &str = "always";
+const KEYS: [&str; 6] = [
     "http.proxy",
     "http.proxyKerberosServicePrincipal",
     "http.proxySupport",
     "cursor.general.disableHttp2",
     "http.experimental.systemCertificatesV2",
+    "cursorAgentHost.remoteInferenceRoute",
 ];
 
 fn path() -> Result<PathBuf> {
@@ -67,6 +69,9 @@ pub fn write_proxy_settings(proxy_url: &str) -> Result<()> {
     settings.insert(KEYS[2].into(), Value::String("on".into()));
     settings.insert(KEYS[3].into(), Value::Bool(true));
     settings.insert(KEYS[4].into(), Value::Bool(true));
+    // Remote-SSH AgentService must dial through the local Cursor client so the
+    // local BYOK proxy and model catalog are visible on the remote window.
+    settings.insert(KEYS[5].into(), Value::String(REMOTE_INFERENCE_ROUTE.into()));
     write(&settings)
 }
 
@@ -89,7 +94,8 @@ pub fn settings_match(proxy_url: &str) -> Result<bool> {
             && settings.get(KEYS[1]) == Some(&Value::String(proxy_url.into()))
             && settings.get(KEYS[2]) == Some(&Value::String("on".into()))
             && settings.get(KEYS[3]) == Some(&Value::Bool(true))
-            && settings.get(KEYS[4]) == Some(&Value::Bool(true)),
+            && settings.get(KEYS[4]) == Some(&Value::Bool(true))
+            && settings.get(KEYS[5]) == Some(&Value::String(REMOTE_INFERENCE_ROUTE.into())),
     )
 }
 
@@ -97,7 +103,8 @@ pub fn clear_stale_managed_settings() -> Result<()> {
     let settings = read()?;
     let managed_signature = settings.get(KEYS[2]) == Some(&Value::String("on".into()))
         && settings.get(KEYS[3]) == Some(&Value::Bool(true))
-        && settings.get(KEYS[4]) == Some(&Value::Bool(true));
+        && settings.get(KEYS[4]) == Some(&Value::Bool(true))
+        && settings.get(KEYS[5]) == Some(&Value::String(REMOTE_INFERENCE_ROUTE.into()));
     let loopback = settings
         .get(KEYS[0])
         .and_then(Value::as_str)

@@ -492,23 +492,11 @@ fn available_model(model: &ModelConfig) -> AvailableModel {
             display_name: "Cursor".into(),
         }),
         model_picker_badges: vec![ModelPickerBadge {
-            label: model
-                .group_name
-                .clone()
-                .unwrap_or_else(|| provider_host(&model.base_url)),
+            label: model.tooltip_data.clone(),
             variant: 1,
             dismiss_on_selection: false,
         }],
     }
-}
-
-/// 徽章回退标签:base_url 的主机名。入库时已校验为带主机的 HTTP(S) URL,
-/// 解析失败仅是理论分支,此时原样返回 base_url。
-fn provider_host(base_url: &str) -> String {
-    reqwest::Url::parse(base_url.trim())
-        .ok()
-        .and_then(|url| url.host_str().map(str::to_lowercase))
-        .unwrap_or_else(|| base_url.trim().into())
 }
 
 fn model_parameters(
@@ -800,6 +788,25 @@ mod tests {
             created_at_ms: 0,
             updated_at_ms: 0,
         }
+    }
+
+    #[test]
+    fn cursor_model_badge_displays_the_configured_note_instead_of_the_api_host_or_group() {
+        let mut configured = model();
+        configured.tooltip_data = "自用模型".into();
+        configured.group_name = Some("provider group".into());
+        let published = available_model(&configured);
+        assert_eq!(published.model_picker_badges.len(), 1);
+        assert_eq!(published.model_picker_badges[0].label, "自用模型");
+        assert_eq!(
+            published.tooltip_data.unwrap().markdown_content.as_deref(),
+            Some("自用模型")
+        );
+        configured.group_name = None;
+        assert_eq!(
+            available_model(&configured).model_picker_badges[0].label,
+            "自用模型"
+        );
     }
 
     #[test]

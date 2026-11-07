@@ -516,35 +516,112 @@ fn normalize_mcp_parameters(tool_name: &str, mut parameters: Value) -> Result<Va
         .as_object_mut()
         .ok_or_else(|| invalid_mcp_parameters(tool_name))?;
     match schema.get("type") {
-        Some(Value::String(schema_type)) if schema_type == "object" => return Ok(parameters),
+        Some(Value::String(schema_type)) if schema_type == "object" => {}
         Some(_) => return Err(invalid_mcp_parameters(tool_name)),
-        None => {}
-    }
-    let object_only_union = ["anyOf", "oneOf"].into_iter().any(|keyword| {
-        schema
-            .get(keyword)
-            .and_then(Value::as_array)
-            .is_some_and(|branches| {
-                !branches.is_empty()
-                    && branches.iter().all(|branch| {
-                        branch
-                            .as_object()
-                            .and_then(|branch| branch.get("type"))
-                            .and_then(Value::as_str)
-                            == Some("object")
+        None => {
+            let object_only_union = ["anyOf", "oneOf"].into_iter().any(|keyword| {
+                schema
+                    .get(keyword)
+                    .and_then(Value::as_array)
+                    .is_some_and(|branches| {
+                        !branches.is_empty()
+                            && branches.iter().all(|branch| {
+                                branch
+                                    .as_object()
+                                    .and_then(|branch| branch.get("type"))
+                                    .and_then(Value::as_str)
+                                    == Some("object")
+                            })
                     })
-            })
-    });
-    if !object_only_union {
-        return Err(invalid_mcp_parameters(tool_name));
+            });
+            if !object_only_union {
+                return Err(invalid_mcp_parameters(tool_name));
+            }
+            // OpenAI-compatible providers require an object type at the root,
+            // even when all branches of a union already describe objects.
+            schema.insert("type".into(), Value::String("object".into()));
+        }
     }
-    // OpenAI-compatible function schemas (and the corresponding schema
-    // validators used by other providers) require the root schema to declare
-    // an object type. Cursor's app-control MCP sometimes sends an object-only
-    // `anyOf`/`oneOf` schema without that root annotation. Preserve the union
-    // while adding the annotation to the model-facing copy.
-    schema.insert("type".into(), Value::String("object".into()));
+    normalize_schema_integer_constraints(&mut parameters);
     Ok(parameters)
+}
+
+fn normalize_schema_integer_constraints(schema: &mut Value) {
+    let Some(object) = schema.as_object_mut() else {
+        return;
+    };
+    // Protobuf represents every number as a double; count constraints must be
+    // serialized as JSON integers for strict provider schema validators.
+    for keyword in [
+        "minLength",
+        "maxLength",
+        "minItems",
+        "maxItems",
+        "minProperties",
+        "maxProperties",
+        "minContains",
+        "maxContains",
+    ] {
+        if let Some(value) = object.get_mut(keyword) {
+            if let Some(number) = value
+                .as_number()
+                .filter(|number| number.is_f64())
+                .and_then(serde_json::Number::as_f64)
+                .filter(|number| {
+                    *number >= 0.0
+                        && *number < 18_446_744_073_709_551_616.0
+                        && number.fract() == 0.0
+                })
+            {
+                *value = Value::from(number as u64);
+            }
+        }
+    }
+    for keyword in [
+        "properties",
+        "patternProperties",
+        "$defs",
+        "definitions",
+        "dependentSchemas",
+        "dependencies",
+    ] {
+        if let Some(children) = object.get_mut(keyword).and_then(Value::as_object_mut) {
+            for child in children.values_mut() {
+                normalize_schema_integer_constraints(child);
+            }
+        }
+    }
+    for keyword in ["anyOf", "allOf", "oneOf", "prefixItems"] {
+        if let Some(children) = object.get_mut(keyword).and_then(Value::as_array_mut) {
+            for child in children {
+                normalize_schema_integer_constraints(child);
+            }
+        }
+    }
+    for keyword in [
+        "additionalProperties",
+        "unevaluatedProperties",
+        "propertyNames",
+        "items",
+        "contains",
+        "additionalItems",
+        "unevaluatedItems",
+        "not",
+        "if",
+        "then",
+        "else",
+        "contentSchema",
+    ] {
+        if let Some(child) = object.get_mut(keyword) {
+            if let Some(children) = child.as_array_mut() {
+                for child in children {
+                    normalize_schema_integer_constraints(child);
+                }
+            } else {
+                normalize_schema_integer_constraints(child);
+            }
+        }
+    }
 }
 
 fn invalid_mcp_parameters(tool_name: &str) -> Error {
@@ -571,6 +648,119 @@ fn prost_value(value: &prost_types::Value) -> Value {
         ),
         Some(Kind::ListValue(value)) => {
             Value::Array(value.values.iter().map(prost_value).collect())
+        }
+    }
+}
+
+#[cfg(test)]
+mod schema_tests {
+    use super::*;
+    use prost_types::value::Kind;
+    use serde_json::json;
+
+    fn protobuf_value(value: &Value) -> prost_types::Value {
+        let kind = match value {
+            Value::Null => Kind::NullValue(0),
+            Value::Bool(value) => Kind::BoolValue(*value),
+            Value::Number(value) => Kind::NumberValue(value.as_f64().unwrap()),
+            Value::String(value) => Kind::StringValue(value.clone()),
+            Value::Array(values) => Kind::ListValue(prost_types::ListValue {
+                values: values.iter().map(protobuf_value).collect(),
+            }),
+            Value::Object(values) => Kind::StructValue(prost_types::Struct {
+                fields: values
+                    .iter()
+                    .map(|(key, value)| (key.clone(), protobuf_value(value)))
+                    .collect(),
+            }),
+        };
+        prost_types::Value { kind: Some(kind) }
+    }
+
+    #[test]
+    fn schema_constraints_preserve_invalid_and_large_values_without_rounding() {
+        let original = json!({
+            "type": "object",
+            "maxItems": 9007199254740993_u64,
+            "minLength": 1.5,
+            "maxLength": -1.0,
+            "minProperties": 1e40,
+            "$defs": {"entry": {"type": "string", "minLength": 0.0}},
+            "additionalProperties": {"type": "array", "maxItems": 4.0},
+            "enum": [{"minLength": 1.0}]
+        });
+        let normalized = normalize_mcp_parameters("mcp", original.clone()).unwrap();
+        for key in [
+            "maxItems",
+            "minLength",
+            "maxLength",
+            "minProperties",
+            "enum",
+        ] {
+            assert_eq!(normalized[key], original[key], "{key} must stay unchanged");
+        }
+        assert_eq!(normalized["$defs"]["entry"]["minLength"].as_u64(), Some(0));
+        assert_eq!(
+            normalized["additionalProperties"]["maxItems"].as_u64(),
+            Some(4)
+        );
+    }
+
+    #[test]
+    fn dynamic_mcp_schema_preserves_integer_constraints_for_model_requests() {
+        let schema = json!({
+            "anyOf": [{"type": "object", "properties": {
+                "rootPath": {"type": "string", "minLength": 1.0, "maxLength": 100.0},
+                "minLength": {"type": "number", "default": 1.0},
+                "values": {"type": "array", "minItems": 2.0, "items": {
+                    "type": "object", "minProperties": 1.0,
+                    "properties": {"amount": {"type": "number", "minimum": 1.5}}
+                }}
+            }}],
+            "default": {"minLength": 1.0}
+        });
+        let name = "cursor-app-control-move_agent_to_cloned_root";
+        for use_json in [false, true] {
+            let wire = pb::McpToolDefinition {
+                name: name.into(),
+                input_schema: (!use_json).then(|| protobuf_value(&schema)),
+                input_schema_json: use_json.then(|| schema.to_string()),
+                ..Default::default()
+            };
+            let context = pb::RequestContext {
+                tools: vec![wire.clone()],
+                ..Default::default()
+            };
+            let tools = dynamic_mcp(&pb::AgentRunRequest::default(), &context).unwrap();
+            let (captured, definition) = &tools[name];
+            let parameters = &definition.parameters;
+            let properties = &parameters["anyOf"][0]["properties"];
+            assert_eq!(parameters["type"], "object");
+            for (value, expected) in [
+                (&properties["rootPath"]["minLength"], 1),
+                (&properties["rootPath"]["maxLength"], 100),
+                (&properties["values"]["minItems"], 2),
+                (&properties["values"]["items"]["minProperties"], 1),
+            ] {
+                assert_eq!(
+                    value.as_u64(),
+                    Some(expected),
+                    "constraint must serialize as an integer: {value}"
+                );
+            }
+            assert_eq!(
+                normalize_mcp_parameters(name, parameters.clone()).unwrap(),
+                *parameters,
+                "repeated compilation must produce the same tool schema"
+            );
+            assert_eq!(
+                properties["values"]["items"]["properties"]["amount"]["minimum"],
+                json!(1.5)
+            );
+            assert_eq!(properties["minLength"]["default"], json!(1.0));
+            assert_eq!(parameters["default"], json!({"minLength": 1.0}));
+            assert_eq!(captured.input_schema_json, wire.input_schema_json);
+            assert_eq!(captured.input_schema, wire.input_schema);
         }
     }
 }

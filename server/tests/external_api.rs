@@ -901,3 +901,45 @@ async fn matching_http_protocols_forward_native_requests_and_responses() {
     server.abort();
     drop(directory);
 }
+
+#[tokio::test]
+async fn the_control_api_never_serves_promotions_or_contacts_the_ad_service() {
+    let (router, _provider, _store, _directory) = setup().await;
+
+    let promotions = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/__byok-api__/api/promotions")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(promotions.status(), StatusCode::NOT_FOUND);
+
+    let image = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/__byok-api__/api/promotions/images/00.png")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(image.status(), StatusCode::NOT_FOUND);
+
+    let dismissal = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/__byok-api__/api/promotions/any-ad/dismissals")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(r#"{"reason":"no ads"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(dismissal.status(), StatusCode::NOT_FOUND);
+}

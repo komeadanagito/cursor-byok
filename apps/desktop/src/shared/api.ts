@@ -1,4 +1,3 @@
-import type { AdRuntime } from "../shell/ads/types";
 import type { CommitPromptLocale, Locale } from "../i18n/runtime";
 
 export type ModelType = "openai" | "anthropic";
@@ -78,6 +77,23 @@ export interface LegacyModelImportPreview {
   new_models: number;
   existing_models: number;
   models: LegacyModelImportPreviewItem[];
+}
+
+export interface MigrationFile {
+  format: string;
+  version: number;
+  app_version: string;
+  exported_at_ms: number;
+  models: ModelInput[];
+  plugin_resources: { plugin_id: string; resource_type: string; accounts: unknown[] }[];
+}
+
+export interface MigrationResult {
+  models_added: number;
+  models_total: number;
+  resources_added: number;
+  resources_updated: number;
+  warnings: string[];
 }
 
 export interface LegacyModelImportResult {
@@ -476,16 +492,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  ads: (disabledAdIds: Iterable<string>, locale: Locale) => {
-    const value = [...disabledAdIds].join(",");
-    return request<AdRuntime>("/promotions", {
-      headers: {
-        "accept-language": locale,
-        ...(value ? { "disable-ad-ids": value } : {}),
-      },
-    });
-  },
-  dismissAd: (id: string, reason: string) => request<void>(`/promotions/${encodeURIComponent(id)}/dismissals`, { method: "POST", body: JSON.stringify({ reason }) }),
   models: () => request<Model[]>("/models"),
   createModels: (models: ModelInput[]) => request<Model[]>("/models", { method: "POST", body: JSON.stringify({ models }) }),
   reorderModels: (modelHashes: string[]) => request<Model[]>("/models/order", { method: "PUT", body: JSON.stringify({ model_hashes: modelHashes }) }),
@@ -494,6 +500,8 @@ export const api = {
   importV0049Models: () => request<LegacyModelImportResult>("/models/import-v0049", { method: "POST" }),
   updateModel: (hash: string, model: ModelInput) => request<Model>(`/models/${hash}`, { method: "PUT", body: JSON.stringify(model) }),
   deleteModel: (hash: string) => request<void>(`/models/${hash}`, { method: "DELETE" }),
+  migrationExportUrl: () => `${API_ROOT}/migration/export`,
+  migrationImport: (file: MigrationFile) => request<MigrationResult>("/migration/import", { method: "POST", body: JSON.stringify(file) }),
   testModel: (hash: string, testId: string, signal?: AbortSignal) => request<ModelConnectivityResult>(`/models/${encodeURIComponent(hash)}/test/${encodeURIComponent(testId)}`, { method: "POST", signal }),
   cancelModelTest: (hash: string, testId: string) => request<void>(`/models/${encodeURIComponent(hash)}/test/${encodeURIComponent(testId)}`, { method: "DELETE" }),
   overview: (filter?: { startMs: number; endMs: number; modelHashes?: string[]; bucketMs?: number }) => {

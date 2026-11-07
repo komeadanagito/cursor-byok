@@ -31,6 +31,11 @@ pub struct App {
 impl App {
     pub async fn new(mut config: Config) -> Result<Self> {
         let store = Store::connect(&config.database_url).await?;
+        // Best-effort startup maintenance: dead checkpoint lineages and aged
+        // wire blobs are what make the database grow without bound.
+        if let Err(error) = store.prune_dead_lineages().await {
+            tracing::warn!(%error, "startup lineage prune skipped");
+        }
         if config.use_persisted_ports {
             config
                 .listen_addr

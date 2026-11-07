@@ -5,6 +5,15 @@
   gap: 16px;
 }
 
+.noteWarning {
+  align-self: flex-start;
+  padding: 4px 8px;
+  color: #805500;
+  background: #fff0bf;
+  border-radius: 5px;
+  font-size: type.$font-size-xs;
+}
+
 .takeoverActions {
   display: flex;
   align-items: center;
@@ -344,6 +353,27 @@
     gap: 8px;
     color: var(--vscode-descriptionForeground);
     font-size: type.$font-size-xs;
+
+    > span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  }
+}
+
+.infoButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--vscode-descriptionForeground);
+  cursor: help;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--vscode-foreground);
   }
 }
 

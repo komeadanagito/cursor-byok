@@ -9,11 +9,13 @@ Release through `.github/workflows/release.yml`. Preserve both updater formats: 
 
 ## Publication authority
 
-- Only the repository author, GitHub user `leookun`, may authorize a live release.
-- Before any live mutation, require an explicit release instruction from the author in the current task and verify `gh api user --jq .login` returns `leookun`.
+- Live releases belong to **this** repository, [zkldwxz/cursor-byok](https://github.com/zkldwxz/cursor-byok). The archived upstream `leookun/cursor-byok` is not the publication authority here.
+- The release workflow accepts a tag push from the repository owner **or** a GitHub App (`name[bot]`), including Cursor cloud agents that push as `cursor[bot]`. A human collaborator who is not the owner still cannot publish under their own login.
+- Write access to push the `v*` tag is the authorization. Do not ask the owner to re-push a tag that an allowed bot already pushed.
+- Before any live mutation, require an explicit release instruction in the current task (for example “构建新版本”, “publish 1.0.3”, “push the tag”). Preparing version bumps, README, and a PR is allowed without a tag push.
 - Treat all of these as publication actions: pushing a `v*` tag, rerunning the release workflow, and publishing or editing a GitHub Release. Pushing a release commit to `main` only prepares the release and must never trigger publication by itself.
 - Without that authorization, restrict work to inspection, local edits, validation, and a release-ready commit or branch. Do not infer publication permission from requests such as “prepare”, “check”, or “ready to release”.
-- Never print, commit, or upload `.tauri/cursor-byok.key` anywhere except the repository's `TAURI_SIGNING_PRIVATE_KEY` Actions Secret when the author explicitly requests that secret configuration.
+- Never print, commit, or upload `.tauri/cursor-byok.key` anywhere except the repository's `TAURI_SIGNING_PRIVATE_KEY` Actions Secret when the owner explicitly requests that secret configuration.
 - Never delete, replace, or move an existing tag or published Release without separate explicit authorization.
 
 ## Version and GitHub Release policy
@@ -24,7 +26,8 @@ Release through `.github/workflows/release.yml`. Preserve both updater formats: 
 - This normal-Release rule is required because both installed update clients resolve assets through GitHub's `/releases/latest/download/` path, which excludes GitHub prereleases.
 - Windows beta builds must use the NSIS bundle. WiX/MSI rejects nonnumeric prerelease identifiers such as `beta.1`; do not weaken the SemVer tag to accommodate MSI.
 - Release only from a `v*` tag whose commit is contained in `origin/main`. The tag must equal `v<version>` from the desktop manifests.
-- Keep ordinary `main` pushes and manual workflow dispatch disabled as release triggers. The author pushes the matching tag only after the release commit is present on `origin/main`.
+- Keep ordinary `main` pushes and manual workflow dispatch disabled as release triggers. Push the matching tag only after the release commit is present on `origin/main`.
+- GitHub Actions reads `release.yml` from the tagged commit. A workflow policy change cannot be picked up by re-running an older tag; bump the version and tag the commit that contains the new workflow.
 - Never republish an already published version. Select a new version instead.
 
 ## Release sources
@@ -43,7 +46,9 @@ cursor-byok/
 ├── scripts/cursor-proto/proto/
 │   ├── agent_v1.proto
 │   └── aiserver_v1.proto
-└── .github/workflows/release.yml
+└── .github/
+    ├── scripts/                 # author check and updater manifests
+    └── workflows/release.yml
 ```
 
 The two listed Proto files are required build inputs and must be committed. Keep the other locally extracted Proto files ignored unless the build starts depending on them.

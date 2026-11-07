@@ -16,6 +16,12 @@ export type OpenAiChatCall = {
   model: string;
   request: LlmRequest;
   headers?: Record<string, string>;
+  /** Upstream field for the output limit; Z.AI coding plans expect max_tokens. */
+  maxTokensField?: "max_tokens" | "max_completion_tokens";
+  /** Some compatible endpoints reject the OpenAI stream_options object. */
+  includeStreamUsage?: boolean;
+  includeServiceTier?: boolean;
+  includePromptCacheKey?: boolean;
   /** 最后合并进请求体。 */
   extraBody?: Record<string, JsonValue>;
 };
@@ -87,8 +93,10 @@ export function buildChatBody(call: OpenAiChatCall): Record<string, JsonValue> {
     model: call.model,
     messages,
     stream: true,
-    stream_options: { include_usage: true },
   };
+  if (call.includeStreamUsage !== false) {
+    body.stream_options = { include_usage: true };
+  }
   if (call.request.tools.length > 0) {
     body.tools = call.request.tools.map((tool) => ({
       type: "function",
@@ -96,13 +104,17 @@ export function buildChatBody(call: OpenAiChatCall): Record<string, JsonValue> {
     }));
   }
   if (call.request.maxOutputTokens !== null) {
-    body.max_completion_tokens = call.request.maxOutputTokens;
+    body[call.maxTokensField ?? "max_completion_tokens"] = call.request.maxOutputTokens;
   }
   if (call.request.reasoning.effort !== null) {
     body.reasoning_effort = call.request.reasoning.effort;
   }
-  if (call.request.latency === "fast") body.service_tier = "fast";
-  if (call.request.cacheKey !== null) body.prompt_cache_key = call.request.cacheKey;
+  if (call.request.latency === "fast" && call.includeServiceTier !== false) {
+    body.service_tier = "fast";
+  }
+  if (call.request.cacheKey !== null && call.includePromptCacheKey !== false) {
+    body.prompt_cache_key = call.request.cacheKey;
+  }
   return { ...body, ...call.extraBody };
 }
 

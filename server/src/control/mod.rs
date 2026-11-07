@@ -1,7 +1,7 @@
 //! Exposes the local control API.
-mod ads;
 mod calls;
 mod harness;
+mod migration;
 mod models;
 mod overview;
 mod plugins;
@@ -111,15 +111,6 @@ fn proxy_error(error: impl std::fmt::Display) -> Response<Body> {
 
 pub fn api_router(service: ControlService) -> Router {
     Router::new()
-        .route("/__byok-api__/api/promotions", get(ads::get))
-        .route(
-            "/__byok-api__/api/promotions/images/{file_name}",
-            get(ads::image),
-        )
-        .route(
-            "/__byok-api__/api/promotions/{ad_id}/dismissals",
-            post(ads::dismiss),
-        )
         .route(
             "/__byok-api__/api/models",
             get(models::list).post(models::create),
@@ -188,6 +179,8 @@ pub fn api_router(service: ControlService) -> Router {
             "/__byok-api__/api/plugins/{plugin_id}/providers/{provider_id}/models/enabled",
             put(plugins::set_model_enabled),
         )
+        .route("/__byok-api__/api/migration/export", get(migration::export))
+        .route("/__byok-api__/api/migration/import", post(migration::import))
         .route(
             "/__byok-api__/api/settings/observability",
             get(settings::get).put(settings::update),

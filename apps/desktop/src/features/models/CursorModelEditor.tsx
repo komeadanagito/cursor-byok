@@ -2,14 +2,18 @@ import { useRef } from "react";
 import type { ModelInput, ModelType } from "../../shared/api";
 import { defaultCustomHeadersText } from "../../shared/utils/modelDefaults";
 import { modelPresets, presetEndpoint, trimTrailingSlash, type ModelPreset } from "../../shared/utils/modelPresets";
+import { usesZcodeEnvironment, zcodeEnvironment } from "../../shared/utils/zcodeEnvironment";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Checkbox";
 import { FormField, SecretTextInput, TextInput } from "../../shared/ui/FormControls";
+import { Icon } from "../../shared/ui/Icon";
 import { JsonEditor } from "../../shared/ui/JsonEditor";
 import { Combobox, Select, type ComboboxHandle } from "../../shared/ui/Select";
 import { Switch } from "../../shared/ui/Switch";
-import { claudeIcon, openAiIcon } from "../../shared/ui/icons";
+import { TooltipTrigger } from "../../shared/ui/TooltipTrigger";
+import { claudeIcon, informationOutlineIcon, openAiIcon } from "../../shared/ui/icons";
 import { CursorPresetChips } from "./CursorPresetChips";
+import { modelNoteTooLong } from "./modelNote";
 import styles from "./CursorSettings.module.scss";
 
 export type CursorModelDraft = {
@@ -51,10 +55,11 @@ export const emptyCursorModelDraft = (): CursorModelDraft => ({
   anthropicExtraParamsText: "{}",
 });
 
-export function CursorModelEditor({ draft, modelOptions, discovering, onChange, onDiscover }: {
+export function CursorModelEditor({ draft, modelOptions, discovering, zcodePluginReady, onChange, onDiscover }: {
   draft: CursorModelDraft;
   modelOptions: string[];
   discovering: boolean;
+  zcodePluginReady: boolean;
   onChange: (draft: CursorModelDraft) => void;
   onDiscover: () => Promise<boolean>;
 }) {
@@ -158,7 +163,7 @@ export function CursorModelEditor({ draft, modelOptions, discovering, onChange, 
 
       <FormField label={t("模型名称")} hint={t("可以直接输入模型标识，也可以读取接口返回的模型列表。")}><Combobox ref={modelCombobox} value={draft.model.model_id} options={combinedOptions} placeholder="gpt-5" append={<Button className={styles.discoverButton} disabled={discovering || !canDiscover} onClick={() => void discoverModels()}>{discovering ? t("获取中…") : t("获取模型")}</Button>} onChange={(model_id) => setModel({ model_id, display_name: draft.model.display_name || model_id })} /></FormField>
       <FormField label={t("显示名称")} hint={t("仅用于界面展示，不会改变发送给模型服务的模型名称。")}> <TextInput placeholder={t("例如：主力模型")} value={draft.model.display_name} onChange={(event) => setModel({ display_name: event.target.value })} /></FormField>
-      <FormField className={styles.fullWidth} label={t("备注")} hint={t("显示在 Cursor 模型说明中。")}> <TextInput placeholder={t("请输入模型备注")} value={draft.model.tooltip_data} onChange={(event) => setModel({ tooltip_data: event.target.value })} /></FormField>
+      <FormField className={styles.fullWidth} label={t("备注")} hint={t("显示在 Cursor 模型标签和说明中，建议不超过 5 个字。")}> <TextInput placeholder={t("请输入模型备注")} value={draft.model.tooltip_data} onChange={(event) => setModel({ tooltip_data: event.target.value })} />{modelNoteTooLong(draft.model.tooltip_data) && <span className={styles.noteWarning} role="status">{t("备注建议不超过 5 个字，以免标签过长。")}</span>}</FormField>
 
       <FormField label={t("上下文窗口 Token")} hint={t("留空时使用默认值。")}> <TextInput type="number" min={1} step={1} placeholder={t("留空使用默认值")} value={draft.model.context_window_tokens ?? ""} onChange={(event) => setModel({ context_window_tokens: numberValue(event.target.value) })} /></FormField>
       {draft.model.type === "openai" ? <>
@@ -190,8 +195,101 @@ export function CursorModelEditor({ draft, modelOptions, discovering, onChange, 
         onEnabledChange={(anthropic_extra_params_enabled) => setModel({ anthropic_extra_params_enabled })}
         onTextChange={(anthropicExtraParamsText) => onChange({ ...draft, anthropicExtraParamsText })}
       />}
+
+      <ZcodeEnvironmentRow
+        draft={draft}
+        pluginReady={zcodePluginReady}
+        onChange={onChange}
+      />
     </div>
   </div>;
+}
+
+/**
+ * Spoofs the official ZCode coding-plan client for a manually configured model.
+ *
+ * The identity is filled into the same custom-header and extra-parameter fields
+ * the user can edit by hand, so the switch is a convenience over those fields
+ * rather than a second configuration path. It is only offered while the
+ * `zcode-auth` plugin is installed and enabled.
+ */
+function ZcodeEnvironmentRow({ draft, pluginReady, onChange }: {
+  draft: CursorModelDraft;
+  pluginReady: boolean;
+  onChange: (draft: CursorModelDraft) => void;
+}) {
+  const active = usesZcodeEnvironment(parseObjectLoose(draft.customHeadersText));
+  const tip = pluginReady
+    ? t("让该模型以官方 ZCode 客户端的身份请求智谱 Coding Plan，获得与官方客户端一致的模型环境。开启后会写入自定义 Headers 与额外参数，可再手动微调。")
+    : t("需先在「插件」页安装并启用 ZCode 插件，才能为模型伪造 ZCode 环境。");
+
+  const apply = (checked: boolean) => {
+    const isAnthropic = draft.model.type === "anthropic";
+    const extraText = isAnthropic ? draft.anthropicExtraParamsText : draft.openAIExtraParamsText;
+    if (!checked) {
+      // Strip only what this switch writes; anything the user added by hand stays.
+      const headers = parseObjectLoose(draft.customHeadersText);
+      for (const key of Object.keys(zcodeEnvironment().customHeaders)) delete headers[key];
+      const extra = parseObjectLoose(extraText);
+      delete extra.thinking;
+      delete extra.tool_stream;
+      const extraEnabled = Object.keys(extra).length > 0;
+      onChange({
+        ...draft,
+        customHeadersText: JSON.stringify(headers, null, 2),
+        openAIExtraParamsText: isAnthropic ? draft.openAIExtraParamsText : JSON.stringify(extra, null, 2),
+        anthropicExtraParamsText: isAnthropic ? JSON.stringify(extra, null, 2) : draft.anthropicExtraParamsText,
+        model: {
+          ...draft.model,
+          custom_headers_enabled: Object.keys(headers).length > 0 ? draft.model.custom_headers_enabled : false,
+          openai_extra_params_enabled: isAnthropic ? draft.model.openai_extra_params_enabled : (extraEnabled && draft.model.openai_extra_params_enabled),
+          anthropic_extra_params_enabled: isAnthropic ? (extraEnabled && draft.model.anthropic_extra_params_enabled) : draft.model.anthropic_extra_params_enabled,
+        },
+      });
+      return;
+    }
+    const env = zcodeEnvironment();
+    onChange({
+      ...draft,
+      customHeadersText: JSON.stringify(env.customHeaders, null, 2),
+      openAIExtraParamsText: isAnthropic ? draft.openAIExtraParamsText : JSON.stringify(env.openaiExtraParams, null, 2),
+      anthropicExtraParamsText: isAnthropic ? JSON.stringify(env.openaiExtraParams, null, 2) : draft.anthropicExtraParamsText,
+      model: {
+        ...draft.model,
+        custom_headers_enabled: true,
+        openai_extra_params_enabled: isAnthropic ? draft.model.openai_extra_params_enabled : true,
+        anthropic_extra_params_enabled: isAnthropic ? true : draft.model.anthropic_extra_params_enabled,
+      },
+    });
+  };
+
+  return <div className={`${styles.fullWidth} ${styles.jsonOption}`}>
+    <label>
+      <span>
+        {t("伪造 ZCode 环境")}
+        <TooltipTrigger label={tip}>
+          <button type="button" className={styles.infoButton} aria-label={tip}>
+            <Icon icon={informationOutlineIcon} size="1em" />
+          </button>
+        </TooltipTrigger>
+      </span>
+      <Switch
+        label={t("伪造 ZCode 环境")}
+        checked={active}
+        disabled={!pluginReady}
+        onChange={apply}
+      />
+    </label>
+  </div>;
+}
+
+function parseObjectLoose(text: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
 }
 
 function ToggleJsonField({ label, enabled, text, onEnabledChange, onTextChange }: {

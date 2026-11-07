@@ -49,7 +49,81 @@ function ResourceAddSection({ plugin, resource, onConfigured }: {
       method={method}
       onConfigured={onConfigured}
     />)}
+    {resource.import && <ImportMethodCard
+      pluginId={plugin.id}
+      resource={resource}
+      onConfigured={onConfigured}
+    />}
   </>;
+}
+
+function ImportMethodCard({ pluginId, resource, onConfigured }: {
+  pluginId: string;
+  resource: PluginResourceDescriptor;
+  onConfigured: () => void;
+}) {
+  const { locale } = useI18n();
+  const importSupport = resource.import;
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<"idle" | "importing" | "success" | "error">("idle");
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const importFiles = async (files: FileList | null) => {
+    if (!files?.length || !importSupport) return;
+    setStatus("importing");
+    setFeedback(null);
+    try {
+      const entries = await Promise.all(
+        [...files].map(async (file) => ({ name: file.name, content: await file.text() })),
+      );
+      const result = await api.importPluginResources(pluginId, resource.type, entries);
+      await appStore.refreshPlugins();
+      if (result.modelSyncError) {
+        setStatus("error");
+        setFeedback(t("\u8d26\u53f7\u5df2\u4fdd\u5b58\uff0c\u4f46\u540c\u6b65\u6a21\u578b\u5931\u8d25\uff1a{error}", {
+          error: result.modelSyncError,
+        }));
+        return;
+      }
+      const summary = t("\u5bfc\u5165\u5b8c\u6210\uff1a\u65b0\u589e {added}\uff0c\u66f4\u65b0 {updated}", {
+        added: result.added,
+        updated: result.updated,
+      });
+      setStatus("success");
+      setFeedback(result.warnings.length > 0 ? `${summary} \u00b7 ${result.warnings.join("; ")}` : summary);
+      onConfigured();
+    } catch (cause) {
+      setStatus("error");
+      setFeedback(errorText(cause));
+    } finally {
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  if (!importSupport) return null;
+  return <Card className={styles.methodCard}>
+    <strong>{pluginText(importSupport.displayName, locale)}</strong>
+    {importSupport.description && <span>{pluginText(importSupport.description, locale)}</span>}
+    <div className={styles.actions}>
+      <Button
+        variant="primary"
+        disabled={status === "importing"}
+        onClick={() => fileInput.current?.click()}
+      >
+        {status === "importing" ? t("\u6b63\u5728\u5bfc\u5165\u2026") : t("\u6279\u91cf\u5bfc\u5165")}
+      </Button>
+    </div>
+    {status === "success" && feedback && <span className={styles.success}>{feedback}</span>}
+    {status === "error" && feedback && <span className={styles.error} role="alert">{feedback}</span>}
+    <input
+      ref={fileInput}
+      type="file"
+      hidden
+      accept={importSupport.accept.join(",")}
+      multiple={importSupport.multiple}
+      onChange={(event) => void importFiles(event.target.files)}
+    />
+  </Card>;
 }
 
 function OAuthMethodCard({ pluginId, resourceType, method, onConfigured }: {

@@ -7,6 +7,8 @@ import { ActionMenu, type ActionMenuItem } from "../../shared/ui/ActionMenu";
 import { Button } from "../../shared/ui/Button";
 import { Card } from "../../shared/ui/Card";
 import { Modal } from "../../shared/ui/Modal";
+import { Switch } from "../../shared/ui/Switch";
+import { TooltipTrigger } from "../../shared/ui/TooltipTrigger";
 import { useMessage } from "../../shared/ui/message";
 import { TruncatedButton } from "../../shared/ui/TruncatedButton";
 import { PluginAddPanel, PluginSettingsPanel } from "./PluginResourcePanels";
@@ -144,6 +146,29 @@ function PluginCard({ plugin, onOpen }: {
   const subtitle = plugin.providers.map((provider) => pluginText(provider.displayName, locale)).join(" · ") || plugin.id;
   const importResource = plugin.resources.find((resource) => resource.import);
   const exportResource = plugin.resources.find((resource) => resource.resources.length > 0);
+  const models = plugin.providers.flatMap((provider) => provider.models);
+  const enabled = models.some((model) => model.enabled);
+  const stateLabel = models.length > 0 && enabled === false
+    ? t("未启用")
+    : configured
+    ? t("已配置")
+    : t("未配置");
+  const [toggling, setToggling] = useState(false);
+
+  const togglePlugin = async (nextEnabled: boolean) => {
+    setToggling(true);
+    try {
+      for (const model of models) {
+        if (model.enabled === nextEnabled) continue;
+        await api.setPluginModelEnabled(plugin.id, model.providerId, model.modelId, nextEnabled);
+      }
+      await appStore.refreshPlugins();
+    } catch (cause) {
+      message(cause instanceof Error ? cause.message : String(cause), { duration: 5000 });
+    } finally {
+      setToggling(false);
+    }
+  };
 
   const importFiles = async (files: FileList | null) => {
     if (!files?.length || !importResource) return;
@@ -210,11 +235,23 @@ function PluginCard({ plugin, onOpen }: {
           <span className={styles.pluginName}>{plugin.name}</span>
           <span className={styles.pluginId}>{subtitle}</span>
         </div>
-        <span
-          className={`${styles.stateBadge} ${configured ? styles.stateReady : ""}`}
-        >
-          {configured ? t("已配置") : t("未配置")}
-        </span>
+        <div className={styles.pluginState}>
+          <span
+            className={`${styles.stateBadge} ${configured && enabled ? styles.stateReady : ""}`}
+          >
+            {stateLabel}
+          </span>
+          {models.length > 0 && (
+            <TooltipTrigger label={t("启用 {model}", { model: plugin.name })}>
+              <Switch
+                checked={enabled}
+                disabled={toggling}
+                label={t("启用 {model}", { model: plugin.name })}
+                onChange={(nextEnabled) => void togglePlugin(nextEnabled)}
+              />
+            </TooltipTrigger>
+          )}
+        </div>
       </div>
       <div className={styles.pluginMeta}>
         <span>

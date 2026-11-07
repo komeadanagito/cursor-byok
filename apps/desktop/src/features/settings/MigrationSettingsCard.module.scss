@@ -1,0 +1,36 @@
+@use "../../styles/typography" as type;
+
+.content {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.description {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+
+  small {
+    color: var(--vscode-descriptionForeground);
+    font-size: type.$font-size-xs;
+  }
+}
+
+.preview {
+  display: grid;
+  gap: 8px;
+
+  .warning {
+    color: var(--vscode-charts-orange, #cca700);
+    font-size: type.$font-size-xs;
+  }
+}

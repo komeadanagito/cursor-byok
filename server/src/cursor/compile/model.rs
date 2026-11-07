@@ -105,10 +105,8 @@ fn from_requested(
                 spec.reasoning.enabled |= spec.reasoning.effort.is_some();
             }
             "thinking" => spec.reasoning.enabled |= parse_bool(parameter)?,
-            "fast" => {
-                if parse_bool(parameter)? {
-                    spec.latency = ModelLatency::Fast;
-                }
+            "fast" if parse_bool(parameter)? => {
+                spec.latency = ModelLatency::Fast;
             }
             "context" => {
                 spec.context_window_tokens =
