@@ -160,22 +160,21 @@ pub fn decode(request: &ai::BidiAppendRequest) -> Result<DecodedAppend> {
         .map(|id| id.request_id.as_str())
         .filter(|id| !id.is_empty())
         .ok_or_else(|| Error::Protocol("BidiAppend request_id is required".into()))?;
-    if !request.data_binary.is_empty() {
-        return Err(Error::Protocol(
-            "BidiAppend data_binary is not part of the captured protocol".into(),
-        ));
-    }
-    if request.data.is_empty() {
+    let message = if !request.data_binary.is_empty() {
+        agent::AgentClientMessage::decode(request.data_binary.as_slice())?
+    } else if !request.data.is_empty() {
+        let payload = hex::decode(&request.data)
+            .map_err(|error| Error::Protocol(format!("invalid BidiAppend hex: {error}")))?;
+        agent::AgentClientMessage::decode(payload.as_slice())?
+    } else {
         return Err(Error::Protocol(
             "BidiAppend contains no AgentClientMessage".into(),
         ));
-    }
-    let payload = hex::decode(&request.data)
-        .map_err(|error| Error::Protocol(format!("invalid BidiAppend hex: {error}")))?;
+    };
     Ok(DecodedAppend {
         request_id: request_id.into(),
         seqno: request.append_seqno,
-        message: agent::AgentClientMessage::decode(payload.as_slice())?,
+        message,
     })
 }
 
@@ -208,4 +207,61 @@ pub async fn append(
         })
         .await?;
     Ok(ai::BidiAppendResponse {})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decodes_bidi_append_with_data_binary() {
+        let client_message = agent::AgentClientMessage {
+            message: Some(agent::agent_client_message::Message::ClientHeartbeat(
+                agent::ClientHeartbeat {},
+            )),
+        };
+        let bytes = client_message.encode_to_vec();
+        let request = ai::BidiAppendRequest {
+            request_id: Some(ai::BidiRequestId {
+                request_id: "req-1".into(),
+            }),
+            append_seqno: 1,
+            data_binary: bytes,
+            data: String::new(),
+        };
+
+        let decoded = decode(&request).expect("decode data_binary");
+        assert_eq!(decoded.request_id, "req-1");
+        assert_eq!(decoded.seqno, 1);
+        assert!(matches!(
+            decoded.message.message,
+            Some(agent::agent_client_message::Message::ClientHeartbeat(_))
+        ));
+    }
+
+    #[test]
+    fn decodes_bidi_append_with_hex_data() {
+        let client_message = agent::AgentClientMessage {
+            message: Some(agent::agent_client_message::Message::ClientHeartbeat(
+                agent::ClientHeartbeat {},
+            )),
+        };
+        let bytes = client_message.encode_to_vec();
+        let request = ai::BidiAppendRequest {
+            request_id: Some(ai::BidiRequestId {
+                request_id: "req-2".into(),
+            }),
+            append_seqno: 2,
+            data_binary: Vec::new(),
+            data: hex::encode(bytes),
+        };
+
+        let decoded = decode(&request).expect("decode hex data");
+        assert_eq!(decoded.request_id, "req-2");
+        assert_eq!(decoded.seqno, 2);
+        assert!(matches!(
+            decoded.message.message,
+            Some(agent::agent_client_message::Message::ClientHeartbeat(_))
+        ));
+    }
 }
