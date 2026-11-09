@@ -53,6 +53,8 @@ struct CallbackState {
 struct CallbackQuery {
     code: Option<String>,
     state: Option<String>,
+    user_id: Option<String>,
+    access_token: Option<String>,
     error: Option<String>,
     error_description: Option<String>,
 }
@@ -110,7 +112,32 @@ async fn handle_callback(
     Query(query): Query<CallbackQuery>,
 ) -> Html<String> {
     let locale = callback_locale(&headers);
-    if query.state.as_deref() != Some(state.expected_state.as_str()) {
+    let native_credentials = if query.state.is_none() {
+        query
+            .user_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .zip(
+                query
+                    .access_token
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty()),
+            )
+            .map(|(user_id, access_token)| {
+                serde_json::json!({
+                    "user_id": user_id,
+                    "access_token": access_token,
+                })
+                .to_string()
+            })
+    } else {
+        None
+    };
+
+    if native_credentials.is_none() && query.state.as_deref() != Some(state.expected_state.as_str())
+    {
         return Html(render_page(
             &state,
             locale,
@@ -123,12 +150,13 @@ async fn handle_callback(
         ));
     }
 
-    let result = match query.code.filter(|code| !code.trim().is_empty()) {
-        Some(code) => Ok(code),
-        None => Err(query.error_description.or(query.error).unwrap_or_else(|| {
-            localized(locale, "授权被取消。", "Authorization was cancelled.").to_owned()
-        })),
-    };
+    let result =
+        match native_credentials.or_else(|| query.code.filter(|code| !code.trim().is_empty())) {
+            Some(code) => Ok(code),
+            None => Err(query.error_description.or(query.error).unwrap_or_else(|| {
+                localized(locale, "授权被取消。", "Authorization was cancelled.").to_owned()
+            })),
+        };
     let Some(sender) = state.sender.lock().await.take() else {
         return Html(render_page(
             &state,
@@ -335,6 +363,51 @@ mod tests {
         });
         let request = (&mut callback.receiver).await.unwrap();
         assert_eq!(request.result.unwrap(), "accepted");
+        request
+            .response
+            .send(CallbackOutcome {
+                success: true,
+                message: None,
+            })
+            .unwrap();
+        assert!(browser.await.unwrap().contains("Resource added"));
+    }
+
+    #[tokio::test]
+    async fn callback_delivers_native_app_signin_credentials_without_state() {
+        let mut callback = bind(
+            None,
+            "/",
+            "expected".into(),
+            "Zed".into(),
+            "data:image/svg+xml;base64,abc".into(),
+            serde_json::json!("Zed account"),
+        )
+        .await
+        .unwrap();
+        let client = reqwest::Client::new();
+        let redirect_uri = callback.redirect_uri.clone();
+        let browser = tokio::spawn(async move {
+            client
+                .get(format!(
+                    "{redirect_uri}?user_id=42&access_token=encrypted_token"
+                ))
+                .send()
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap()
+        });
+        let request = (&mut callback.receiver).await.unwrap();
+        let payload: serde_json::Value = serde_json::from_str(&request.result.unwrap()).unwrap();
+        assert_eq!(
+            payload,
+            serde_json::json!({
+                "user_id": "42",
+                "access_token": "encrypted_token",
+            })
+        );
         request
             .response
             .send(CallbackOutcome {
