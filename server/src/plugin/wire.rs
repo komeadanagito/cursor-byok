@@ -150,7 +150,7 @@ pub fn model_event(value: &serde_json::Value) -> Result<ModelEvent> {
             let input_tokens = tokens("inputTokens");
             ModelEvent::Usage(Usage {
                 input_tokens,
-                context_input_tokens: input_tokens,
+                context_input_tokens: tokens("contextInputTokens").or(input_tokens),
                 output_tokens: tokens("outputTokens"),
                 total_tokens: tokens("totalTokens"),
                 cache_read_tokens: tokens("cacheReadTokens"),
@@ -291,6 +291,23 @@ mod tests {
                 output_tokens: Some(2),
                 total_tokens: None,
                 cache_read_tokens: Some(4),
+                cache_write_tokens: None,
+                reasoning_tokens: None,
+            })
+        );
+        let usage_with_context = model_event(&serde_json::json!({
+            "type":"usage",
+            "usage":{"inputTokens":2,"contextInputTokens":14,"outputTokens":2,"cacheReadTokens":12}
+        }))
+        .unwrap();
+        assert_eq!(
+            usage_with_context,
+            ModelEvent::Usage(Usage {
+                input_tokens: Some(2),
+                context_input_tokens: Some(14),
+                output_tokens: Some(2),
+                total_tokens: None,
+                cache_read_tokens: Some(12),
                 cache_write_tokens: None,
                 reasoning_tokens: None,
             })

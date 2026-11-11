@@ -465,6 +465,20 @@ Deno.test("Anthropic provider streams thinking, text, tool calls, replay state, 
       (e.value as { signature?: string })?.signature === "sig_abc_123"
     ),
   );
+  const usageEvent = events.find((e) => e.type === "usage") as {
+    type: "usage";
+    usage: Record<string, unknown>;
+  };
+  assert(usageEvent !== undefined);
+  assertEquals(usageEvent.usage, {
+    inputTokens: 120,
+    contextInputTokens: 200,
+    outputTokens: 45,
+    totalTokens: 245,
+    cacheReadTokens: 80,
+    cacheWriteTokens: null,
+    reasoningTokens: null,
+  });
   assert(events.some((e) => e.type === "done" && e.reason === "tool-use"));
 });
 

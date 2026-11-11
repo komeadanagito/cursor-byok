@@ -65,6 +65,8 @@ export type LlmRequest = {
 
 export type ModelUsage = {
   inputTokens: number | null;
+  /** 上下文总输入 token 数(包含缓存命中与写入);未指定时宿主回退为 inputTokens。 */
+  contextInputTokens?: number | null;
   outputTokens: number | null;
   totalTokens: number | null;
   cacheReadTokens: number | null;
