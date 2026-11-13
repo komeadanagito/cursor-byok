@@ -217,3 +217,126 @@ Deno.test("isQuotaError identifies rate limits and quota exhaustion", () => {
   assert(isQuotaError("HTTP 429 Too Many Requests"));
   assert(!isQuotaError("Invalid authorization header"));
 });
+
+Deno.test("provider tags emitted thoughtSignature with modelFamily and skips incompatible cross-model signatures on replay", async () => {
+  const emitted: Array<Record<string, unknown>> = [];
+
+  // 1. Claude turn emits replay-state tagged with modelFamily: "claude"
+  await antigravityProvider.invoke(
+    {
+      model: {
+        id: "claude-sonnet-5-5-medium",
+        displayName: "Claude Sonnet 5.5 (Medium)",
+        privateData: {},
+      },
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: request(),
+    },
+    { emit: (event) => emitted.push(event as unknown as Record<string, unknown>) },
+    context({
+      stream: () => ({
+        status: 200,
+        headers: {},
+        lines: sse([
+          'data: {"response":{"candidates":[{"content":{"parts":[{"text":"ok","thoughtSignature":"claude_sig_123"}]},"finishReason":"STOP"}]}}',
+        ]),
+      }),
+    }),
+  );
+
+  const replayEvent = emitted.find((e) => e.type === "replay-state") as {
+    type: string;
+    providerKind: string;
+    value: { thoughtSignature?: string; modelFamily?: string };
+  } | undefined;
+  assert(replayEvent !== undefined);
+  assertEquals(replayEvent.providerKind, "antigravity");
+  assertEquals(replayEvent.value, {
+    thoughtSignature: "claude_sig_123",
+    modelFamily: "claude",
+  });
+
+  // 2. Switching to Gemini 4 Hydrogen in the same conversation must NOT send Claude's signature or legacy untagged signatures,
+  //    while a matching gemini-4 signature MUST be preserved.
+  let capturedBody = "";
+  await antigravityProvider.invoke(
+    {
+      model: {
+        id: "gemini-4-hydrogen-high",
+        displayName: "Gemini 4 Hydrogen (High)",
+        privateData: {},
+      },
+      resource: snapshot({
+        accessToken: "mock-access-token",
+        refreshToken: "mock-refresh-token",
+        expiresAt: Date.now() + 3600_000,
+        projectId: "test-project-123",
+      }),
+      request: {
+        ...request(),
+        messages: [
+          { role: "user", content: [{ type: "text", text: "turn 1" }] },
+          {
+            role: "assistant",
+            text: "",
+            thinking: "",
+            replayState: {
+              providerKind: "antigravity",
+              value: { thoughtSignature: "claude_sig_123", modelFamily: "claude" },
+            },
+            toolCalls: [{ index: 0, callId: "c1", name: "ping", arguments: {} }],
+          },
+          { role: "tool", callId: "c1", name: "ping", content: "ok", isError: false, parts: [] },
+          {
+            role: "assistant",
+            text: "",
+            thinking: "",
+            replayState: {
+              providerKind: "antigravity",
+              value: { thoughtSignature: "legacy_untagged_sig" },
+            },
+            toolCalls: [{ index: 0, callId: "c2", name: "ping", arguments: {} }],
+          },
+          { role: "tool", callId: "c2", name: "ping", content: "ok", isError: false, parts: [] },
+          {
+            role: "assistant",
+            text: "",
+            thinking: "",
+            replayState: {
+              providerKind: "antigravity",
+              value: { thoughtSignature: "gemini4_sig_456", modelFamily: "gemini-4" },
+            },
+            toolCalls: [{ index: 0, callId: "c3", name: "ping", arguments: {} }],
+          },
+          { role: "tool", callId: "c3", name: "ping", content: "ok", isError: false, parts: [] },
+        ],
+      },
+    },
+    { emit: () => {} },
+    context({
+      stream: (_url, init) => {
+        capturedBody = init?.body ?? "";
+        return {
+          status: 200,
+          headers: {},
+          lines: sse([
+            'data: {"response":{"candidates":[{"content":{"parts":[{"text":"done"}]},"finishReason":"STOP"}]}}',
+          ]),
+        };
+      },
+    }),
+  );
+
+  const body = JSON.parse(capturedBody) as {
+    request: { contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> };
+  };
+  const modelTurns = body.request.contents.filter((c) => c.role === "model");
+  assertEquals(modelTurns[0].parts[0].thoughtSignature, "skip_thought_signature_validator");
+  assertEquals(modelTurns[1].parts[0].thoughtSignature, "skip_thought_signature_validator");
+  assertEquals(modelTurns[2].parts[0].thoughtSignature, "gemini4_sig_456");
+});

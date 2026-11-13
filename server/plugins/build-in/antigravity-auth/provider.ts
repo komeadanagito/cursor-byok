@@ -202,13 +202,24 @@ function sanitizeSchema(value: unknown): unknown {
   return clean;
 }
 
+function modelSignatureFamily(modelId: string): string {
+  const lower = modelId.trim().toLowerCase();
+  if (lower.includes("claude")) return "claude";
+  if (lower.startsWith("gemini-4")) return "gemini-4";
+  if (lower.startsWith("gemini-3")) return "gemini-3";
+  if (lower.startsWith("gemini-2")) return "gemini-2";
+  return lower;
+}
+
 function convertToCloudCodeContents(
   instructions: string,
   messages: LlmMessage[],
+  targetModel: string,
 ): {
   contents: Array<{ role: string; parts: Array<Record<string, unknown>> }>;
   systemInstruction?: { role: string; parts: Array<{ text: string }> };
 } {
+  const targetFamily = modelSignatureFamily(targetModel);
   const rawContents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [];
   let systemText = instructions || "";
 
@@ -233,7 +244,11 @@ function convertToCloudCodeContents(
       const replayVal = msg.replayState?.providerKind === "antigravity"
         ? (msg.replayState.value as Record<string, unknown> | null)
         : null;
-      const sig = typeof replayVal?.thoughtSignature === "string"
+      const replayFamily = typeof replayVal?.modelFamily === "string"
+        ? replayVal.modelFamily
+        : null;
+      // 跨模型族切换或缺少 modelFamily 标记的历史签名不能直接回放,否则上游会校验失败报 Corrupted thought signature.
+      const sig = replayFamily === targetFamily && typeof replayVal?.thoughtSignature === "string"
         ? replayVal.thoughtSignature
         : null;
 
@@ -325,6 +340,7 @@ async function streamCloudCode(
   const { contents, systemInstruction } = convertToCloudCodeContents(
     input.request.instructions,
     input.request.messages,
+    actualModel,
   );
 
   const tools = input.request.tools && input.request.tools.length > 0
@@ -538,7 +554,10 @@ async function streamCloudCode(
             output.emit({
               type: "replay-state",
               providerKind: "antigravity",
-              value: { thoughtSignature: lastThoughtSignature },
+              value: {
+                thoughtSignature: lastThoughtSignature,
+                modelFamily: modelSignatureFamily(actualModel),
+              },
             });
             lastThoughtSignature = null;
           }
@@ -577,7 +596,10 @@ async function streamCloudCode(
         output.emit({
           type: "replay-state",
           providerKind: "antigravity",
-          value: { thoughtSignature: lastThoughtSignature },
+          value: {
+            thoughtSignature: lastThoughtSignature,
+            modelFamily: modelSignatureFamily(actualModel),
+          },
         });
       }
       if (finalUsage) {
