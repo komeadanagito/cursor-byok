@@ -31,7 +31,7 @@ Deno.test("static fallback matches the curated catalog", () => {
   const ids = STATIC_ANTIGRAVITY_MODELS.map((model) => model.id);
   assert(
     ids.join(",") ===
-      "gemini-4-argon-medium,gemini-3.8-flash-medium,claude-opus-5-5-medium,claude-sonnet-5-5-medium,gpt-oss-120b-medium",
+      "gemini-4-hydrogen-medium,gemini-4-argon-medium,gemini-3.8-flash-medium,claude-opus-5-5-medium,claude-sonnet-5-5-medium,gpt-oss-120b-medium",
     `unexpected static catalog: ${ids.join(",")}`,
   );
 });

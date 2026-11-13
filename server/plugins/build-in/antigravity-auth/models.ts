@@ -1,6 +1,6 @@
 import type { JsonValue } from "cursor-byok:plugin";
 import type { ModelDefinition, ModelSnapshot, ModelSupport } from "cursor-byok:model";
-import { accountData } from "./resources.ts";
+import { type AccountData, accountData, isTokenExpired, refreshAccount } from "./resources.ts";
 
 export const ANTIGRAVITY_PROD_ENDPOINT = "https://cloudcode-pa.googleapis.com";
 export const ANTIGRAVITY_DAILY_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com";
@@ -52,6 +52,13 @@ const ANTIGRAVITY_HIDDEN_MODELS = new Set([
 ]);
 
 export const STATIC_ANTIGRAVITY_MODELS: ModelDefinition[] = [
+  {
+    id: "gemini-4-hydrogen-medium",
+    displayName: "Gemini 4 Hydrogen (Medium)",
+    capabilities: { images: true },
+    maxOutputTokens: 65536,
+    privateData: { reasoningEfforts: ["low", "medium", "high"] },
+  },
   {
     id: "gemini-4-argon-medium",
     displayName: "Gemini 4 Argon (Medium)",
@@ -144,45 +151,93 @@ export function reasoningEfforts(model: ModelSnapshot): string[] {
   return Array.isArray(efforts) ? efforts.filter((item) => typeof item === "string") : [];
 }
 
+async function fetchModelsCatalog(
+  accessToken: string,
+  projectId: string,
+  context: Parameters<ModelSupport["list"]>[1],
+): Promise<{ models: ModelDefinition[]; authFailed: boolean }> {
+  const payloads = [
+    JSON.stringify({ project: projectId || "bamboo-precept-lgxtn" }),
+    JSON.stringify({}),
+  ];
+  let authFailed = false;
+
+  for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
+    for (const bodyPayload of payloads) {
+      try {
+        const response = await context.network.fetch(
+          `${endpoint}${FETCH_AVAILABLE_MODELS_PATH}`,
+          {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${accessToken}`,
+              "content-type": "application/json",
+              "user-agent": ANTIGRAVITY_USER_AGENT,
+              ...ANTIGRAVITY_CLIENT_HEADERS,
+            },
+            body: bodyPayload,
+          },
+        );
+        if (response.status >= 200 && response.status < 300) {
+          const body = JSON.parse(response.body);
+          const models = parseAntigravityModels(body);
+          if (models.length > 0) return { models, authFailed: false };
+        } else if (response.status === 401 || response.status === 403) {
+          authFailed = true;
+        }
+      } catch {
+        // Continue
+      }
+    }
+  }
+
+  return { models: [], authFailed };
+}
+
 export const antigravityModels: ModelSupport = {
   list: async ({ resource }, context): Promise<ModelDefinition[]> => {
     if (!resource) return STATIC_ANTIGRAVITY_MODELS;
-    let data;
+    let data: AccountData;
     try {
       data = accountData(resource);
     } catch {
       return STATIC_ANTIGRAVITY_MODELS;
     }
 
-    const payloads = [
-      JSON.stringify({ project: data.projectId || "bamboo-precept-lgxtn" }),
-      JSON.stringify({}),
-    ];
-
-    for (const endpoint of ANTIGRAVITY_ENDPOINTS) {
-      for (const bodyPayload of payloads) {
-        try {
-          const response = await context.network.fetch(
-            `${endpoint}${FETCH_AVAILABLE_MODELS_PATH}`,
-            {
-              method: "POST",
-              headers: {
-                authorization: `Bearer ${data.accessToken}`,
-                "content-type": "application/json",
-                "user-agent": ANTIGRAVITY_USER_AGENT,
-                ...ANTIGRAVITY_CLIENT_HEADERS,
-              },
-              body: bodyPayload,
-            },
-          );
-          if (response.status >= 200 && response.status < 300) {
-            const body = JSON.parse(response.body);
-            const models = parseAntigravityModels(body);
-            if (models.length > 0) return models;
-          }
-        } catch {
-          // Continue
+    let refreshedOnce = false;
+    if (data.refreshToken && isTokenExpired(data)) {
+      try {
+        const refreshed = await refreshAccount(resource, context);
+        if (refreshed.privateData) {
+          data = refreshed.privateData as unknown as AccountData;
+          refreshedOnce = true;
         }
+      } catch {
+        // Continue with existing token; authFailed fallback below can still retry if needed.
+      }
+    }
+
+    const first = await fetchModelsCatalog(
+      data.accessToken,
+      data.projectId || "bamboo-precept-lgxtn",
+      context,
+    );
+    if (first.models.length > 0) return first.models;
+
+    if (first.authFailed && !refreshedOnce && data.refreshToken) {
+      try {
+        const refreshed = await refreshAccount(resource, context);
+        if (refreshed.privateData) {
+          const fresh = refreshed.privateData as unknown as AccountData;
+          const retry = await fetchModelsCatalog(
+            fresh.accessToken,
+            fresh.projectId || data.projectId || "bamboo-precept-lgxtn",
+            context,
+          );
+          if (retry.models.length > 0) return retry.models;
+        }
+      } catch {
+        // Fall back to static catalog if refresh fails.
       }
     }
 
