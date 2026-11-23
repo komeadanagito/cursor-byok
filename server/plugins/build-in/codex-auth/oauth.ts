@@ -129,16 +129,26 @@ async function completed(credential: CredentialCandidate): Promise<OAuth2Poll> {
   return { status: "completed", resources: [await credentialDraft(credential)] };
 }
 
-async function poll(sessionValue: JsonValue, context: PluginContext): Promise<OAuth2Poll> {
-  const session = parseSession(sessionValue);
-  const response = await context.network.fetch(DEVICE_TOKEN_URL, {
+async function fetchDeviceToken(session: Session, context: PluginContext) {
+  const init = {
     method: "POST",
     headers: { accept: "application/json", "content-type": "application/json" },
     body: JSON.stringify({
       device_auth_id: session.deviceAuthId,
       user_code: session.userCode,
     }),
-  });
+  };
+  try {
+    return await context.network.fetch(DEVICE_TOKEN_URL, init);
+  } catch {
+    // Retry once on transient network/TLS hiccups during device-code polling.
+    return await context.network.fetch(DEVICE_TOKEN_URL, init);
+  }
+}
+
+async function poll(sessionValue: JsonValue, context: PluginContext): Promise<OAuth2Poll> {
+  const session = parseSession(sessionValue);
+  const response = await fetchDeviceToken(session, context);
   const body = parseBody(response.body);
   // 该端点用 403/404 表示"尚未完成授权"。
   if (response.status === 403 || response.status === 404) return { status: "pending" };

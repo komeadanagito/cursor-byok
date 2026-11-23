@@ -13,7 +13,7 @@ use std::{
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin},
-    sync::{mpsc, Mutex},
+    sync::{mpsc, Mutex, RwLock},
 };
 use tokio_util::sync::CancellationToken;
 
@@ -22,7 +22,11 @@ use super::{
     definition::{file_url, PluginDefinitionLoader},
     protocol::{HostMessage, WorkerMessage},
 };
-use crate::{provider::CallRecorder, store::Store, Error, Result};
+use crate::{
+    provider::CallRecorder,
+    store::{ProxySettingsSecret, Store},
+    Error, Result,
+};
 
 const INVOCATION_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 const MAX_NETWORK_RESPONSE_BYTES: u64 = 16 * 1024 * 1024;
@@ -81,6 +85,7 @@ struct HostContext {
     plugin_id: String,
     network_hosts: Arc<HashSet<String>>,
     store: Store,
+    http_client: Arc<RwLock<Option<(ProxySettingsSecret, reqwest::Client)>>>,
     invocations: Arc<Mutex<HashMap<String, Arc<InvocationState>>>>,
     streams: Arc<Mutex<HashMap<String, StreamLines>>>,
 }
@@ -107,6 +112,7 @@ impl PluginWorker {
                             .collect(),
                     ),
                     store,
+                    http_client: Arc::new(RwLock::new(None)),
                     invocations: Arc::new(Mutex::new(HashMap::new())),
                     streams: Arc::new(Mutex::new(HashMap::new())),
                 },
@@ -467,6 +473,27 @@ impl HostContext {
         }
     }
 
+    async fn http_client(&self) -> Result<reqwest::Client> {
+        let settings = self.store.proxy_settings_secret().await?;
+        if let Some((cached_settings, client)) = self.http_client.read().await.as_ref() {
+            if cached_settings == &settings {
+                return Ok(client.clone());
+            }
+        }
+        let mut cache = self.http_client.write().await;
+        if let Some((cached_settings, client)) = cache.as_ref() {
+            if cached_settings == &settings {
+                return Ok(client.clone());
+            }
+        }
+        let client = crate::network::client_builder_from_settings(&settings)?
+            .redirect(reqwest::redirect::Policy::none())
+            .connect_timeout(Duration::from_secs(30))
+            .build()?;
+        *cache = Some((settings, client.clone()));
+        Ok(client)
+    }
+
     async fn request(
         &self,
         request_id: &str,
@@ -500,11 +527,7 @@ impl HostContext {
             .unwrap_or("GET")
             .parse::<reqwest::Method>()
             .map_err(|error| Error::Config(format!("invalid plugin HTTP method: {error}")))?;
-        let client = crate::network::client_builder(&self.store)
-            .await?
-            .redirect(reqwest::redirect::Policy::none())
-            .connect_timeout(Duration::from_secs(30))
-            .build()?;
+        let client = self.http_client().await?;
         let mut request = client.request(method, url);
         if let Some(headers) = params.get("headers").and_then(serde_json::Value::as_object) {
             for (name, value) in headers {
@@ -792,6 +815,7 @@ mod tests {
             plugin_id: "test".into(),
             network_hosts: Arc::new(HashSet::from(["example.com".into()])),
             store,
+            http_client: Arc::new(RwLock::new(None)),
             invocations,
             streams: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -891,5 +915,77 @@ mod tests {
         assert_eq!(summary.response_bytes, response.len() as i64);
         assert_eq!(summary.stream_event_count, 1);
         assert!(!summary.detailed);
+    }
+
+    #[tokio::test]
+    async fn reuses_http_client_across_requests_until_proxy_settings_change() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let (_directory, store, recorder) = recorder(false, "pooled-plugin").await;
+        let host = host_with_recorder(store.clone(), recorder).await;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let accepts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let accepts_task = accepts.clone();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            accepts_task.fetch_add(1, Ordering::SeqCst);
+            let mut buf = [0_u8; 1024];
+            for _ in 0..2 {
+                let n = socket.read(&mut buf).await.unwrap();
+                if n == 0 {
+                    break;
+                }
+                socket
+                    .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok")
+                    .await
+                    .unwrap();
+            }
+        });
+
+        let client_one = host.http_client().await.unwrap();
+        let client_two = host.http_client().await.unwrap();
+        assert_eq!(
+            client_one
+                .get(format!("http://{addr}/one"))
+                .send()
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap(),
+            "ok"
+        );
+        assert_eq!(
+            client_two
+                .get(format!("http://{addr}/two"))
+                .send()
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap(),
+            "ok"
+        );
+        server.await.unwrap();
+        assert_eq!(accepts.load(Ordering::SeqCst), 1);
+
+        store
+            .set_proxy_settings(crate::store::ProxySettingsInput {
+                mode: crate::store::ProxyMode::Custom,
+                address: "http://127.0.0.1:17890".into(),
+                auth_enabled: false,
+                username: String::new(),
+                password: None,
+            })
+            .await
+            .unwrap();
+        let cached = host.http_client().await.unwrap();
+        assert!(cached
+            .get(format!("http://{addr}/three"))
+            .send()
+            .await
+            .is_err());
     }
 }

@@ -341,6 +341,36 @@ Deno.test("device OAuth begins with a host-held session and completes with a res
   assertEquals(requestNumber, 3);
 });
 
+Deno.test("device OAuth poll retries once on transient network failure", async () => {
+  let pollAttempt = 0;
+  const flowContext = context({
+    fetch: (url) => {
+      assertEquals(url, "https://auth.openai.com/api/accounts/deviceauth/token");
+      pollAttempt += 1;
+      if (pollAttempt === 1) {
+        throw new Error("http error: error sending request for url (https://auth.openai.com/api/accounts/deviceauth/token)");
+      }
+      return {
+        status: 403,
+        headers: {},
+        body: JSON.stringify({
+          error: {
+            code: "deviceauth_authorization_pending",
+            message: "Device authorization is pending. Please try again.",
+          },
+        }),
+      };
+    },
+  });
+
+  const polled = await codexDeviceOAuth.poll(
+    { deviceAuthId: "private-device-id", userCode: "ABCD-EFGH" },
+    flowContext,
+  );
+  assertEquals(polled, { status: "pending" });
+  assertEquals(pollAttempt, 2);
+});
+
 Deno.test("invoke streams normalized events from the Codex Responses API", async () => {
   const token = jwt({ "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } });
   const draft = await credentialDraft({

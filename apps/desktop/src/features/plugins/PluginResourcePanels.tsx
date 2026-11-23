@@ -156,10 +156,12 @@ function OAuthMethodCard({ pluginId, resourceType, method, onConfigured }: {
         const result = await api.pluginOAuthPoll(begun.sessionId);
         if (stopped.current) return;
         if (result.status === "pending") {
+          setError(null);
           timer = window.setTimeout(() => void poll(result.pollIntervalMs), Math.max(1000, result.pollIntervalMs));
           return;
         }
         if (result.status === "completed") {
+          setError(null);
           await appStore.refreshPlugins();
           if (result.modelSyncError) {
             setStatus("error");

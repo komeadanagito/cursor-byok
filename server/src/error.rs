@@ -29,7 +29,7 @@ pub enum Error {
         "database migration stage '{stage}' timed out after {timeout_seconds} seconds; close other Cursor BYOK processes and try again"
     )]
     MigrationTimeout { stage: String, timeout_seconds: u64 },
-    #[error("http error: {0}")]
+    #[error("http error: {}", format_http_error(.0))]
     Http(#[from] reqwest::Error),
     #[error("protobuf decode error: {0}")]
     Decode(#[from] prost::DecodeError),
@@ -39,6 +39,19 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+}
+
+fn format_http_error(error: &reqwest::Error) -> String {
+    use std::error::Error as _;
+
+    let mut message = error.to_string();
+    let mut source = error.source();
+    while let Some(cause) = source {
+        message.push_str(": ");
+        message.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    message
 }
 
 impl IntoResponse for Error {
@@ -71,5 +84,32 @@ impl IntoResponse for Error {
             Json(serde_json::json!({ "code": code, "message": self.to_string() })),
         )
             .into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn http_error_includes_underlying_source_chain() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        drop(listener);
+
+        let err = reqwest::Client::new()
+            .get(format!("http://{addr}/test"))
+            .send()
+            .await
+            .unwrap_err();
+        let formatted = Error::Http(err).to_string();
+
+        assert!(formatted.starts_with("http error: "), "{formatted}");
+        assert!(
+            formatted.contains("tcp connect error")
+                || formatted.contains("refused")
+                || formatted.contains("connect"),
+            "expected root cause in formatted http error, got: {formatted}"
+        );
     }
 }

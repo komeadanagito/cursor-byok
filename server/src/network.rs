@@ -95,11 +95,17 @@ impl NetworkClients {
 
 pub async fn client_builder(store: &Store) -> Result<reqwest::ClientBuilder> {
     let settings = store.proxy_settings_secret().await?;
+    client_builder_from_settings(&settings)
+}
+
+pub(crate) fn client_builder_from_settings(
+    settings: &ProxySettingsSecret,
+) -> Result<reqwest::ClientBuilder> {
     // Use the platform TLS stack for compatibility with provider gateways that
     // only offer legacy TLS 1.2 cipher suites unsupported by rustls.
     let mut builder = reqwest::Client::builder().use_native_tls();
     if settings.mode.is_custom() {
-        builder = builder.proxy(custom_proxy(&settings)?);
+        builder = builder.proxy(custom_proxy(settings)?);
     }
     Ok(builder)
 }
