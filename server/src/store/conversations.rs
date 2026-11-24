@@ -40,10 +40,13 @@ impl Store {
         .await?;
 
         let current: Option<i64> = sqlx::query_scalar(
-            "SELECT current_checkpoint_id FROM conversations WHERE conversation_id = ?",
+            "SELECT c.current_checkpoint_id
+             FROM conversations c
+             JOIN conversation_checkpoints ck ON ck.checkpoint_id = c.current_checkpoint_id
+             WHERE c.conversation_id = ?",
         )
         .bind(conversation_id.as_str())
-        .fetch_one(&mut *tx)
+        .fetch_optional(&mut *tx)
         .await?;
         if let Some(current) = current {
             return Ok(CheckpointId(current));
@@ -63,7 +66,7 @@ impl Store {
         .last_insert_rowid();
         sqlx::query(
             "UPDATE conversations SET current_checkpoint_id = ?, updated_at_ms = ?
-             WHERE conversation_id = ? AND current_checkpoint_id IS NULL",
+             WHERE conversation_id = ?",
         )
         .bind(root)
         .bind(now_ms())

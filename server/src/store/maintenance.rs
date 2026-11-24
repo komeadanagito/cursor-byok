@@ -173,6 +173,14 @@ async fn prune_tx(tx: &mut Transaction<'_, Sqlite>) -> Result<PruneResult> {
         )
         .execute(&mut **tx)
         .await?;
+        sqlx::query(
+            "UPDATE conversations
+             SET current_checkpoint_id = NULL
+             WHERE current_checkpoint_id IS NOT NULL
+               AND current_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
+        )
+        .execute(&mut **tx)
+        .await?;
         let checkpoints = sqlx::query(
             "DELETE FROM conversation_checkpoints
              WHERE checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
@@ -534,5 +542,29 @@ mod tests {
             freelist_pages > 0,
             "expected freed pages to stay on freelist without rewriting a large file via VACUUM"
         );
+    }
+
+    #[tokio::test]
+    async fn pruned_idle_conversation_can_resume_without_foreign_key_error() {
+        let (_directory, store) = store().await;
+        let dead = checkpoint_line(&store, "idle-chat", 2).await;
+        sqlx::query(
+            "UPDATE conversation_checkpoints SET created_at_ms = ? WHERE checkpoint_id = ?",
+        )
+        .bind(now_ms() - PRUNE_GRACE_MS - 1)
+        .bind(dead.last().unwrap())
+        .execute(store.pool())
+        .await
+        .unwrap();
+
+        store.prune_dead_lineages().await.unwrap();
+
+        let conversation_id = ConversationId::new("idle-chat");
+        let base_checkpoint_id = store.ensure_conversation(&conversation_id).await.unwrap();
+        let anchored = store
+            .anchor_input(&conversation_id, "resume-input-1", base_checkpoint_id)
+            .await
+            .unwrap();
+        assert_eq!(anchored, base_checkpoint_id);
     }
 }
