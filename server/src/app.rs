@@ -49,11 +49,6 @@ impl App {
             ));
         }
         let store = Store::connect(&config.database_url).await?;
-        // Best-effort startup maintenance: dead checkpoint lineages and aged
-        // wire blobs are what make the database grow without bound.
-        if let Err(error) = store.prune_dead_lineages().await {
-            tracing::warn!(%error, "startup lineage prune skipped");
-        }
         if config.use_persisted_ports {
             let ports = store.port_settings().await?;
             config.listen_addr.set_port(ports.service_port);
@@ -181,6 +176,17 @@ impl App {
         self.registry.web_cache().set_service_addr(address);
         self.harness.set_backend_addr(address);
         tracing::info!(%address, %inference_address, "management and inference listeners ready");
+        let maintenance_store = self.store.clone();
+        let maintenance_shutdown = shutdown.clone();
+        tokio::spawn(async move {
+            tokio::select! {
+                () = maintenance_shutdown.cancelled() => return,
+                () = tokio::time::sleep(Duration::from_secs(15)) => {}
+            }
+            if let Err(error) = maintenance_store.prune_dead_lineages().await {
+                tracing::warn!(%error, "background lineage prune skipped");
+            }
+        });
         let registry = self.registry;
         let harness = self.harness;
         let api_addr = control::InferenceAddress(inference_address);

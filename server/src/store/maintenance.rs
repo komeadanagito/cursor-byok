@@ -15,14 +15,17 @@ pub(crate) const PRUNE_GRACE_MS: i64 = 24 * 60 * 60 * 1000;
 /// back to the client for no meaningful space.
 pub(crate) const BLOB_GRACE_MS: i64 = 7 * 24 * 60 * 60 * 1000;
 
-/// Estimated dead-lineage bytes that justify a VACUUM, which rewrites and
-/// fsyncs the whole database file.
+/// Reclaimable freelist bytes that justify a VACUUM on moderately sized files.
 pub(crate) const VACUUM_THRESHOLD_BYTES: i64 = 32 * 1024 * 1024;
+
+/// Multi-gigabyte databases hold an exclusive write lock across the full file
+/// copy during VACUUM; SQLite reuses freelist pages automatically above this cap.
+const MAX_AUTO_VACUUM_DB_BYTES: i64 = 512 * 1024 * 1024;
 
 impl Store {
     /// Removes checkpoints, messages, tool rounds, and wire blobs that no
     /// live lineage references, then rewrites the file when that is expected
-    /// to free meaningful space.
+    /// to free meaningful space without stalling a multi-gigabyte database.
     pub(crate) async fn prune_dead_lineages(&self) -> Result<()> {
         let mut session = self.write_session().await?;
         let mut tx = session.begin().await?;
@@ -31,7 +34,7 @@ impl Store {
         session.committed();
         // VACUUM takes its own write session; retaining this guard would deadlock.
         drop(session);
-        if pruned.checkpoints == 0 && pruned.messages == 0 {
+        if pruned.checkpoints == 0 && pruned.messages == 0 && pruned.blobs == 0 {
             return Ok(());
         }
         tracing::info!(
@@ -39,10 +42,13 @@ impl Store {
             messages = pruned.messages,
             tool_rounds = pruned.tool_rounds,
             blobs = pruned.blobs,
-            estimated_reclaim_bytes = pruned.estimated_bytes,
+            reclaimable_bytes = pruned.reclaimable_bytes,
+            total_bytes = pruned.total_bytes,
             "pruned dead checkpoint lineages"
         );
-        if pruned.estimated_bytes >= VACUUM_THRESHOLD_BYTES {
+        if pruned.reclaimable_bytes >= VACUUM_THRESHOLD_BYTES
+            && pruned.total_bytes <= MAX_AUTO_VACUUM_DB_BYTES
+        {
             self.vacuum().await?;
         }
         Ok(())
@@ -65,7 +71,8 @@ struct PruneResult {
     messages: i64,
     tool_rounds: i64,
     blobs: i64,
-    estimated_bytes: i64,
+    reclaimable_bytes: i64,
+    total_bytes: i64,
 }
 
 /// One canonical definition of checkpoint liveness: every ancestor of a
@@ -110,66 +117,80 @@ async fn fill_live_checkpoints(tx: &mut Transaction<'_, Sqlite>) -> Result<()> {
 async fn prune_tx(tx: &mut Transaction<'_, Sqlite>) -> Result<PruneResult> {
     fill_live_checkpoints(tx).await?;
 
-    // Every constraint here is NO ACTION, so deletes run leaves-first:
-    // tool_round_calls before tool_rounds, tool_rounds and runs before the
-    // checkpoints they pin, and only after the checkpoints are gone do
-    // messages lose their last referencer. Runs whose base or head sits on a
-    // dead checkpoint belong to that lineage and must go too — a run still
-    // marked running over a dead lineage is the crashed-run case pruning
-    // exists to clear.
-    sqlx::query(
-        "DELETE FROM checkpoint_messages
-         WHERE checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
-    )
-    .execute(&mut **tx)
-    .await?;
-    // Input anchors pin a base checkpoint so retries of the same input id
-    // resolve to the same lineage; an anchor into a dead lineage can never be
-    // retried again.
-    sqlx::query(
-        "DELETE FROM input_anchors
-         WHERE base_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
-    )
-    .execute(&mut **tx)
-    .await?;
-    sqlx::query(
-        "DELETE FROM tool_round_calls
-         WHERE round_id NOT IN (
-             SELECT round_id FROM tool_rounds
-             WHERE base_checkpoint_id IN (SELECT checkpoint_id FROM live_checkpoints)
+    let has_dead_checkpoints: i64 = sqlx::query_scalar(
+        "SELECT EXISTS(
+             SELECT 1 FROM conversation_checkpoints
+             WHERE checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)
          )",
     )
-    .execute(&mut **tx)
+    .fetch_one(&mut **tx)
     .await?;
-    let tool_rounds = sqlx::query(
-        "DELETE FROM tool_rounds
-         WHERE base_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
-    )
-    .execute(&mut **tx)
-    .await?
-    .rows_affected() as i64;
-    sqlx::query(
-        "DELETE FROM runs
-         WHERE base_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)
-            OR (head_checkpoint_id IS NOT NULL
-                AND head_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints))",
-    )
-    .execute(&mut **tx)
-    .await?;
-    let checkpoints = sqlx::query(
-        "DELETE FROM conversation_checkpoints
-         WHERE checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
-    )
-    .execute(&mut **tx)
-    .await?
-    .rows_affected() as i64;
-    let messages = sqlx::query(
-        "DELETE FROM messages
-         WHERE message_id NOT IN (SELECT message_id FROM checkpoint_messages)",
-    )
-    .execute(&mut **tx)
-    .await?
-    .rows_affected() as i64;
+
+    let (checkpoints, messages, tool_rounds) = if has_dead_checkpoints != 0 {
+        // Every constraint here is NO ACTION, so deletes run leaves-first:
+        // tool_round_calls before tool_rounds, tool_rounds and runs before the
+        // checkpoints they pin, and only after the checkpoints are gone do
+        // messages lose their last referencer. Runs whose base or head sits on a
+        // dead checkpoint belong to that lineage and must go too — a run still
+        // marked running over a dead lineage is the crashed-run case pruning
+        // exists to clear.
+        sqlx::query(
+            "DELETE FROM checkpoint_messages
+             WHERE checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
+        )
+        .execute(&mut **tx)
+        .await?;
+        // Input anchors pin a base checkpoint so retries of the same input id
+        // resolve to the same lineage; an anchor into a dead lineage can never be
+        // retried again.
+        sqlx::query(
+            "DELETE FROM input_anchors
+             WHERE base_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
+        )
+        .execute(&mut **tx)
+        .await?;
+        sqlx::query(
+            "DELETE FROM tool_round_calls
+             WHERE round_id NOT IN (
+                 SELECT round_id FROM tool_rounds
+                 WHERE base_checkpoint_id IN (SELECT checkpoint_id FROM live_checkpoints)
+             )",
+        )
+        .execute(&mut **tx)
+        .await?;
+        let tool_rounds = sqlx::query(
+            "DELETE FROM tool_rounds
+             WHERE base_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
+        )
+        .execute(&mut **tx)
+        .await?
+        .rows_affected() as i64;
+        sqlx::query(
+            "DELETE FROM runs
+             WHERE base_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)
+                OR (head_checkpoint_id IS NOT NULL
+                    AND head_checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints))",
+        )
+        .execute(&mut **tx)
+        .await?;
+        let checkpoints = sqlx::query(
+            "DELETE FROM conversation_checkpoints
+             WHERE checkpoint_id NOT IN (SELECT checkpoint_id FROM live_checkpoints)",
+        )
+        .execute(&mut **tx)
+        .await?
+        .rows_affected() as i64;
+        let messages = sqlx::query(
+            "DELETE FROM messages
+             WHERE message_id NOT IN (SELECT message_id FROM checkpoint_messages)",
+        )
+        .execute(&mut **tx)
+        .await?
+        .rows_affected() as i64;
+        (checkpoints, messages, tool_rounds)
+    } else {
+        (0, 0, 0)
+    };
 
     // Wire blobs are a cache of what was handed to the client KV store; the
     // client still holds them and blob_sync falls back to a KV GET when one
@@ -191,44 +212,61 @@ async fn prune_tx(tx: &mut Transaction<'_, Sqlite>) -> Result<PruneResult> {
     .bind(now_ms() - BLOB_GRACE_MS)
     .execute(&mut **tx)
     .await?;
-    // Read tool attachments are durable message references, not wire cache.
-    let read_images: Vec<String> = sqlx::query_scalar(
-        "SELECT DISTINCT json_extract(payload_json, '$.content.image.blob_id')
-         FROM messages WHERE json_type(payload_json, '$.content.image.blob_id') = 'text'",
-    )
-    .fetch_all(&mut **tx)
-    .await?;
-    for image in read_images {
-        let id = super::BlobId::from_base64(&image)?;
-        sqlx::query("DELETE FROM dead_blobs WHERE blob_id = ?")
-            .bind(id.as_bytes().as_slice())
-            .execute(&mut **tx)
-            .await?;
-    }
-    sqlx::query("DELETE FROM blob_edges WHERE parent_blob_id IN (SELECT blob_id FROM dead_blobs)")
-        .execute(&mut **tx)
-        .await?;
-    sqlx::query("DELETE FROM blob_edges WHERE child_blob_id IN (SELECT blob_id FROM dead_blobs)")
-        .execute(&mut **tx)
-        .await?;
-    let blobs = sqlx::query("DELETE FROM blobs WHERE blob_id IN (SELECT blob_id FROM dead_blobs)")
-        .execute(&mut **tx)
-        .await?
-        .rows_affected() as i64;
 
-    let estimated_bytes = sqlx::query_scalar::<_, i64>(
-        "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()",
+    let has_dead_blobs: i64 = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM dead_blobs)")
+        .fetch_one(&mut **tx)
+        .await?;
+
+    let blobs = if has_dead_blobs != 0 {
+        // Read tool attachments are durable message references, not wire cache.
+        let read_images: Vec<String> = sqlx::query_scalar(
+            "SELECT DISTINCT json_extract(payload_json, '$.content.image.blob_id')
+             FROM messages
+             WHERE payload_json LIKE '%\"blob_id\"%'
+               AND json_type(payload_json, '$.content.image.blob_id') = 'text'",
+        )
+        .fetch_all(&mut **tx)
+        .await?;
+        for image in read_images {
+            let id = super::BlobId::from_base64(&image)?;
+            sqlx::query("DELETE FROM dead_blobs WHERE blob_id = ?")
+                .bind(id.as_bytes().as_slice())
+                .execute(&mut **tx)
+                .await?;
+        }
+        sqlx::query(
+            "DELETE FROM blob_edges WHERE parent_blob_id IN (SELECT blob_id FROM dead_blobs)",
+        )
+        .execute(&mut **tx)
+        .await?;
+        sqlx::query(
+            "DELETE FROM blob_edges WHERE child_blob_id IN (SELECT blob_id FROM dead_blobs)",
+        )
+        .execute(&mut **tx)
+        .await?;
+        sqlx::query("DELETE FROM blobs WHERE blob_id IN (SELECT blob_id FROM dead_blobs)")
+            .execute(&mut **tx)
+            .await?
+            .rows_affected() as i64
+    } else {
+        0
+    };
+
+    let (reclaimable_bytes, total_bytes) = sqlx::query_as::<_, (i64, i64)>(
+        "SELECT freelist_count * page_size, page_count * page_size
+         FROM pragma_freelist_count(), pragma_page_count(), pragma_page_size()",
     )
     .fetch_one(&mut **tx)
     .await
-    .unwrap_or(0);
+    .unwrap_or((0, 0));
 
     Ok(PruneResult {
         checkpoints,
         messages,
         tool_rounds,
         blobs,
-        estimated_bytes,
+        reclaimable_bytes,
+        total_bytes,
     })
 }
 
@@ -454,5 +492,47 @@ mod tests {
         store.vacuum().await.unwrap();
         // Still writable after the rewrite.
         checkpoint_line(&store, "v2", 1).await;
+    }
+
+    #[tokio::test]
+    async fn pruning_tiny_dead_lineage_in_large_database_skips_full_file_vacuum() {
+        let (_directory, store) = store().await;
+        let _live = checkpoint_line(&store, "live", 2).await;
+        let dead = checkpoint_line(&store, "dead", 20).await;
+        sqlx::query(
+            "UPDATE conversation_checkpoints SET created_at_ms = ? WHERE checkpoint_id = ?",
+        )
+        .bind(now_ms() - PRUNE_GRACE_MS - 1)
+        .bind(dead.last().unwrap())
+        .execute(store.pool())
+        .await
+        .unwrap();
+        // Dead blob frees several 4 KiB pages (< 1 MiB) while the live blob
+        // keeps total file size above VACUUM_THRESHOLD_BYTES.
+        sqlx::query("INSERT INTO blobs(blob_id, data, created_at_ms) VALUES (?, zeroblob(?), ?)")
+            .bind([2_u8; 32].as_slice())
+            .bind(64 * 1024_i64)
+            .bind(now_ms() - BLOB_GRACE_MS - 1)
+            .execute(store.pool())
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO blobs(blob_id, data, created_at_ms) VALUES (?, zeroblob(?), ?)")
+            .bind([1_u8; 32].as_slice())
+            .bind(VACUUM_THRESHOLD_BYTES + 4 * 1024 * 1024)
+            .bind(now_ms())
+            .execute(store.pool())
+            .await
+            .unwrap();
+
+        store.prune_dead_lineages().await.unwrap();
+
+        let freelist_pages: i64 = sqlx::query_scalar("SELECT * FROM pragma_freelist_count()")
+            .fetch_one(store.pool())
+            .await
+            .unwrap();
+        assert!(
+            freelist_pages > 0,
+            "expected freed pages to stay on freelist without rewriting a large file via VACUUM"
+        );
     }
 }

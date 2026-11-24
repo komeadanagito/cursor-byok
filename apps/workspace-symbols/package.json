@@ -3,7 +3,7 @@
   "displayName": "BYOK Workspace Symbols",
   "description": "Semantic code search, symbol definitions and references from the active local or SSH workspace.",
   "publisher": "cursor-byok",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "MIT",
   "engines": {
     "vscode": "^1.93.0"
