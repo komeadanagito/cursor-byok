@@ -251,7 +251,7 @@ pub async fn available_models(
     Extension(proxy): Extension<CursorProxy>,
     request: Request<Body>,
 ) -> Result<Response<Body>> {
-    let models = registry.store().models().await?;
+    let models = registry.store().configured_models().await?;
     let plugin_models = match registry.plugins() {
         Some(plugins) => plugins.configured_models().await,
         None => Vec::new(),
@@ -286,7 +286,7 @@ pub async fn usable_models(
     Extension(proxy): Extension<CursorProxy>,
     request: Request<Body>,
 ) -> Result<Response<Body>> {
-    let models = registry.store().models().await?;
+    let models = registry.store().configured_models().await?;
     let plugin_models = match registry.plugins() {
         Some(plugins) => plugins.configured_models().await,
         None => Vec::new(),
@@ -316,7 +316,7 @@ pub async fn usable_models(
 pub async fn default_model_for_cli(
     State(registry): State<TransportRegistry>,
 ) -> Result<Response<Body>> {
-    let models = registry.store().models().await?;
+    let models = registry.store().configured_models().await?;
     let plugin_models = configured_plugin_models(&registry).await;
     Ok(local_response(
         agent::GetDefaultModelForCliResponse {
@@ -327,7 +327,7 @@ pub async fn default_model_for_cli(
 }
 
 pub async fn default_model(State(registry): State<TransportRegistry>) -> Result<Response<Body>> {
-    let models = registry.store().models().await?;
+    let models = registry.store().configured_models().await?;
     let plugin_models = configured_plugin_models(&registry).await;
     Ok(local_response(
         default_model_response(&models, &plugin_models).encode_to_vec(),
@@ -337,7 +337,7 @@ pub async fn default_model(State(registry): State<TransportRegistry>) -> Result<
 pub async fn default_model_nudge(
     State(registry): State<TransportRegistry>,
 ) -> Result<Response<Body>> {
-    let models = registry.store().models().await?;
+    let models = registry.store().configured_models().await?;
     let plugin_models = configured_plugin_models(&registry).await;
     Ok(local_response(
         default_model_nudge_response(&models, &plugin_models).encode_to_vec(),
@@ -450,15 +450,35 @@ fn unary_payload(body: &Bytes) -> Result<(bool, &[u8])> {
     Ok((true, &body[5..]))
 }
 
+const SERVICE_TIERS: [(&str, &str); 3] = [
+    ("default", "Standard"),
+    ("priority", "Fast"),
+    ("ultrafast", "Ultrafast"),
+];
+const FAST_TOGGLE: [(&str, &str); 2] = [("false", ""), ("true", "Fast")];
+
 fn available_model(model: &ModelConfig) -> AvailableModel {
-    let contexts = context_options(model.context_window_tokens);
+    let gateway = model.gateway_capabilities.as_ref();
+    let efforts = gateway.map(|g| {
+        g.efforts
+            .iter()
+            .map(|s| (s.as_str(), s.as_str()))
+            .collect::<Vec<_>>()
+    });
+    let efforts = efforts.as_deref().unwrap_or(&EFFORTS);
+    let contexts = match (gateway, model.context_window_tokens) {
+        (Some(_), Some(tokens)) => vec![(tokens.to_string(), format_token_count(tokens))],
+        _ => context_options(model.context_window_tokens),
+    };
     let tooltip = model_tooltip(model);
+    let ultrafast = model.uses_ultrafast_by_default();
     let variants = model_variants(
         &model.model_hash,
         &model.display_name,
         &tooltip,
         &contexts,
-        true,
+        efforts,
+        ultrafast,
     );
     let legacy_slugs = variants
         .iter()
@@ -470,7 +490,8 @@ fn available_model(model: &ModelConfig) -> AvailableModel {
         supports_agent: Some(true),
         degradation_status: Some(0),
         tooltip_data: Some(tooltip.clone()),
-        supports_thinking: Some(true),
+        supports_thinking: Some(gateway.is_none_or(|g| g.thinking)),
+        // Cursor can attach images to a text model through the configured reader.
         supports_images: Some(true),
         supports_max_mode: Some(true),
         client_display_name: Some(model.display_name.clone()),
@@ -482,14 +503,26 @@ fn available_model(model: &ModelConfig) -> AvailableModel {
         inputbox_short_model_name: Some(model.display_name.clone()),
         supports_sandboxing: Some(true),
         supports_cmd_k: Some(false),
-        parameter_definitions: model_parameters(&contexts, true),
+        parameter_definitions: model_parameters(&contexts, efforts, ultrafast),
         variants,
         legacy_slugs,
         named_model_section_index: Some(1),
-        vendor_name: Some("cursor".into()),
+        vendor_name: Some(
+            if gateway.is_some() {
+                "magpie"
+            } else {
+                "cursor"
+            }
+            .into(),
+        ),
         vendor: Some(AvailableModelVendor {
             id: 6,
-            display_name: "Cursor".into(),
+            display_name: if gateway.is_some() {
+                "Magpie"
+            } else {
+                "Cursor"
+            }
+            .into(),
         }),
         model_picker_badges: vec![ModelPickerBadge {
             label: model.tooltip_data.clone(),
@@ -501,7 +534,8 @@ fn available_model(model: &ModelConfig) -> AvailableModel {
 
 fn model_parameters(
     contexts: &[(String, String)],
-    thinking: bool,
+    efforts: &[(&str, &str)],
+    ultrafast: bool,
 ) -> Vec<ModelParameterDefinition> {
     let mut parameters = vec![ModelParameterDefinition {
         id: "context".into(),
@@ -521,7 +555,7 @@ fn model_parameters(
         }),
         is_cycleable_by_hotkey: Some(false),
     }];
-    if thinking {
+    if !efforts.is_empty() {
         parameters.push(ModelParameterDefinition {
             id: "reasoning".into(),
             name: "Effort".into(),
@@ -529,8 +563,9 @@ fn model_parameters(
             parameter_type: Some(ModelParameterType {
                 boolean_parameter: None,
                 enum_parameter: Some(EnumParameter {
-                    values: EFFORTS
-                        .into_iter()
+                    values: efforts
+                        .iter()
+                        .copied()
                         .map(|(value, display_name)| EnumParameterValue {
                             value: value.into(),
                             display_name: Some(display_name.into()),
@@ -540,6 +575,30 @@ fn model_parameters(
             }),
             is_cycleable_by_hotkey: Some(true),
         });
+    }
+    if ultrafast {
+        parameters.push(ModelParameterDefinition {
+            id: "service_tier".into(),
+            name: "Speed".into(),
+            markdown_tooltip: Some(
+                "Ultrafast availability and pricing depend on the upstream model and account."
+                    .into(),
+            ),
+            parameter_type: Some(ModelParameterType {
+                boolean_parameter: None,
+                enum_parameter: Some(EnumParameter {
+                    values: SERVICE_TIERS
+                        .iter()
+                        .map(|(value, name)| EnumParameterValue {
+                            value: (*value).into(),
+                            display_name: Some((*name).into()),
+                        })
+                        .collect(),
+                }),
+            }),
+            is_cycleable_by_hotkey: Some(false),
+        });
+        return parameters;
     }
     parameters.push(ModelParameterDefinition {
         id: "fast".into(),
@@ -572,32 +631,36 @@ fn model_variants(
     display_name: &str,
     tooltip: &TooltipData,
     contexts: &[(String, String)],
-    thinking: bool,
+    levels: &[(&str, &str)],
+    ultrafast: bool,
 ) -> Vec<ModelVariant> {
-    // 非思考模型没有 Effort 轴,变体网格只剩 Context × Fast。
-    let efforts: &[Option<(&str, &str)>] = if thinking {
-        &[
-            Some(EFFORTS[0]),
-            Some(EFFORTS[1]),
-            Some(EFFORTS[2]),
-            Some(EFFORTS[3]),
-            Some(EFFORTS[4]),
-        ]
+    let (speed_id, speeds, default_speed) = if ultrafast {
+        ("service_tier", SERVICE_TIERS.as_slice(), "ultrafast")
     } else {
-        &[None]
+        ("fast", FAST_TOGGLE.as_slice(), "false")
     };
-    let mut variants = Vec::with_capacity(contexts.len() * efforts.len() * 2);
-    for (context, context_name) in contexts {
-        for effort in efforts {
-            for fast in [false, true] {
+    let efforts: Vec<_> = if levels.is_empty() {
+        vec![None]
+    } else {
+        levels.iter().copied().map(Some).collect()
+    };
+    let mut variants = Vec::with_capacity(contexts.len() * efforts.len() * speeds.len());
+    let default_effort = levels
+        .iter()
+        .find(|(id, _)| *id == "high")
+        .or(levels.first())
+        .copied();
+    for (i, context) in contexts.iter().enumerate() {
+        for effort in &efforts {
+            for &(speed_value, speed_name) in speeds {
                 variants.push(model_variant(
                     name,
                     display_name,
                     tooltip,
                     context,
-                    context_name,
                     *effort,
-                    fast,
+                    (speed_id, speed_value, speed_name),
+                    i == 0 && speed_value == default_speed && *effort == default_effort,
                 ));
             }
         }
@@ -609,11 +672,13 @@ fn model_variant(
     name: &str,
     display_name: &str,
     tooltip: &TooltipData,
-    context: &str,
-    context_name: &str,
+    context: &(String, String),
     effort: Option<(&str, &str)>,
-    fast: bool,
+    speed: (&str, &str, &str),
+    is_default: bool,
 ) -> ModelVariant {
+    let (speed_id, speed_value, speed_name) = speed;
+    let (context, context_name) = (context.0.as_str(), context.1.as_str());
     let mut suffix = Vec::with_capacity(3);
     if context != DEFAULT_CONTEXT {
         suffix.push(context_name);
@@ -621,8 +686,8 @@ fn model_variant(
     if let Some((_, effort_name)) = effort {
         suffix.push(effort_name);
     }
-    if fast {
-        suffix.push("Fast");
+    if !speed_name.is_empty() {
+        suffix.push(speed_name);
     }
     let suffix = suffix.join(" ");
     let display_name = if suffix.is_empty() {
@@ -632,8 +697,6 @@ fn model_variant(
             "{display_name} <span style=\"color: var(--cursor-text-tertiary);\">{suffix}</span>"
         )
     };
-    let is_default =
-        context == DEFAULT_CONTEXT && !fast && effort.is_none_or(|(effort, _)| effort == "high");
     let mut parameter_values = vec![ModelParameterValue {
         id: "context".into(),
         value: context.into(),
@@ -645,8 +708,8 @@ fn model_variant(
         });
     }
     parameter_values.push(ModelParameterValue {
-        id: "fast".into(),
-        value: fast.to_string(),
+        id: speed_id.into(),
+        value: speed_value.into(),
     });
     ModelVariant {
         parameter_values,
@@ -658,16 +721,20 @@ fn model_variant(
         display_name_outside_picker: Some(display_name),
         variant_string_representation: Some(match effort {
             Some((effort, _)) => {
-                format!("{name}[context={context},reasoning={effort},fast={fast}]")
+                format!("{name}[context={context},reasoning={effort},{speed_id}={speed_value}]")
             }
-            None => format!("{name}[context={context},fast={fast}]"),
+            None => format!("{name}[context={context},{speed_id}={speed_value}]"),
         }),
         legacy_slug: Some(format!(
             "{name}-{context}{}{}",
             effort
                 .map(|(effort, _)| format!("-{effort}"))
                 .unwrap_or_default(),
-            if fast { "-fast" } else { "" }
+            match speed_value {
+                "true" | "priority" => "-fast",
+                "ultrafast" => "-ultrafast",
+                _ => "",
+            }
         )),
     }
 }
@@ -684,7 +751,14 @@ fn available_plugin_model(model: &PluginModelDescriptor) -> AvailableModel {
     };
     // Effort 与上下文档位由宿主统一提供,与内置模型一致;插件不再声明这两项。
     let contexts = context_options(None);
-    let variants = model_variants(&model.id, &model.display_name, &tooltip, &contexts, true);
+    let variants = model_variants(
+        &model.id,
+        &model.display_name,
+        &tooltip,
+        &contexts,
+        &EFFORTS,
+        false,
+    );
     let legacy_slugs = variants
         .iter()
         .filter_map(|variant| variant.legacy_slug.clone())
@@ -696,7 +770,7 @@ fn available_plugin_model(model: &PluginModelDescriptor) -> AvailableModel {
         degradation_status: Some(0),
         tooltip_data: Some(tooltip.clone()),
         supports_thinking: Some(true),
-        supports_images: Some(model.images),
+        supports_images: Some(true),
         supports_max_mode: Some(false),
         client_display_name: Some(model.display_name.clone()),
         server_model_name: Some(model.id.clone()),
@@ -707,7 +781,7 @@ fn available_plugin_model(model: &PluginModelDescriptor) -> AvailableModel {
         inputbox_short_model_name: Some(model.display_name.clone()),
         supports_sandboxing: Some(true),
         supports_cmd_k: Some(false),
-        parameter_definitions: model_parameters(&contexts, true),
+        parameter_definitions: model_parameters(&contexts, &EFFORTS, false),
         variants,
         legacy_slugs,
         named_model_section_index: Some(1),
@@ -749,7 +823,11 @@ fn usable_model(model: &ModelConfig) -> agent::ModelDetails {
         display_model_id: model.model_hash.clone(),
         display_name: model.display_name.clone(),
         display_name_short: model.display_name.clone(),
-        thinking_details: Some(agent::ThinkingDetails::default()),
+        thinking_details: model
+            .gateway_capabilities
+            .as_ref()
+            .is_none_or(|g| g.thinking)
+            .then(agent::ThinkingDetails::default),
         credentials: Some(cli_local_model_credentials()),
         ..Default::default()
     }
@@ -762,6 +840,8 @@ mod tests {
 
     fn model() -> ModelConfig {
         ModelConfig {
+            gateway_capabilities: None,
+            supports_images: true,
             model_hash: "local-model-hash".into(),
             sort_order: 0,
             display_name: "Local Model".into(),
@@ -807,6 +887,117 @@ mod tests {
             available_model(&configured).model_picker_badges[0].label,
             "自用模型"
         );
+    }
+
+    #[test]
+    fn opted_in_responses_model_exposes_ultrafast_with_independent_effort() {
+        let mut configured = model();
+        configured.openai_endpoint = crate::model::OPENAI_RESPONSES_ENDPOINT.into();
+        configured.openai_extra_params_enabled = true;
+        configured.openai_extra_params = serde_json::json!({"service_tier":"ultrafast"});
+        let listed = available_model(&configured);
+        let tiers = listed
+            .parameter_definitions
+            .iter()
+            .find(|p| p.id == "service_tier")
+            .expect("explicitly configured Responses model should expose Speed");
+        let values = &tiers
+            .parameter_type
+            .as_ref()
+            .unwrap()
+            .enum_parameter
+            .as_ref()
+            .unwrap()
+            .values;
+        assert_eq!(
+            values.iter().map(|v| v.value.as_str()).collect::<Vec<_>>(),
+            ["default", "priority", "ultrafast"]
+        );
+        let default = listed
+            .variants
+            .iter()
+            .find(|v| v.is_default_non_max_config == Some(true))
+            .unwrap();
+        assert!(default
+            .parameter_values
+            .iter()
+            .any(|v| v.id == "service_tier" && v.value == "ultrafast"));
+        assert!(default
+            .parameter_values
+            .iter()
+            .any(|v| v.id == "reasoning" && v.value == "high"));
+        for tier in ["default", "priority", "ultrafast"] {
+            let selected = listed
+                .variants
+                .iter()
+                .find(|v| {
+                    v.parameter_values
+                        .iter()
+                        .any(|p| p.id == "service_tier" && p.value == tier)
+                })
+                .unwrap();
+            let mut spec = crate::cursor::compile::requested_model(&agent::AgentRunRequest {
+                requested_model: Some(agent::RequestedModel {
+                    model_id: listed.name.clone(),
+                    parameters: selected
+                        .parameter_values
+                        .iter()
+                        .map(|p| agent::requested_model::ModelParameterValue {
+                            id: p.id.clone(),
+                            value: p.value.clone(),
+                        })
+                        .collect(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .unwrap();
+            configured.configure(&mut spec);
+            assert_eq!(spec.latency.responses_tier(), Some(tier));
+        }
+        let mut older_client = crate::model::ModelSpec::new(&listed.name);
+        configured.configure(&mut older_client);
+        assert_eq!(older_client.latency.responses_tier(), Some("ultrafast"));
+        assert!(available_model(&model())
+            .parameter_definitions
+            .iter()
+            .all(|p| p.id != "service_tier"));
+    }
+
+    #[test]
+    fn gateway_models_have_a_default_variant_within_advertised_capabilities() {
+        let mut configured = model();
+        configured.context_window_tokens = Some(128000);
+        configured.supports_images = false;
+        configured.gateway_capabilities = Some(crate::model::GatewayCapabilities {
+            thinking: true,
+            efforts: vec!["low".into(), "medium".into()],
+        });
+        let listed = available_model(&configured);
+        assert_eq!(listed.supports_images, Some(true));
+        assert_eq!(
+            listed
+                .variants
+                .iter()
+                .filter(|v| v.is_default_non_max_config == Some(true))
+                .count(),
+            1
+        );
+        assert!(listed.variants.iter().all(|v| v
+            .parameter_values
+            .iter()
+            .all(|p| p.id != "reasoning" || matches!(p.value.as_str(), "low" | "medium"))));
+    }
+
+    #[test]
+    fn text_only_gateway_models_do_not_request_adaptive_thinking_in_cli() {
+        let mut configured = model();
+        configured.supports_images = false;
+        configured.gateway_capabilities = Some(crate::model::GatewayCapabilities {
+            thinking: false,
+            efforts: vec![],
+        });
+        assert!(usable_model(&configured).thinking_details.is_none());
     }
 
     #[test]

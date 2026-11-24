@@ -205,7 +205,7 @@ impl Store {
                 content: result.content.clone(),
                 is_error: result.is_error,
                 image: result.image.clone(),
-                provider_parts: Vec::new(),
+                provider_parts: result.parts.clone(),
             }),
             runtime_event_id: None,
         };

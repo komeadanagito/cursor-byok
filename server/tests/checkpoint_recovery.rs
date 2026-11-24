@@ -542,6 +542,184 @@ async fn recovery_rejects_a_kv_get_payload_whose_hash_does_not_match_the_blob_id
         .contains("Blob hash mismatch"));
 }
 
+#[tokio::test]
+async fn resumed_history_fetches_only_missing_roots_in_parallel_and_preserves_order() {
+    use cursor_server::{
+        cursor::checkpoint::messages::stable_messages,
+        model::{CanonicalMessage, Origin, ProjectedContent, Role},
+    };
+    use std::{collections::HashMap, time::Duration};
+
+    let (_directory, store) = fixtures::temp_store().await;
+    let provider = fake_provider::FakeProvider::default();
+    provider.push(vec![
+        ModelEvent::Start {
+            model_call_id: "reply".into(),
+        },
+        ModelEvent::TextStart,
+        ModelEvent::TextDelta("complete".into()),
+        ModelEvent::TextEnd,
+        ModelEvent::Done(FinishReason::Stop),
+    ]);
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let registry = TransportRegistry::new(
+        store.clone(),
+        Arc::new(provider.clone()),
+        PromptCompiler::new(assets),
+    );
+    let source = (0..6)
+        .map(|index| {
+            CanonicalMessage::text(
+                format!("u{index}"),
+                Role::User,
+                Origin::User,
+                format!("prior query {index}"),
+            )
+        })
+        .collect::<Vec<_>>();
+    let roots = stable_messages("test prompt", &source, "test-model").unwrap();
+    let root_ids = roots
+        .iter()
+        .map(|root| BlobId::digest(root).as_bytes().to_vec())
+        .collect::<Vec<_>>();
+    for (id, root) in root_ids.iter().zip(&roots).take(2) {
+        assert_eq!(
+            store
+                .put_blob(root, &[])
+                .await
+                .unwrap()
+                .as_bytes()
+                .as_slice(),
+            id
+        );
+    }
+    let mut remote = root_ids[2..]
+        .iter()
+        .cloned()
+        .zip(roots.into_iter().skip(2))
+        .collect::<HashMap<_, _>>();
+    let handle = registry.get_or_create("resumed-run").await.unwrap();
+    let mut output = handle.subscribe();
+    handle
+        .command(TransportCommand::Append {
+            seqno: 0,
+            message: Box::new(resume_request(pb::ConversationStateStructure {
+                root_prompt_messages_json: root_ids,
+                mode: Some(pb::AgentMode::Agent as i32),
+                ..Default::default()
+            })),
+        })
+        .await
+        .unwrap();
+
+    let mut requests = Vec::new();
+    for _ in 0..4 {
+        let message = tokio::time::timeout(Duration::from_secs(1), next_message(&mut output))
+            .await
+            .expect("independent misses should be requested before the first reply");
+        let Some(pb::agent_server_message::Message::KvServerMessage(kv)) = message.message else {
+            panic!("expected a KV request before the model can run");
+        };
+        let Some(pb::kv_server_message::Message::GetBlobArgs(args)) = kv.message else {
+            panic!("expected a GET for a missing root");
+        };
+        requests.push((
+            kv.id,
+            remote
+                .remove(&args.blob_id)
+                .expect("GET is only for a missing root"),
+        ));
+    }
+    assert!(
+        tokio::time::timeout(Duration::from_millis(40), output.recv())
+            .await
+            .is_err(),
+        "only one bounded batch stays in flight"
+    );
+
+    let mut seqno = 1;
+    for (id, data) in requests.into_iter().rev() {
+        supply_blob(&handle, &mut seqno, id, data).await;
+    }
+    loop {
+        let frame = tokio::time::timeout(Duration::from_secs(5), output.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        let (flags, payload) = connect::decode_frames(&frame).unwrap().pop().unwrap();
+        if flags & connect::END_STREAM_FLAG != 0 {
+            let end = serde_json::from_slice::<serde_json::Value>(&payload).unwrap();
+            assert!(end.get("error").is_none(), "{end}");
+            break;
+        }
+        if let Some(pb::agent_server_message::Message::KvServerMessage(kv)) =
+            pb::AgentServerMessage::decode(payload).unwrap().message
+        {
+            match kv.message {
+                Some(pb::kv_server_message::Message::GetBlobArgs(args)) => {
+                    supply_blob(
+                        &handle,
+                        &mut seqno,
+                        kv.id,
+                        remote.remove(&args.blob_id).unwrap(),
+                    )
+                    .await;
+                }
+                Some(pb::kv_server_message::Message::SetBlobArgs(_)) => {
+                    acknowledge(&handle, &mut seqno, kv.id).await
+                }
+                _ => panic!("unexpected KV request"),
+            }
+        }
+    }
+    assert!(remote.is_empty());
+    let requests = provider.requests();
+    assert_eq!(requests.len(), 1);
+    let history = &requests[0].history;
+    assert_eq!(history.len(), 6);
+    for (index, message) in history.iter().enumerate() {
+        let ProjectedContent::Parts(parts) = &message.content else {
+            panic!("expected a recovered user message");
+        };
+        assert!(parts.iter().any(|part| matches!(part,
+            cursor_server::model::ContentPart::Text { text } if text == &format!("prior query {index}"))));
+    }
+    registry.shutdown().await;
+}
+
+async fn supply_blob(
+    handle: &cursor_server::cursor::TransportHandle,
+    seqno: &mut i64,
+    id: u32,
+    data: Vec<u8>,
+) {
+    handle
+        .command(TransportCommand::Append {
+            seqno: *seqno,
+            message: Box::new(pb::AgentClientMessage {
+                message: Some(pb::agent_client_message::Message::KvClientMessage(
+                    pb::KvClientMessage {
+                        id,
+                        message: Some(pb::kv_client_message::Message::GetBlobResult(
+                            pb::GetBlobResult {
+                                blob_data: Some(data),
+                                error: None,
+                            },
+                        )),
+                    },
+                )),
+            }),
+        })
+        .await
+        .unwrap();
+    *seqno += 1;
+}
+
 fn start_request() -> pb::AgentClientMessage {
     pb::AgentClientMessage {
         message: Some(pb::agent_client_message::Message::RunRequest(
@@ -616,7 +794,7 @@ fn read_result(id: u32) -> pb::AgentClientMessage {
 }
 
 async fn next_message(
-    output: &mut tokio::sync::mpsc::UnboundedReceiver<bytes::Bytes>,
+    output: &mut cursor_server::cursor::transport::OutputSubscription,
 ) -> pb::AgentServerMessage {
     let frame = tokio::time::timeout(std::time::Duration::from_secs(5), output.recv())
         .await

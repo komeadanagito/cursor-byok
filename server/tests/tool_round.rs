@@ -16,7 +16,7 @@ use cursor_server::{
         tools::{
             codec,
             runtime::{CursorToolRuntime, ExecContext},
-            ClientToolEvent, ToolBatchState, ToolDispatcher,
+            ToolBatchState, ToolDispatcher,
         },
     },
     cursor::{TransportCommand, TransportRegistry},
@@ -218,7 +218,16 @@ async fn dynamic_mcp_uses_one_definition_for_stream_ui_exec_and_result() {
                         )),
                     }],
                     is_error: false,
-                    structured_content: None,
+                    structured_content: Some(prost_types::Struct {
+                        fields: BTreeMap::from([(
+                            "result".into(),
+                            prost_types::Value {
+                                kind: Some(prost_types::value::Kind::StringValue(
+                                    "navigated".into(),
+                                )),
+                            },
+                        )]),
+                    }),
                 })),
             })),
             ..Default::default()
@@ -230,11 +239,19 @@ async fn dynamic_mcp_uses_one_definition_for_stream_ui_exec_and_result() {
     let codec::ClientExecEvent::Completed(completion) = event else {
         panic!("expected completed MCP result")
     };
+    assert_eq!(completion.result().content, "navigated");
     let Some(pb::tool_call::Tool::McpToolCall(tool)) = &completion.tool_call().tool else {
         panic!("expected rendered MCP result")
     };
     assert_eq!(tool.args.as_ref().unwrap().name, definition.name);
-    assert!(tool.result.is_some());
+    let Some(pb::mcp_tool_result::Result::Success(wire_result)) = tool
+        .result
+        .as_ref()
+        .and_then(|result| result.result.as_ref())
+    else {
+        panic!("expected the tool card to receive the MCP success payload")
+    };
+    assert!(wire_result.structured_content.is_some());
 }
 
 #[tokio::test]
@@ -359,9 +376,7 @@ async fn mcp_auth_uses_the_cursor_auth_interaction_without_a_tool_definition() {
         })
         .await
         .unwrap();
-    let ClientToolEvent::Completed(completion) = event else {
-        panic!("expected MCP auth completion")
-    };
+    let completion = event.completion.expect("expected MCP auth completion");
     let Some(pb::tool_call::Tool::McpAuthToolCall(auth)) = &completion.tool_call().tool else {
         panic!("expected MCP auth tool call")
     };
@@ -829,6 +844,7 @@ async fn one_run_can_auto_compact_again_after_more_tool_output() {
     let (_directory, store) = fixtures::temp_store().await;
     let model = store
         .create_model(&ModelConfigInput {
+            supports_images: true,
             sort_order: 0,
             display_name: "Repeated compaction".into(),
             group_name: None,
@@ -1437,6 +1453,135 @@ fn kv_ack(id: u32) -> pb::AgentClientMessage {
                 message: Some(pb::kv_client_message::Message::SetBlobResult(
                     pb::SetBlobResult { error: None },
                 )),
+            },
+        )),
+    }
+}
+
+// Cursor interrupts the run when an answered question card stays open, so the
+// card must settle on the wire before the approved command reports its result.
+#[tokio::test]
+async fn approved_desktop_command_settles_its_question_then_returns_output_to_the_model() {
+    let (_directory, store) = fixtures::temp_store().await;
+    let provider = fake_provider::FakeProvider::default();
+    provider.push(vec![
+        ModelEvent::Start {
+            model_call_id: "desktop-model-call".into(),
+        },
+        ModelEvent::ToolCallStart {
+            index: 0,
+            call_id: "desktop-call".into(),
+            name: "CallMcpTool".into(),
+        },
+        ModelEvent::ToolCallArgumentsDelta {
+            index: 0,
+            delta: json!({
+                "server": "cursor-devtools",
+                "toolName": "local_run",
+                "arguments": {"command": "echo desktop-output"}
+            })
+            .to_string(),
+        },
+        ModelEvent::ToolCallEnd { index: 0 },
+        ModelEvent::Done(FinishReason::ToolUse),
+    ]);
+    provider.push(text_events("done"));
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let registry = TransportRegistry::new(
+        store,
+        Arc::new(provider.clone()),
+        PromptCompiler::new(assets),
+    );
+    let handle = registry.get_or_create("desktop-request").await.unwrap();
+    let mut output = handle.subscribe();
+    handle
+        .command(TransportCommand::Append {
+            seqno: 0,
+            message: Box::new(client_run()),
+        })
+        .await
+        .unwrap();
+
+    let mut seqno = 1;
+    let mut question_id = String::new();
+    let mut completed = Vec::new();
+    loop {
+        let frame = tokio::time::timeout(std::time::Duration::from_secs(10), output.recv())
+            .await
+            .expect("the run stalled")
+            .expect("RunSSE closed before successful EndStream");
+        let (flags, payload) = connect::decode_frames(&frame).unwrap().pop().unwrap();
+        if flags & connect::END_STREAM_FLAG != 0 {
+            assert_eq!(payload.as_ref(), b"{}");
+            break;
+        }
+        let reply = match pb::AgentServerMessage::decode(payload).unwrap().message {
+            Some(pb::agent_server_message::Message::KvServerMessage(kv)) => Some(kv_ack(kv.id)),
+            Some(pb::agent_server_message::Message::InteractionQuery(query)) => {
+                let Some(pb::interaction_query::Query::AskQuestionInteractionQuery(ask)) =
+                    query.query
+                else {
+                    panic!("expected the approval question")
+                };
+                question_id = ask.tool_call_id;
+                Some(approve_desktop_command(query.id))
+            }
+            Some(pb::agent_server_message::Message::InteractionUpdate(update)) => {
+                if let Some(pb::interaction_update::Message::ToolCallCompleted(done)) =
+                    update.message
+                {
+                    completed.push(done.call_id);
+                }
+                None
+            }
+            _ => None,
+        };
+        if let Some(message) = reply {
+            handle
+                .command(TransportCommand::Append {
+                    seqno,
+                    message: Box::new(message),
+                })
+                .await
+                .unwrap();
+            seqno += 1;
+        }
+    }
+
+    assert_eq!(completed, [question_id, "desktop-call".to_string()]);
+    let requests = provider.requests();
+    assert_eq!(requests.len(), 2);
+    // Only the executed command yields an exit code; the call itself echoes its text.
+    assert!(format!("{:?}", requests[1]).contains("exit_code"));
+}
+
+fn approve_desktop_command(id: u32) -> pb::AgentClientMessage {
+    pb::AgentClientMessage {
+        message: Some(pb::agent_client_message::Message::InteractionResponse(
+            pb::InteractionResponse {
+                id,
+                result: Some(
+                    pb::interaction_response::Result::AskQuestionInteractionResponse(
+                        pb::AskQuestionInteractionResponse {
+                            result: Some(pb::AskQuestionResult {
+                                result: Some(pb::ask_question_result::Result::Success(
+                                    pb::AskQuestionSuccess {
+                                        answers: vec![pb::ask_question_success::Answer {
+                                            question_id: "byok-desktop-command".into(),
+                                            selected_option_ids: vec!["run-once".into()],
+                                            freeform_text: String::new(),
+                                        }],
+                                    },
+                                )),
+                            }),
+                        },
+                    ),
+                ),
             },
         )),
     }

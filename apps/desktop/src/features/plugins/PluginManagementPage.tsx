@@ -12,6 +12,8 @@ import { TooltipTrigger } from "../../shared/ui/TooltipTrigger";
 import { useMessage } from "../../shared/ui/message";
 import { TruncatedButton } from "../../shared/ui/TruncatedButton";
 import { PluginAddPanel, PluginSettingsPanel } from "./PluginResourcePanels";
+import { MagpieEntry } from "./MagpieEntry";
+import { WorkspaceSearchEntry } from "./WorkspaceSearchEntry";
 import styles from "./PluginManagementPage.module.scss";
 
 export function PluginManagementPage() {
@@ -55,12 +57,19 @@ export function PluginManagementPage() {
     }
   };
 
-  const content = pluginRuntime?.state === "ready"
-    ? <PluginCards plugins={plugins} onOpen={(pluginId, mode) => setSelected({ pluginId, mode })} />
-    : <RuntimeGate status={pluginRuntime} starting={starting} onInitialize={() => void initialize()} />;
-  const estimatedHeight = plugins.length > 0
-    ? Math.max(320, Math.ceil(plugins.length / 3) * 180)
-    : 320;
+  const content = <>
+    <div className={styles.pluginGrid}>
+      <WorkspaceSearchEntry />
+      <MagpieEntry />
+      {pluginRuntime?.state === "ready" && plugins.map((plugin) => (
+        <PluginCard key={plugin.id} plugin={plugin} onOpen={(pluginId, mode) => setSelected({ pluginId, mode })} />
+      ))}
+    </div>
+    {pluginRuntime?.state !== "ready" && (
+      <RuntimeGate status={pluginRuntime} starting={starting} onInitialize={() => void initialize()} />
+    )}
+  </>;
+  const estimatedHeight = Math.max(320, Math.ceil((plugins.length + 2) / 3) * 180);
 
   return <>
     <PageContent
@@ -113,21 +122,6 @@ function RuntimeGate({ status, starting, onInitialize }: { status: PluginRuntime
     {!unsupported && <Button variant="primary" disabled={checking || initializing} onClick={onInitialize}>
       {checking ? t("检查中…") : initializing ? t("初始化中…") : failed ? t("重新初始化插件") : t("初始化插件")}
     </Button>}
-  </div>;
-}
-
-function PluginCards({ plugins, onOpen }: {
-  plugins: PluginDescriptor[];
-  onOpen: (pluginId: string, mode: "add" | "settings") => void;
-}) {
-  if (plugins.length === 0) {
-    return <div className={styles.empty}>
-      <strong>{t("还没有安装插件")}</strong>
-      <span>{t("安装插件后会显示在这里。")}</span>
-    </div>;
-  }
-  return <div className={styles.pluginGrid}>
-    {plugins.map((plugin) => <PluginCard key={plugin.id} plugin={plugin} onOpen={onOpen} />)}
   </div>;
 }
 
@@ -264,7 +258,7 @@ function PluginCard({ plugin, onOpen }: {
           <span className={styles.pluginAuthor}>{plugin.author}</span>
         )}
       </div>
-      <div className={styles.cardActions}>
+      <div className={`${styles.cardFooter} ${styles.cardActions}`}>
         <TruncatedButton
           size="small"
           variant="primary"

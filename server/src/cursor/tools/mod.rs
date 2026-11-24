@@ -6,8 +6,10 @@ use std::{
 
 use tokio::sync::Mutex;
 
+pub(crate) mod browser_bridge;
 pub mod codec;
 pub(crate) mod compat;
+pub(crate) mod devtools;
 pub(crate) mod edit;
 pub(crate) mod registry;
 pub mod runtime;
@@ -34,7 +36,6 @@ pub struct ToolDispatcher {
     results: ToolResultSender,
     search: WebSearch,
     fetch: WebFetch,
-    store: Option<Store>,
     edit_schedule: Arc<Mutex<EditSchedule>>,
 }
 
@@ -43,16 +44,20 @@ pub struct DispatchedTool {
     pub completion: Option<ToolCompletion>,
 }
 
+impl DispatchedTool {
+    fn pending() -> Self {
+        Self {
+            messages: Vec::new(),
+            completion: None,
+        }
+    }
+}
+
 pub struct ToolBatchState<'a> {
     pub completed: &'a HashSet<String>,
     pub started: &'a HashSet<String>,
     pub response_text: &'a str,
     pub response_thinking: &'a str,
-}
-
-pub enum ClientToolEvent {
-    Completed(Box<ToolCompletion>),
-    Pending,
 }
 
 impl ToolDispatcher {
@@ -63,7 +68,6 @@ impl ToolDispatcher {
             results,
             search: WebSearch::built_in(),
             fetch: WebFetch::built_in(),
-            store: None,
             edit_schedule: Arc::new(Mutex::new(EditSchedule::default())),
         }
     }
@@ -78,8 +82,7 @@ impl ToolDispatcher {
             runtime,
             results,
             search: WebSearch::managed(store.clone()),
-            fetch: WebFetch::managed(store.clone(), web_cache),
-            store: Some(store),
+            fetch: WebFetch::managed(store, web_cache),
             edit_schedule: Arc::new(Mutex::new(EditSchedule::default())),
         }
     }
@@ -203,7 +206,6 @@ impl ToolDispatcher {
             message_index,
             dynamic_mcp,
             context,
-            self.store.as_ref(),
         )
         .await?;
         messages.extend(started.messages);
@@ -216,9 +218,9 @@ impl ToolDispatcher {
     pub async fn interaction_response(
         &self,
         response: &pb::InteractionResponse,
-    ) -> Result<ClientToolEvent> {
+    ) -> Result<DispatchedTool> {
         if self.runtime.is_interrupted(response.id).await {
-            return Ok(ClientToolEvent::Pending);
+            return Ok(DispatchedTool::pending());
         }
         let pending = match self.runtime.take_interaction(response.id).await {
             Some(pending) => pending,
@@ -227,14 +229,14 @@ impl ToolDispatcher {
                     id = response.id,
                     "ignoring duplicate terminal interaction response"
                 );
-                return Ok(ClientToolEvent::Pending);
+                return Ok(DispatchedTool::pending());
             }
             None => {
                 tracing::warn!(
                     id = response.id,
                     "ignoring response for unknown interaction"
                 );
-                return Ok(ClientToolEvent::Pending);
+                return Ok(DispatchedTool::pending());
             }
         };
         let call = pending.call.clone();
@@ -249,22 +251,16 @@ impl ToolDispatcher {
         {
             Ok(continuation) => continuation,
             Err(Error::Protocol(message)) => {
-                return Ok(ClientToolEvent::Completed(Box::new(
-                    compat::failure_with_message(&call, message),
-                )));
+                return Ok(validation_failure(&call, message));
             }
             Err(Error::Json(error)) => {
-                return Ok(ClientToolEvent::Completed(Box::new(
-                    compat::failure_with_message(&call, error.to_string()),
-                )));
+                return Ok(validation_failure(&call, error.to_string()));
             }
             Err(error) => return Err(error),
         };
-        Ok(match continuation {
-            tool_call_dispatch::InteractionContinuation::Completed(completion) => {
-                ClientToolEvent::Completed(completion)
-            }
-            tool_call_dispatch::InteractionContinuation::Pending => ClientToolEvent::Pending,
+        Ok(DispatchedTool {
+            messages: continuation.messages,
+            completion: continuation.completion,
         })
     }
 }

@@ -22,6 +22,7 @@ struct ClientCache {
     default: Option<reqwest::Client>,
     cursor: Option<reqwest::Client>,
     provider: Option<(Duration, reqwest::Client)>,
+    magpie: Option<(Duration, reqwest::Client)>,
 }
 
 impl NetworkClients {
@@ -88,6 +89,26 @@ impl NetworkClients {
         Ok(client)
     }
 
+    pub(crate) async fn model_client(
+        &self,
+        model: &crate::model::ModelConfig,
+        timeout: Duration,
+    ) -> Result<reqwest::Client> {
+        if model.gateway_capabilities.is_none() {
+            return self.provider_client(timeout).await;
+        }
+        let client = {
+            let mut cache = self.cache.write().await;
+            if cache.magpie.as_ref().is_none_or(|(t, _)| *t != timeout) {
+                cache.magpie = Some((timeout, crate::provider::magpie::local_client(timeout)?));
+            }
+            cache.magpie.as_ref().unwrap().1.clone()
+        };
+        // A stopped gateway's port can be reused by an unrelated local service.
+        crate::provider::magpie::verify_gateway(&client, &model.base_url).await?;
+        Ok(client)
+    }
+
     pub async fn invalidate(&self) {
         *self.cache.write().await = ClientCache::default();
     }
@@ -112,15 +133,6 @@ pub(crate) fn client_builder_from_settings(
 
 pub async fn client(store: &Store) -> Result<reqwest::Client> {
     Ok(client_builder(store).await?.build()?)
-}
-
-pub async fn blocking_client_builder(store: &Store) -> Result<reqwest::blocking::ClientBuilder> {
-    let settings = store.proxy_settings_secret().await?;
-    let mut builder = reqwest::blocking::Client::builder().use_native_tls();
-    if settings.mode.is_custom() {
-        builder = builder.proxy(custom_proxy(&settings)?);
-    }
-    Ok(builder)
 }
 
 fn custom_proxy(settings: &ProxySettingsSecret) -> Result<reqwest::Proxy> {

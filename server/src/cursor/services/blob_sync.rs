@@ -33,9 +33,9 @@ struct Inner {
     store: Store,
     handle: TransportHandle,
     next_id: AtomicU32,
-    set_requests: Mutex<HashMap<u32, PendingSet>>,
+    set_requests: parking_lot::Mutex<HashMap<u32, PendingSet>>,
     acked_blobs: Mutex<HashSet<BlobId>>,
-    get_requests: Mutex<HashMap<u32, PendingGet>>,
+    get_requests: parking_lot::Mutex<HashMap<u32, PendingGet>>,
 }
 
 struct PendingSet {
@@ -49,6 +49,17 @@ struct PendingGet {
     result: oneshot::Sender<Result<Option<Vec<u8>>>>,
 }
 
+struct RequestRegistration<'a, T> {
+    pending: &'a parking_lot::Mutex<HashMap<u32, T>>,
+    id: u32,
+}
+
+impl<T> Drop for RequestRegistration<'_, T> {
+    fn drop(&mut self) {
+        self.pending.lock().remove(&self.id);
+    }
+}
+
 impl BlobSynchronizer {
     pub fn new(request_id: String, store: Store, handle: TransportHandle) -> Self {
         Self {
@@ -57,9 +68,9 @@ impl BlobSynchronizer {
                 store,
                 handle,
                 next_id: AtomicU32::new(1),
-                set_requests: Mutex::new(HashMap::new()),
+                set_requests: parking_lot::Mutex::new(HashMap::new()),
                 acked_blobs: Mutex::new(HashSet::new()),
-                get_requests: Mutex::new(HashMap::new()),
+                get_requests: parking_lot::Mutex::new(HashMap::new()),
             }),
         }
     }
@@ -101,7 +112,7 @@ impl BlobSynchronizer {
         }
         let id = self.inner.next_id.fetch_add(1, Ordering::Relaxed);
         let (sender, receiver) = oneshot::channel();
-        self.inner.set_requests.lock().await.insert(
+        self.inner.set_requests.lock().insert(
             id,
             PendingSet {
                 blob_id: blob_id.clone(),
@@ -109,7 +120,11 @@ impl BlobSynchronizer {
                 result: sender,
             },
         );
-        if let Err(error) = self.inner.handle.emit(&pb::AgentServerMessage {
+        let _registration = RequestRegistration {
+            pending: &self.inner.set_requests,
+            id,
+        };
+        self.inner.handle.emit(&pb::AgentServerMessage {
             ttft_breakdown: None,
             message: Some(pb::agent_server_message::Message::KvServerMessage(
                 pb::KvServerMessage {
@@ -123,20 +138,13 @@ impl BlobSynchronizer {
                     )),
                 },
             )),
-        }) {
-            self.inner.set_requests.lock().await.remove(&id);
-            return Err(error);
-        }
+        })?;
         let cancellation = self.inner.handle.disconnect_token();
-        let result = tokio::select! {
+        tokio::select! {
             result = receiver => result.map_err(|_| Error::Protocol("KV SET response channel closed".into()))?,
             _ = cancellation.cancelled() => Err(Error::Cancelled),
             _ = tokio::time::sleep(SET_TIMEOUT) => Err(Error::Protocol(format!("KV SET timed out: {}", blob_id.to_base64()))),
-        };
-        if result.is_err() {
-            self.inner.set_requests.lock().await.remove(&id);
         }
-        result
     }
 
     pub async fn get(&self, blob_id: &BlobId) -> Result<Option<Vec<u8>>> {
@@ -157,13 +165,17 @@ impl BlobSynchronizer {
         }
         let id = self.inner.next_id.fetch_add(1, Ordering::Relaxed);
         let (sender, receiver) = oneshot::channel();
-        self.inner.get_requests.lock().await.insert(
+        self.inner.get_requests.lock().insert(
             id,
             PendingGet {
                 blob_id: blob_id.clone(),
                 result: sender,
             },
         );
+        let _registration = RequestRegistration {
+            pending: &self.inner.get_requests,
+            id,
+        };
         self.inner.handle.emit(&pb::AgentServerMessage {
             ttft_breakdown: None,
             message: Some(pb::agent_server_message::Message::KvServerMessage(
@@ -184,9 +196,6 @@ impl BlobSynchronizer {
             _ = cancellation.cancelled() => Err(Error::Cancelled),
             _ = tokio::time::sleep(GET_TIMEOUT) => Err(Error::Protocol(format!("KV GET timed out: {}", blob_id.to_base64()))),
         };
-        if result.is_err() {
-            self.inner.get_requests.lock().await.remove(&id);
-        }
         if let Some(trace) = self.inner.handle.trace() {
             match &result {
                 Ok(Some(data)) => {
@@ -245,7 +254,8 @@ impl BlobSynchronizer {
     pub async fn handle_client(&self, message: pb::KvClientMessage) -> Result<()> {
         match message.message {
             Some(pb::kv_client_message::Message::SetBlobResult(result)) => {
-                if let Some(pending) = self.inner.set_requests.lock().await.remove(&message.id) {
+                let pending = self.inner.set_requests.lock().remove(&message.id);
+                if let Some(pending) = pending {
                     if let Some(error) = result.error {
                         tracing::error!(
                             request_id = self.request_id(),
@@ -279,7 +289,8 @@ impl BlobSynchronizer {
                 }
             }
             Some(pb::kv_client_message::Message::GetBlobResult(result)) => {
-                if let Some(pending) = self.inner.get_requests.lock().await.remove(&message.id) {
+                let pending = self.inner.get_requests.lock().remove(&message.id);
+                if let Some(pending) = pending {
                     let value = if let Some(error) = result.error {
                         Err(Error::Protocol(format!("KV GET: {}", error.message)))
                     } else if let Some(data) = result.blob_data {

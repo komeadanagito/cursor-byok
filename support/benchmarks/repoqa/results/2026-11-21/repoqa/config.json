@@ -1,0 +1,42 @@
+{
+  "dataset": "https://github.com/evalplus/repoqa_release/releases/download/2024-06-23/repoqa-2024-06-23.json.gz",
+  "dataset_sha256": "c050a2ad90a7df89d9dc1f1c3b3b20683edd20a56293b35fcaae43dec115d681",
+  "base_url": "http://127.0.0.1:3425/v1",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "rust_binary_sha256": "3d6172106d980d0f191819bcc39f383ffb28c068b11c404eb3a72c5c206cc9b2",
+  "started_epoch": 1795260366.876894,
+  "workers": 2,
+  "upstream": true,
+  "repos": [
+    {
+      "repo": "psf/black",
+      "commit_sha": "f03ee113c9f3dfeb477f2d4247bfb7de2e5f465c",
+      "language": "python"
+    },
+    {
+      "repo": "skypjack/uvw",
+      "commit_sha": "ba10b27646035594fc1dd9525dede8573b71a7d7",
+      "language": "cpp"
+    },
+    {
+      "repo": "square/retrofit",
+      "commit_sha": "10014c2bb7bd5fd24cf6b5b680e6917ab9a7767b",
+      "language": "java"
+    },
+    {
+      "repo": "axios/axios",
+      "commit_sha": "751133eb9ed794c6f6634c52f4fe116e33bf5f09",
+      "language": "typescript"
+    },
+    {
+      "repo": "tokio-rs/tracing",
+      "commit_sha": "908cc432a5994f6e17c8f36e13c217dc40085704",
+      "language": "rust"
+    },
+    {
+      "repo": "junegunn/fzf",
+      "commit_sha": "e352b6887849cb6c3c8ae1d98ed357f94273e90a",
+      "language": "go"
+    }
+  ]
+}

@@ -1,0 +1,1392 @@
+[
+  {
+    "id": "r01-scheduler-ready-timers",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 3,
+      "B": 3
+    },
+    "rank_by_trial": {
+      "A": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "B": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    }
+  },
+  {
+    "id": "r02-ime-before-input",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r03-controlled-select-options",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "fixtures/dom/src/components/fixtures/selects/index.js",
+        162,
+        179
+      ]
+    ],
+    "added_chunks": [
+      [
+        "fixtures/dom/src/components/fixtures/selects/index.js",
+        35,
+        49
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r04-client-tree-position-id",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "compiler/crates/react_compiler_lowering/src/build_hir.rs",
+        1477,
+        1492
+      ],
+      [
+        "packages/react-dom-bindings/src/events/FallbackCompositionState.js",
+        1,
+        22
+      ],
+      [
+        "packages/react-server/src/ReactFizzTreeContext.js",
+        84,
+        98
+      ]
+    ],
+    "added_chunks": [
+      [
+        "compiler/crates/react_compiler_lowering/src/build_hir.rs",
+        644,
+        665
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberCommitWork.js",
+        1301,
+        1308
+      ],
+      [
+        "packages/react-server/src/ReactFizzTreeContext.js",
+        73,
+        84
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r05-flight-date-wire-format",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "r06-server-inline-style",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/react-devtools-shared/src/devtools/views/Components/NativeStyleEditor/StyleEditor.js",
+        72,
+        91
+      ],
+      [
+        "packages/react-dom-bindings/src/client/CSSPropertyOperations.js",
+        111,
+        129
+      ],
+      [
+        "packages/react-dom-bindings/src/client/ReactDOMComponent.js",
+        274,
+        287
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/react-devtools-shared/src/devtools/views/Components/NativeStyleEditor/StyleEditor.js",
+        23,
+        35
+      ],
+      [
+        "packages/react-dom-bindings/src/client/CSSPropertyOperations.js",
+        102,
+        111
+      ],
+      [
+        "packages/react-dom-bindings/src/client/ReactDOMComponent.js",
+        251,
+        273
+      ]
+    ],
+    "first_rank": {
+      "A": 10,
+      "B": 10
+    },
+    "rank_by_trial": {
+      "A": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "B": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
+    }
+  },
+  {
+    "id": "r07-edit-retain-local-state",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/Inference/AliasingEffects.ts",
+        66,
+        80
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/MergeReactiveScopesThatInvalidateTogether.ts",
+        457,
+        466
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberApplyGesture.js",
+        853,
+        858
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberCommitEffects.js",
+        541,
+        557
+      ]
+    ],
+    "added_chunks": [
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/HIR/PropagateScopeDependenciesHIR.ts",
+        554,
+        570
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/MergeReactiveScopesThatInvalidateTogether.ts",
+        422,
+        441
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberApplyGesture.js",
+        795,
+        817
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberCommitEffects.js",
+        497,
+        518
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r08-commit-dispose-hook-effects",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "r09-external-store-legacy-client",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "scripts/rollup/bundles.js",
+        1134,
+        1155
+      ]
+    ],
+    "added_chunks": [
+      [
+        "compiler/crates/react_compiler_validation/src/validate_no_set_state_in_effects.rs",
+        179,
+        197
+      ]
+    ],
+    "first_rank": {
+      "A": 6,
+      "B": 6
+    },
+    "rank_by_trial": {
+      "A": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "B": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ]
+    }
+  },
+  {
+    "id": "r10-compiler-render-update-diagnostic",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "compiler/crates/react_compiler/src/entrypoint/pipeline.rs",
+        1701,
+        1719
+      ],
+      [
+        "compiler/crates/react_compiler_inference/src/infer_mutation_aliasing_effects.rs",
+        2500,
+        2507
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts",
+        2237,
+        2242
+      ]
+    ],
+    "added_chunks": [
+      [
+        "compiler/crates/react_compiler/src/entrypoint/pipeline.rs",
+        1630,
+        1648
+      ],
+      [
+        "compiler/crates/react_compiler_inference/src/infer_mutation_aliasing_effects.rs",
+        1991,
+        2013
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts",
+        1713,
+        1728
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r11-client-promise-reuse-slot",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/react-dom-bindings/src/server/fizz-instruction-set/ReactDOMFizzInstructionSetShared.js",
+        648,
+        658
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberBeginWork.js",
+        1046,
+        1058
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/react-dom-bindings/src/server/fizz-instruction-set/ReactDOMFizzInstructionSetShared.js",
+        606,
+        619
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberBeginWork.js",
+        983,
+        995
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r12-lazy-module-default",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/react-server-dom-webpack/src/client/ReactFlightClientConfigBundlerWebpack.js",
+        95,
+        101
+      ],
+      [
+        "packages/react-server/src/ReactFizzServer.js",
+        3577,
+        3596
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/react-server-dom-webpack/src/client/ReactFlightClientConfigBundlerWebpack.js",
+        58,
+        75
+      ],
+      [
+        "packages/react-server/src/ReactFizzServer.js",
+        3492,
+        3503
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v01-enqueue-post-render-callback",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/runtime-core/src/components/Suspense.ts",
+        899,
+        918
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/runtime-core/src/apiWatch.ts",
+        146,
+        150
+      ]
+    ],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v02-computed-global-version",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/reactivity/src/effect.ts",
+        376,
+        397
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/reactivity/src/effect.ts",
+        353,
+        376
+      ]
+    ],
+    "first_rank": {
+      "A": 6,
+      "B": 6
+    },
+    "rank_by_trial": {
+      "A": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "B": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ]
+    }
+  },
+  {
+    "id": "v03-select-array-or-set",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v04-ssr-teleport-target-buffer",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/server-renderer/src/helpers/ssrRenderTeleport.ts",
+        16,
+        29
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/runtime-core/src/components/Teleport.ts",
+        372,
+        384
+      ]
+    ],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v05-template-context-prefix",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/compiler-sfc/src/compileScript.ts",
+        767,
+        784
+      ],
+      [
+        "packages/compiler-sfc/src/script/definePropsDestructure.ts",
+        101,
+        118
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/compiler-sfc/src/compileScript.ts",
+        168,
+        186
+      ],
+      [
+        "packages/compiler-sfc/src/script/definePropsDestructure.ts",
+        82,
+        101
+      ]
+    ],
+    "first_rank": {
+      "A": 10,
+      "B": 10
+    },
+    "rank_by_trial": {
+      "A": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "B": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
+    }
+  },
+  {
+    "id": "v06-script-default-local-binding",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/compiler-sfc/src/compileScript.ts",
+        467,
+        482
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/compiler-sfc/src/compileScript.ts",
+        168,
+        186
+      ]
+    ],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v07-reordered-outlet-content",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        93,
+        103
+      ],
+      [
+        "packages/runtime-core/src/components/Suspense.ts",
+        752,
+        770
+      ],
+      [
+        "packages/runtime-core/src/components/Teleport.ts",
+        384,
+        398
+      ],
+      [
+        "packages/runtime-core/src/hydration.ts",
+        298,
+        311
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        79,
+        93
+      ],
+      [
+        "packages/runtime-core/src/components/Suspense.ts",
+        690,
+        715
+      ],
+      [
+        "packages/runtime-core/src/components/Teleport.ts",
+        372,
+        384
+      ],
+      [
+        "packages/runtime-core/src/hydration.ts",
+        119,
+        137
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": 4
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
+    }
+  },
+  {
+    "id": "v08-evict-retained-active-view",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/runtime-core/src/component.ts",
+        851,
+        868
+      ],
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        93,
+        103
+      ],
+      [
+        "packages/runtime-core/src/components/Suspense.ts",
+        725,
+        744
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/runtime-core/src/component.ts",
+        829,
+        850
+      ],
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        79,
+        93
+      ],
+      [
+        "packages/runtime-core/src/components/Suspense.ts",
+        690,
+        715
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v09-ancestor-error-stop",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/compiler-ssr/src/transforms/ssrTransformComponent.ts",
+        115,
+        124
+      ],
+      [
+        "packages/reactivity/src/watch.ts",
+        136,
+        156
+      ],
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        446,
+        458
+      ],
+      [
+        "packages/runtime-core/src/hydration.ts",
+        277,
+        284
+      ],
+      [
+        "packages/runtime-core/src/renderer.ts",
+        1496,
+        1518
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/compiler-ssr/src/transforms/ssrTransformComponent.ts",
+        87,
+        91
+      ],
+      [
+        "packages/compiler-ssr/src/transforms/ssrTransformTransitionGroup.ts",
+        60,
+        79
+      ],
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        422,
+        426
+      ],
+      [
+        "packages/runtime-core/src/hydration.ts",
+        119,
+        137
+      ],
+      [
+        "packages/runtime-core/src/renderer.ts",
+        1306,
+        1323
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v10-ignore-in-flight-event",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/runtime-core/src/helpers/useModel.ts",
+        91,
+        104
+      ],
+      [
+        "packages/runtime-core/src/renderer.ts",
+        991,
+        1002
+      ],
+      [
+        "packages/runtime-dom/src/directives/vModel.ts",
+        88,
+        97
+      ],
+      [
+        "packages/runtime-dom/src/modules/events.ts",
+        99,
+        110
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/runtime-core/src/helpers/useModel.ts",
+        40,
+        59
+      ],
+      [
+        "packages/runtime-core/src/renderer.ts",
+        975,
+        990
+      ],
+      [
+        "packages/runtime-dom/src/directives/vModel.ts",
+        60,
+        65
+      ],
+      [
+        "packages/runtime-dom/src/modules/events.ts",
+        90,
+        99
+      ]
+    ],
+    "first_rank": {
+      "A": null,
+      "B": 4
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
+    }
+  },
+  {
+    "id": "v11-render-inherit-extra-attrs",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/runtime-core/src/componentOptions.ts",
+        754,
+        778
+      ],
+      [
+        "packages/server-renderer/src/render.ts",
+        164,
+        188
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/runtime-core/src/componentOptions.ts",
+        520,
+        532
+      ],
+      [
+        "packages/server-renderer/src/render.ts",
+        123,
+        140
+      ]
+    ],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v12-css-vars-on-teleports",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": true,
+    "top1_changed": false,
+    "removed_chunks": [
+      [
+        "packages/compiler-sfc/src/compileScript.ts",
+        818,
+        845
+      ]
+    ],
+    "added_chunks": [
+      [
+        "packages/compiler-sfc/src/compileScript.ts",
+        168,
+        186
+      ]
+    ],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  }
+]

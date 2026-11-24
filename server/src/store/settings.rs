@@ -11,7 +11,6 @@ const TAB_SETTINGS_KEY: &str = "cursor_tab";
 const DESKTOP_SETTINGS_KEY: &str = "desktop_lifecycle";
 const COMMIT_SETTINGS_KEY: &str = "commit_settings";
 const CURSOR_TAKEOVER_ENABLED_KEY: &str = "cursor_takeover_enabled";
-const PRICING_SETTINGS_KEY: &str = "token_pricing";
 const EXTERNAL_API_SETTINGS_KEY: &str = "external_api";
 
 /// Embedded default system prompts for commit message generation.
@@ -24,31 +23,14 @@ pub const PUBLIC_TAB_SERVICE_URL: &str = "https://tab.leokun.cn";
 pub struct PortSettings {
     pub proxy_port: u16,
     pub service_port: u16,
+    #[serde(default)]
+    pub inference_port: u16,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
 pub struct ExternalApiSettings {
     pub enabled: bool,
     pub api_key: String,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct TokenPricingSettings {
-    pub input_per_million: f64,
-    pub output_per_million: f64,
-    pub cache_read_per_million: f64,
-    pub cache_write_per_million: f64,
-}
-
-impl Default for TokenPricingSettings {
-    fn default() -> Self {
-        Self {
-            input_per_million: 5.0,
-            output_per_million: 25.0,
-            cache_read_per_million: 0.5,
-            cache_write_per_million: 6.25,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
@@ -260,7 +242,7 @@ impl Store {
         .await?;
         value
             .map(|value| serde_json::from_str(&value).map_err(Into::into))
-            .unwrap_or(Ok(true))
+            .unwrap_or(Ok(false))
     }
 
     pub(crate) async fn set_cursor_takeover_enabled(&self, enabled: bool) -> Result<()> {
@@ -408,12 +390,6 @@ impl Store {
         Ok(())
     }
 
-    pub async fn set_service_port(&self, port: u16) -> Result<()> {
-        let mut settings = self.port_settings().await?;
-        settings.service_port = port;
-        self.set_port_settings(settings).await
-    }
-
     pub async fn set_proxy_port(&self, port: u16) -> Result<()> {
         let mut settings = self.port_settings().await?;
         settings.proxy_port = port;
@@ -476,43 +452,14 @@ impl Store {
         .await?;
         Ok(settings)
     }
-
-    pub async fn pricing_settings(&self) -> Result<TokenPricingSettings> {
-        let value = sqlx::query_scalar::<_, String>(
-            "SELECT value_json FROM service_settings WHERE setting_key = ?",
-        )
-        .bind(PRICING_SETTINGS_KEY)
-        .fetch_optional(&self.pool)
-        .await?;
-        value
-            .map(|value| serde_json::from_str(&value).map_err(Into::into))
-            .unwrap_or_else(|| Ok(TokenPricingSettings::default()))
-    }
-
-    pub async fn set_pricing_settings(
-        &self,
-        settings: TokenPricingSettings,
-    ) -> Result<TokenPricingSettings> {
-        let value_json = serde_json::to_string(&settings)?;
-        let _write = self.writes.lock().await;
-        sqlx::query(
-            "INSERT INTO service_settings(setting_key, value_json, updated_at_ms) VALUES (?, ?, ?) ON CONFLICT(setting_key) DO UPDATE SET value_json = excluded.value_json, updated_at_ms = excluded.updated_at_ms",
-        )
-        .bind(PRICING_SETTINGS_KEY)
-        .bind(value_json)
-        .bind(now_ms())
-        .execute(&self.pool)
-        .await?;
-        Ok(settings)
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
         read_proxy_settings, CommitPromptLocale, CommitSettings, ExternalApiSettings, ProxyMode,
-        ProxySettingsInput, ProxySettingsSecret, Store, TokenPricingSettings,
-        DEFAULT_COMMIT_PROMPT_EN_US, DEFAULT_COMMIT_PROMPT_ZH_CN, PROXY_SETTINGS_KEY,
+        ProxySettingsInput, ProxySettingsSecret, Store, DEFAULT_COMMIT_PROMPT_EN_US,
+        DEFAULT_COMMIT_PROMPT_ZH_CN, PROXY_SETTINGS_KEY,
     };
 
     /// The `outbound_proxy` row exactly as builds before the `system` -> `default`
@@ -626,26 +573,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn token_pricing_settings_persists_and_reads_back() {
+    async fn startup_restores_only_an_explicitly_enabled_local_proxy() {
         let directory = tempfile::tempdir().unwrap();
         let url = format!("sqlite://{}", directory.path().join("test.db").display());
         let store = Store::connect(&url).await.unwrap();
-
-        assert_eq!(
-            store.pricing_settings().await.unwrap(),
-            TokenPricingSettings::default()
-        );
-
-        let custom = TokenPricingSettings {
-            input_per_million: 3.0,
-            output_per_million: 15.0,
-            cache_read_per_million: 0.3,
-            cache_write_per_million: 3.75,
-        };
-        let saved = store.set_pricing_settings(custom).await.unwrap();
-        assert_eq!(saved, custom);
-
-        assert_eq!(store.pricing_settings().await.unwrap(), custom);
+        assert!(!store.cursor_takeover_enabled().await.unwrap());
+        store.set_cursor_takeover_enabled(true).await.unwrap();
+        assert!(Store::connect(&url)
+            .await
+            .unwrap()
+            .cursor_takeover_enabled()
+            .await
+            .unwrap());
+        store.set_cursor_takeover_enabled(false).await.unwrap();
+        assert!(!store.cursor_takeover_enabled().await.unwrap());
     }
 
     #[tokio::test]

@@ -39,7 +39,7 @@ pub struct ToolResultContent {
     pub is_error: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<ToolImageReference>,
-    #[serde(skip)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub provider_parts: Vec<ContentPart>,
 }
 
@@ -49,7 +49,7 @@ pub struct ProviderReplayState {
     pub value: Value,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentPart {
     Text {

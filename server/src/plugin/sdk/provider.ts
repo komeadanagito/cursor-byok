@@ -57,7 +57,7 @@ export type LlmRequest = {
   messages: LlmMessage[];
   tools: LlmTool[];
   reasoning: { enabled: boolean; effort: string | null };
-  latency: "fast" | "standard";
+  latency: "standard" | "default" | "fast" | "ultrafast";
   maxOutputTokens: number | null;
   /** 会话级稳定缓存键,用于上游前缀缓存的路由亲和(如 prompt_cache_key)。 */
   cacheKey: string | null;

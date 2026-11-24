@@ -1,0 +1,72 @@
+{
+  "cache": {
+    "messages": {
+      "requests": 5,
+      "warm_requests": 3,
+      "warm_read": 184128,
+      "warm_input": 184476,
+      "warm_fraction": 0.9981135757496911,
+      "correct_in_warm": 0,
+      "first_source_read": 0,
+      "first_source_input": 61340
+    },
+    "completions": {
+      "requests": 5,
+      "warm_requests": 3,
+      "warm_read": 184448,
+      "warm_input": 184906,
+      "warm_fraction": 0.9975230657739608,
+      "correct_in_warm": 0,
+      "first_source_read": 0,
+      "first_source_input": 61366
+    },
+    "responses": {
+      "requests": 5,
+      "warm_requests": 3,
+      "warm_read": 184128,
+      "warm_input": 184476,
+      "warm_fraction": 0.9981135757496911,
+      "correct_in_warm": 3,
+      "first_source_read": 0,
+      "first_source_input": 61348
+    }
+  },
+  "mcp_retrieval": {
+    "description": {
+      "queries": 60,
+      "hit_at_5": 18,
+      "hit_at_10": 26,
+      "hot_p50_ms": 1.916021000000434
+    },
+    "symbol": {
+      "queries": 60,
+      "hit_at_5": 46,
+      "hit_at_10": 49,
+      "hot_p50_ms": 2.2824784999997405
+    }
+  },
+  "branch_switch": {
+    "cold_ms": 104.44529199999941,
+    "warm_ms": 1.0372919999994679,
+    "first_query_after_switch_ms": 1.5039169999990776,
+    "fresh_results_after_switch_ms": 111.29649999999991,
+    "reopened_ms": 94.50533400000083
+  },
+  "web_recount": {
+    "baseline": {
+      "evidence": 7,
+      "of": 40,
+      "p50_ms": 4004.3457289999997
+    },
+    "current": {
+      "evidence": 6,
+      "of": 40,
+      "p50_ms": 2003.9352499999998
+    },
+    "exa-anonymous": {
+      "evidence": 19,
+      "of": 40,
+      "p50_ms": 1047.9340624999995
+    }
+  }
+}

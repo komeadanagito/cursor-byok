@@ -94,6 +94,30 @@ impl RuleStore {
         Ok(records)
     }
 
+    pub fn personal_rules(root: &Path) -> Result<Vec<String>> {
+        let entries = match std::fs::read_dir(root.join("personal")) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(error.into()),
+        };
+        let mut paths = Vec::new();
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            if path.extension().and_then(|value| value.to_str()) == Some(RULE_EXTENSION)
+                && entry.file_type()?.is_file()
+            {
+                paths.push(path);
+            }
+        }
+        // Saving a file without changing its content must keep the prompt order stable.
+        paths.sort_unstable();
+        paths
+            .into_iter()
+            .map(|path| Ok(std::fs::read_to_string(path)?))
+            .collect()
+    }
+
     pub fn get(&self, id: &str) -> Result<Option<RuleRecord>> {
         validate_id(id)?;
         let path = self.rule_path(id);

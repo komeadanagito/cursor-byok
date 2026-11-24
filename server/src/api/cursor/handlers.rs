@@ -195,7 +195,18 @@ async fn run_sse_handler(
 ) -> Result<Response<Body>> {
     let (parts, body) = buffered(request).await?;
     let request: agent::BidiRequestId = connect::decode_unary(&body)?;
-    let route = registry.wait_route(&request.request_id).await;
+    let Ok(route) = tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        registry.wait_route(&request.request_id),
+    )
+    .await
+    else {
+        let mut response = Response::new(Body::from(
+            "Cursor RunSSE did not receive its first BidiAppend. Retry or resume the conversation.",
+        ));
+        *response.status_mut() = StatusCode::GATEWAY_TIMEOUT;
+        return Ok(response);
+    };
     let trace = registry.trace(&request.request_id);
     trace.resume();
     trace.request(
@@ -240,7 +251,7 @@ async fn bidi_handler(
     let local = if let Some(model_id) = decoded.model_id() {
         // 插件模型 ID 只在本地有意义,永远不转发到 Cursor 官方上游。
         if model_id.starts_with(crate::plugin::ADAPTER_ID_PREFIX)
-            || registry.store().model(model_id).await?.is_some()
+            || crate::cursor::compile::is_local_config_model_id(model_id)
         {
             tracing::info!(
                 request_id = decoded.request_id,
@@ -315,7 +326,23 @@ async fn bidi_handler(
             return Err(error);
         }
     };
-    match bidi::append(&registry, decoded, parent).await {
+    let reader = match decoded.message.message.as_ref() {
+        Some(agent::agent_client_message::Message::RunRequest(run)) => {
+            let max_mode = run
+                .requested_model
+                .as_ref()
+                .map(|model| model.max_mode)
+                .or_else(|| run.model_details.as_ref().and_then(|model| model.max_mode))
+                .unwrap_or(false);
+            crate::cursor::services::describe_image::CursorImageReader::from_session(
+                proxy,
+                &parts.headers,
+                max_mode,
+            )
+        }
+        _ => None,
+    };
+    match bidi::append(&registry, decoded, parent, reader).await {
         Ok(_) => trace.request(
             "bidi_request",
             body,
@@ -396,4 +423,173 @@ fn header_text<'a>(headers: &'a HeaderMap, name: &str) -> Result<Option<&'a str>
         .map(|value| value.to_str())
         .transpose()
         .map_err(|error| crate::Error::Protocol(format!("invalid {name} header: {error}")))
+}
+
+#[cfg(test)]
+mod routing_tests {
+    use super::*;
+    use crate::{
+        model::ModelInvocation,
+        provider::{Provider, ProviderStream},
+    };
+    use prost::Message;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tokio_util::sync::CancellationToken;
+    use tower::ServiceExt;
+
+    struct NoProvider;
+    impl Provider for NoProvider {
+        fn stream(&self, _: ModelInvocation, _: CancellationToken) -> ProviderStream {
+            panic!("an unavailable model must not start inference")
+        }
+    }
+
+    #[tokio::test]
+    async fn run_sse_with_a_missing_first_append_has_a_deadline() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = crate::store::Store::connect(&format!(
+            "sqlite://{}",
+            temp.path().join("state.db").display()
+        ))
+        .await
+        .unwrap();
+        let registry = TransportRegistry::new(
+            store.clone(),
+            Arc::new(NoProvider),
+            crate::cursor::prompting::PromptCompiler::new(
+                crate::cursor::prompting::PromptAssets::embedded().unwrap(),
+            ),
+        );
+        let proxy = CursorProxy::testing(
+            crate::network::NetworkClients::new(store),
+            "http://127.0.0.1:1".into(),
+        );
+        let app = router_with_proxy(
+            registry,
+            proxy,
+            knowledge::KnowledgeService::with_root(temp.path().join("rules")).unwrap(),
+        );
+        let frame = agent::BidiRequestId {
+            request_id: "first-append-did-not-arrive".into(),
+        };
+        let response = tokio::time::timeout(
+            std::time::Duration::from_secs(6),
+            app.oneshot(
+                Request::post("/agent.v1.AgentService/RunSSE")
+                    .body(Body::from(frame.encode_to_vec()))
+                    .unwrap(),
+            ),
+        )
+        .await
+        .expect("RunSSE cannot wait forever")
+        .unwrap();
+        assert_eq!(response.status(), StatusCode::GATEWAY_TIMEOUT);
+    }
+
+    #[tokio::test]
+    async fn unavailable_byok_models_never_reach_cursor_upstream() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = crate::store::Store::connect(&format!(
+            "sqlite://{}",
+            temp.path().join("state.db").display()
+        ))
+        .await
+        .unwrap();
+        let counter = Arc::new(AtomicUsize::new(0));
+        let upstream = Router::new().fallback({
+            let counter = counter.clone();
+            move || {
+                let counter = counter.clone();
+                async move {
+                    counter.fetch_add(1, Ordering::Relaxed);
+                    StatusCode::IM_A_TEAPOT
+                }
+            }
+        });
+        let socket = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = socket.local_addr().unwrap();
+        let upstream_task =
+            tokio::spawn(async move { axum::serve(socket, upstream).await.unwrap() });
+        let registry = TransportRegistry::new(
+            store.clone(),
+            Arc::new(NoProvider),
+            crate::cursor::prompting::PromptCompiler::new(
+                crate::cursor::prompting::PromptAssets::embedded().unwrap(),
+            ),
+        );
+        let proxy = CursorProxy::testing(
+            crate::network::NetworkClients::new(store),
+            format!("http://{addr}"),
+        );
+        let knowledge = knowledge::KnowledgeService::with_root(temp.path().join("rules")).unwrap();
+        let router = router_with_proxy(registry, proxy, knowledge);
+        for (idx, model) in [
+            "000000abcdeffabc",
+            "byok-ff8d2b90-0156-41ec-a2e3-06741280209a",
+            "magpie-Z3JvdXAvd29yaw",
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let request_id = format!("route-{idx}");
+            let message = agent::AgentClientMessage {
+                message: Some(agent::agent_client_message::Message::RunRequest(
+                    agent::AgentRunRequest {
+                        requested_model: Some(agent::RequestedModel {
+                            model_id: model.into(),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    },
+                )),
+            };
+            let append = ai::BidiAppendRequest {
+                request_id: Some(ai::BidiRequestId {
+                    request_id: request_id.clone(),
+                }),
+                data_binary: message.encode_to_vec(),
+                ..Default::default()
+            };
+            let response = router
+                .clone()
+                .oneshot(
+                    Request::post("/aiserver.v1.BidiService/BidiAppend")
+                        .body(Body::from(append.encode_to_vec()))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(
+                response.status(),
+                StatusCode::OK,
+                "{model} must be admitted to local transport"
+            );
+            let sse = tokio::time::timeout(
+                std::time::Duration::from_secs(3),
+                router.clone().oneshot(
+                    Request::post("/agent.v1.AgentService/RunSSE")
+                        .body(Body::from(
+                            agent::BidiRequestId { request_id }.encode_to_vec(),
+                        ))
+                        .unwrap(),
+                ),
+            )
+            .await
+            .unwrap()
+            .unwrap();
+            let body = tokio::time::timeout(
+                std::time::Duration::from_secs(3),
+                to_bytes(sse.into_body(), 16000),
+            )
+            .await
+            .unwrap()
+            .unwrap();
+            assert!(String::from_utf8_lossy(&body).contains("BYOK model is unavailable"));
+        }
+        assert_eq!(counter.load(Ordering::Relaxed), 0);
+        upstream_task.abort();
+    }
 }

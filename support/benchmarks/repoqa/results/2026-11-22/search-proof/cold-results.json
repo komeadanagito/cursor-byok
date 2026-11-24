@@ -1,0 +1,306 @@
+[
+  {
+    "block": "ABBA",
+    "arm": "A",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 4223.130459,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 574.5710419999999,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 55.785333,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 12.208,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4400784,
+      5289303,
+      27016130,
+      33122638
+    ]
+  },
+  {
+    "block": "ABBA",
+    "arm": "B",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 3753.39575,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 550.093125,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 53.839,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 12.023708,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4412545,
+      5299075,
+      27092199,
+      33183670
+    ]
+  },
+  {
+    "block": "ABBA",
+    "arm": "B",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 3790.9346250000003,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 546.0018749999999,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 52.894042,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 12.078083,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4412545,
+      5299075,
+      27092199,
+      33183670
+    ]
+  },
+  {
+    "block": "ABBA",
+    "arm": "A",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 3736.5029999999997,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 505.525125,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 53.328542,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 12.195166,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4400784,
+      5289303,
+      27016130,
+      33122638
+    ]
+  },
+  {
+    "block": "BAAB",
+    "arm": "B",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 3822.713625,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 552.374125,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 55.207917,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 10.510874999999999,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4412545,
+      5299075,
+      27092199,
+      33183670
+    ]
+  },
+  {
+    "block": "BAAB",
+    "arm": "A",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 3715.3997090000003,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 510.720708,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 53.301,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 10.795708,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4400784,
+      5289303,
+      27016130,
+      33122638
+    ]
+  },
+  {
+    "block": "BAAB",
+    "arm": "A",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 3765.259541,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 530.543083,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 53.807333,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 10.708208,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4400784,
+      5289303,
+      27016130,
+      33122638
+    ]
+  },
+  {
+    "block": "BAAB",
+    "arm": "B",
+    "cold": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 3852.856125,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 550.287791,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "reload": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 52.91275,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 12.206625,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "sizes": [
+      4412545,
+      5299075,
+      27092199,
+      33183670
+    ]
+  }
+]

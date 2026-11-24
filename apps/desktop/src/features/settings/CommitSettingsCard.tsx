@@ -6,7 +6,8 @@ import { useAppStore } from "../../shared/store/appStore";
 import { Button } from "../../shared/ui/Button";
 import { Modal } from "../../shared/ui/Modal";
 import { ModelSelect, type ModelSelectOption } from "../../shared/ui/ModelSelect";
-import { claudeIcon, flatColorOrganizationIcon, openAiIcon } from "../../shared/ui/icons";
+import { flatColorOrganizationIcon, providerIcon } from "../../shared/ui/icons";
+import { modelLogo } from "../../shared/utils/brandIcons";
 import { TitledCard } from "../../shared/ui/TitledCard";
 import { useMessage } from "../../shared/ui/message";
 import controls from "../../shared/ui/Controls.module.scss";
@@ -66,7 +67,8 @@ export function CommitSettingsCard() {
           ? `${model.display_name}（${model.model_id}）`
           : model.display_name || model.model_id,
         group: modelProviderName(model),
-        icon: model.type === "anthropic" ? claudeIcon : openAiIcon,
+        iconMask: modelLogo(model),
+        icon: providerIcon,
       });
     }
     for (const plugin of plugins) {

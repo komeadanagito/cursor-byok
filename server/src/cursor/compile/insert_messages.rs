@@ -24,6 +24,7 @@ pub(super) const SHELL_FOLLOW_UP: &str = concat!(
 pub(super) struct Projection {
     pub context: String,
     pub turn_user: pb::UserMessage,
+    pub finished_subagents: Vec<pb::BackgroundTaskCompletion>,
 }
 
 pub(super) fn project(
@@ -122,6 +123,11 @@ pub(super) fn project(
             .map(|(_, context)| context.as_str())
             .collect::<Vec<_>>()
             .join("\n\n"),
+        finished_subagents: completions
+            .values()
+            .filter(|(completion, _)| completion.kind() == pb::BackgroundTaskKind::Subagent)
+            .map(|(completion, _)| (*completion).clone())
+            .collect(),
         turn_user: pb::UserMessage {
             text,
             message_id: format!(

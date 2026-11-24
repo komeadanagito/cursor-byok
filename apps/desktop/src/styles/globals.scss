@@ -64,16 +64,20 @@ button {
   -webkit-app-region: drag;
 }
 
+// Scrolled content must vanish entirely behind the fixed title row; a fade band
+// there reads as text bleeding through the title.
 .scroll-shadow-top[data-scrolled="true"] {
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0,
-    black var(--app-content-top) ,
+    transparent var(--app-content-top),
+    black var(--app-content-top),
     black 100%
   );
   mask-image: linear-gradient(
     to bottom,
     transparent 0,
+    transparent var(--app-content-top),
     black var(--app-content-top),
     black 100%
   );

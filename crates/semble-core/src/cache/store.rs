@@ -108,6 +108,8 @@ mod tests {
                     content: "code".into(),
                 }],
                 definitions: Vec::new(),
+                declarations: Vec::new(),
+                function_anchors: vec![None],
                 lexical_documents: vec![crate::index::lexical_document("code")],
                 vectors: vec![127, 0],
             }],

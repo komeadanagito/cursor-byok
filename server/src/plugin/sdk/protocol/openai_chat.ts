@@ -109,6 +109,9 @@ export function buildChatBody(call: OpenAiChatCall): Record<string, JsonValue> {
   if (call.request.reasoning.effort !== null) {
     body.reasoning_effort = call.request.reasoning.effort;
   }
+  if (call.request.latency === "ultrafast") {
+    throw new Error("Ultrafast model selection requires OpenAI Responses");
+  }
   if (call.request.latency === "fast" && call.includeServiceTier !== false) {
     body.service_tier = "fast";
   }

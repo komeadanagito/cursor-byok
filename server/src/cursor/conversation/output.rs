@@ -150,6 +150,7 @@ impl ConversationOutput {
         }
         let mut worker = CheckpointWorker::spawn(
             self.store.clone(),
+            self.core.history.clone(),
             self.checkpoint.clone(),
             self.handle.clone(),
             self.context.mode,
@@ -961,6 +962,7 @@ impl ConversationOutput {
                         event_id,
                         target_run_id: None,
                         messages: vec![message],
+                        finished_subagents: Vec::new(),
                         delivery: MessageDelivery::BreakMessages,
                     },
                 )
@@ -1001,6 +1003,7 @@ fn cursor_error(failure: RunFailure) -> Error {
     match failure {
         RunFailure::Protocol(message) => Error::Protocol(message),
         RunFailure::Provider(message) => Error::Provider(message),
+        RunFailure::ProviderRefusal(message) => Error::ProviderRefusal(message),
         RunFailure::Store(message) => Error::Store(message),
         RunFailure::Client(message) => Error::Protocol(message),
     }
@@ -1046,16 +1049,17 @@ pub(crate) fn finish_failed(handle: &TransportHandle, error: &Error) -> Result<(
         details: Vec::new(),
     };
     let stream_error = match error {
-        Error::Provider(_) | Error::Http(_) => {
+        Error::Provider(_) | Error::ProviderRefusal(_) | Error::Http(_) => {
+            let refused = matches!(error, Error::ProviderRefusal(_));
             let detail = ai::ErrorDetails {
                 error: ai::error_details::Error::ProviderError as i32,
                 details: Some(ai::CustomErrorDetails {
                     title: "Provider Error".into(),
                     detail: error.to_string(),
                     allow_command_links_potentially_unsafe_please_only_use_for_handwritten_trusted_markdown: Some(true),
-                    is_retryable: Some(true),
+                    is_retryable: Some(!refused),
                     show_request_id: Some(true),
-                    should_show_immediate_error: Some(false),
+                    should_show_immediate_error: Some(refused),
                 }),
                 is_expected: Some(true),
             };

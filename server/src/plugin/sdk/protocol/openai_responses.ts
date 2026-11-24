@@ -123,11 +123,14 @@ export function buildResponsesBody(call: OpenAiResponsesCall): Record<string, Js
       ...(reasoning.effort !== null ? { effort: reasoning.effort } : {}),
     };
   }
-  // OpenAI 的规范 tier 值是 priority;"fast" 只是客户端别名,上游不接受。
-  if (call.request.latency === "fast") body.service_tier = "priority";
   // 会话级缓存键把请求钉到同一缓存分片,前缀缓存才能稳定命中。
   if (call.request.cacheKey !== null) body.prompt_cache_key = call.request.cacheKey;
-  return { ...body, ...call.extraBody };
+  const tier = call.request.latency;
+  return {
+    ...body,
+    ...call.extraBody,
+    ...(tier === "standard" ? {} : { service_tier: tier === "fast" ? "priority" : tier }),
+  };
 }
 
 type ToolState = {

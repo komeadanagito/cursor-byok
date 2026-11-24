@@ -39,6 +39,7 @@ pub(crate) fn subagents_disabled(call: &ToolCall) -> Result<ToolCompletion> {
             call_id: call.call_id.clone(),
             content: SUBAGENTS_DISABLED_REMINDER.into(),
             is_error: true,
+            parts: Vec::new(),
             image: None,
         },
         tool,
@@ -78,6 +79,7 @@ fn todo_write(call: &ToolCall) -> Result<ToolCompletion> {
             call_id: call.call_id.clone(),
             content: call.arguments.to_string(),
             is_error: false,
+            parts: Vec::new(),
             image: None,
         },
         tool,
@@ -123,6 +125,7 @@ fn update_current_step(call: &ToolCall, message_index: usize) -> Result<ToolComp
             })
             .to_string(),
             is_error: false,
+            parts: Vec::new(),
             image: None,
         },
         tool,

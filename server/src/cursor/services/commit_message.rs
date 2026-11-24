@@ -119,7 +119,7 @@ async fn ensure_configured_model(registry: &TransportRegistry, model_id: &str) -
         plugins.model_descriptor(model_id).await?;
         return Ok(());
     }
-    if registry.store().model(model_id).await?.is_some() {
+    if registry.store().configured_model(model_id).await?.is_some() {
         return Ok(());
     }
     Err(Error::Provider(format!(

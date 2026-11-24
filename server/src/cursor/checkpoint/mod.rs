@@ -6,9 +6,11 @@ pub mod messages;
 mod recovery;
 mod roots;
 mod steps;
+mod subagents;
 mod summary;
 mod turns;
 pub(crate) mod worker;
 
 pub use builder::CheckpointBuilder;
 pub use steps::{PendingSteps, StepBuffer};
+pub(crate) use subagents::SubagentCompletions;

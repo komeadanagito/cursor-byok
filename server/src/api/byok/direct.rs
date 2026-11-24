@@ -139,7 +139,10 @@ impl NativeForwarder {
                     .map(|value| (name.as_str().to_owned(), Value::String(value.to_owned())))
             })
             .collect::<serde_json::Map<_, _>>();
-        let client = self.clients.provider_client(self.request_timeout).await?;
+        let client = self
+            .clients
+            .model_client(model, self.request_timeout)
+            .await?;
         let recorder = CallRecorder::start(self.store.clone(), new_call).await?;
         recorder
             .request(Value::Object(logged_headers), &body)

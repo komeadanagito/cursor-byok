@@ -1,0 +1,197 @@
+{
+  "retrieval": [
+    {
+      "engine": "byok-rust",
+      "track": "description",
+      "queries": 60,
+      "hit_at_5": 20,
+      "hit_at_10": 26,
+      "p50_ms": 0.3556665
+    },
+    {
+      "engine": "byok-rust",
+      "track": "symbol",
+      "queries": 60,
+      "hit_at_5": 51,
+      "hit_at_10": 53,
+      "p50_ms": 0.025771000000000002
+    },
+    {
+      "engine": "upstream-python",
+      "track": "description",
+      "queries": 60,
+      "hit_at_5": 18,
+      "hit_at_10": 26,
+      "p50_ms": 1.9977919291704893
+    },
+    {
+      "engine": "upstream-python",
+      "track": "symbol",
+      "queries": 60,
+      "hit_at_5": 46,
+      "hit_at_10": 49,
+      "p50_ms": 2.4801039835438132
+    }
+  ],
+  "models": [],
+  "indexes": {
+    "byok-rust": {
+      "cold": [
+        {
+          "chunks": 754,
+          "files": 27,
+          "ms": 78.257458,
+          "root": "psf/black"
+        },
+        {
+          "chunks": 467,
+          "files": 54,
+          "ms": 92.882125,
+          "root": "skypjack/uvw"
+        },
+        {
+          "chunks": 394,
+          "files": 56,
+          "ms": 51.0115,
+          "root": "square/retrofit"
+        },
+        {
+          "chunks": 234,
+          "files": 56,
+          "ms": 39.021333,
+          "root": "axios/axios"
+        },
+        {
+          "chunks": 325,
+          "files": 11,
+          "ms": 35.029417,
+          "root": "tokio-rs/tracing"
+        },
+        {
+          "chunks": 874,
+          "files": 65,
+          "ms": 98.833791,
+          "root": "junegunn/fzf"
+        }
+      ],
+      "reopen": [
+        {
+          "chunks": 754,
+          "files": 27,
+          "ms": 5.666709,
+          "root": "psf/black"
+        },
+        {
+          "chunks": 467,
+          "files": 54,
+          "ms": 3.708041,
+          "root": "skypjack/uvw"
+        },
+        {
+          "chunks": 394,
+          "files": 56,
+          "ms": 2.2102910000000002,
+          "root": "square/retrofit"
+        },
+        {
+          "chunks": 234,
+          "files": 56,
+          "ms": 3.2862910000000003,
+          "root": "axios/axios"
+        },
+        {
+          "chunks": 325,
+          "files": 11,
+          "ms": 3.207625,
+          "root": "tokio-rs/tracing"
+        },
+        {
+          "chunks": 874,
+          "files": 65,
+          "ms": 3.7287909999999997,
+          "root": "junegunn/fzf"
+        }
+      ],
+      "cache_bytes": 3482001
+    },
+    "upstream-python": {
+      "cold": [
+        {
+          "root": "psf/black",
+          "ms": 147.55854080431163,
+          "files": 27,
+          "chunks": 736
+        },
+        {
+          "root": "skypjack/uvw",
+          "ms": 141.81704190559685,
+          "files": 54,
+          "chunks": 464
+        },
+        {
+          "root": "square/retrofit",
+          "ms": 84.7517498768866,
+          "files": 56,
+          "chunks": 393
+        },
+        {
+          "root": "axios/axios",
+          "ms": 49.14045799523592,
+          "files": 56,
+          "chunks": 233
+        },
+        {
+          "root": "tokio-rs/tracing",
+          "ms": 82.78075000271201,
+          "files": 11,
+          "chunks": 317
+        },
+        {
+          "root": "junegunn/fzf",
+          "ms": 221.79387509822845,
+          "files": 65,
+          "chunks": 861
+        }
+      ],
+      "reopen": [
+        {
+          "root": "psf/black",
+          "ms": 7.187458919361234,
+          "files": 27,
+          "chunks": 736
+        },
+        {
+          "root": "skypjack/uvw",
+          "ms": 3.460083855316043,
+          "files": 54,
+          "chunks": 464
+        },
+        {
+          "root": "square/retrofit",
+          "ms": 5.02954120747745,
+          "files": 56,
+          "chunks": 393
+        },
+        {
+          "root": "axios/axios",
+          "ms": 4.067834001034498,
+          "files": 56,
+          "chunks": 233
+        },
+        {
+          "root": "tokio-rs/tracing",
+          "ms": 2.6544169522821903,
+          "files": 11,
+          "chunks": 317
+        },
+        {
+          "root": "junegunn/fzf",
+          "ms": 22.984124952927232,
+          "files": 65,
+          "chunks": 861
+        }
+      ],
+      "cache_bytes": 6769170
+    }
+  }
+}

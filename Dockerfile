@@ -14,6 +14,8 @@ FROM rust:1-bookworm AS server
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY server/ server/
+COPY crates/ crates/
+COPY support/benchmarks/semble/ support/benchmarks/semble/
 COPY apps/desktop/src-tauri/Cargo.toml apps/desktop/src-tauri/Cargo.toml
 COPY apps/desktop/src-tauri/build.rs apps/desktop/src-tauri/build.rs
 COPY apps/desktop/src-tauri/src/ apps/desktop/src-tauri/src/
@@ -39,6 +41,8 @@ COPY --from=server /tmp/cursor-server /usr/local/bin/cursor-server
 COPY --from=web /src/apps/desktop/dist/ /app/console/
 
 ENV CURSOR_LISTEN_ADDR=0.0.0.0:3000 \
+    CURSOR_CONTROL_ADDR=127.0.0.1:3001 \
+    HOME=/data \
     CURSOR_DATABASE_URL=sqlite:///data/cursor-server.db \
     CURSOR_CONSOLE_DIR=/app/console \
     RUST_LOG=cursor_server=info
@@ -47,5 +51,5 @@ USER cursor-byok
 EXPOSE 3000
 VOLUME ["/data"]
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-    CMD curl --fail --silent http://127.0.0.1:3000/__byok-api__/healthz || exit 1
+    CMD curl --fail --silent http://127.0.0.1:3001/__byok-api__/healthz || exit 1
 ENTRYPOINT ["/usr/local/bin/cursor-server"]

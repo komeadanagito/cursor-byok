@@ -1,6 +1,6 @@
 import type { EChartsCoreOption } from "echarts/core";
 import { useMemo, useState } from "react";
-import type { TokenUsageGranularity } from "../../../shared/api";
+import type { OverviewGranularity } from "../../../shared/api";
 import { formatCompactInteger } from "../../../shared/utils/numberFormat";
 import { EChart } from "./EChart";
 import styles from "./DailyTokenUsageChart.module.scss";
@@ -45,7 +45,7 @@ function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 
-function formatAxisLabel(bucketStartMs: number, granularity: TokenUsageGranularity) {
+function formatAxisLabel(bucketStartMs: number, granularity: OverviewGranularity) {
   const value = new Date(bucketStartMs);
   if (granularity === "minute") return `${pad(value.getHours())}:${pad(value.getMinutes())}`;
   if (granularity === "hour") return `${pad(value.getHours())}:00`;
@@ -55,7 +55,7 @@ function formatAxisLabel(bucketStartMs: number, granularity: TokenUsageGranulari
   return formatDay(value);
 }
 
-function formatTooltipTime(bucketStartMs: number, granularity: TokenUsageGranularity) {
+export function formatTooltipTime(bucketStartMs: number, granularity: OverviewGranularity) {
   const value = new Date(bucketStartMs);
   if (granularity === "day") return formatDay(value);
   const time = `${pad(value.getHours())}:${pad(value.getMinutes())}`;
@@ -71,7 +71,7 @@ export function DailyTokenUsageChart({
   granularity,
 }: {
   data: DailyTokenUsage[];
-  granularity: TokenUsageGranularity;
+  granularity: OverviewGranularity;
 }) {
   const [hovered, setHovered] = useState(false);
   const maximumTotal = data.reduce((maximum, day) => Math.max(maximum, totalTokens(day)), 0);
@@ -85,7 +85,13 @@ export function DailyTokenUsageChart({
   const option = useMemo<EChartsCoreOption>(() => ({
     animationDuration: 450,
     animationEasing: "cubicOut",
-    grid: { top: 8, right: 0, bottom: 0, left: 0 },
+    grid: { top: 30, right: 0, bottom: 0, left: 0 },
+    // Four stacked series: the colors need names next to them, not only in the tooltip.
+    legend: {
+      top: 0, right: 0, itemWidth: 10, itemHeight: 10, itemGap: 16, icon: "roundRect",
+      data: [t("输入（非缓存）"), t("缓存输入"), t("缓存写入"), t("模型输出")],
+      textStyle: { color: "#8c8c8c" },
+    },
     tooltip: {
       trigger: "axis",
       confine: true,

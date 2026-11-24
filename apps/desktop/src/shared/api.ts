@@ -2,7 +2,24 @@ import type { CommitPromptLocale, Locale } from "../i18n/runtime";
 
 export type ModelType = "openai" | "anthropic";
 
+export interface MagpieCatalog {
+  port: number;
+  models: {
+    id: string;
+    magpie_label?: string | null;
+    display_name?: string | null;
+    context_window?: number | null;
+    reasoning?: boolean;
+    modalities?: { input: string[] } | null;
+  }[];
+  disabled: string[];
+}
+
+export type VisionSettings = { mode: "cursor" } | { mode: "model"; model_id: string } | { mode: "mcp"; url: string; tool: string };
+
 export interface Model {
+  supports_images: boolean;
+  gateway_capabilities?: { thinking: boolean; efforts: string[] };
   model_hash: string;
   sort_order: number;
   display_name: string;
@@ -10,7 +27,6 @@ export interface Model {
   type: ModelType;
   base_url: string;
   use_full_url: boolean;
-  api_key: string;
   tooltip_data: string;
   model_id: string;
   reasoning_effort: string | null;
@@ -18,7 +34,6 @@ export interface Model {
   openai_extra_params_enabled: boolean;
   openai_extra_params: Record<string, unknown>;
   custom_headers_enabled: boolean;
-  custom_headers: Record<string, string>;
   anthropic_extra_params_enabled: boolean;
   anthropic_extra_params: Record<string, unknown>;
   context_window_tokens: number | null;
@@ -31,6 +46,7 @@ export interface Model {
 }
 
 export interface ModelInput {
+  supports_images: boolean;
   sort_order: number;
   display_name: string;
   group_name: string | null;
@@ -45,7 +61,7 @@ export interface ModelInput {
   openai_extra_params_enabled: boolean;
   openai_extra_params: Record<string, unknown>;
   custom_headers_enabled: boolean;
-  custom_headers: Record<string, string>;
+  custom_headers: Record<string, string> | null;
   anthropic_extra_params_enabled: boolean;
   anthropic_extra_params: Record<string, unknown>;
   context_window_tokens: number | null;
@@ -56,11 +72,12 @@ export interface ModelInput {
 }
 
 export interface ModelDiscoveryInput {
+  model_hash?: string;
   type: ModelType;
   base_url: string;
   api_key: string;
   custom_headers_enabled: boolean;
-  custom_headers: Record<string, string>;
+  custom_headers: Record<string, string> | null;
 }
 
 export interface LegacyModelImportPreviewItem {
@@ -124,15 +141,26 @@ export interface CursorHarnessStatus {
   ca_install_command: string | null;
 }
 
+export type WorkspaceExtensionState = "missing" | "outdated" | "current";
+export interface WorkspaceExtensionStatus {
+  state: WorkspaceExtensionState;
+  installed_version: string | null;
+  expected_version: string;
+  cursor_cli: boolean;
+}
+
 export interface PortSettings {
   proxy_port: number;
   service_port: number;
+  inference_port: number;
 }
 
 export interface ExternalApiSettings {
   enabled: boolean;
   api_key: string;
 }
+
+export type ExternalApiView = ExternalApiSettings & { base_url: string | null };
 
 export interface StatisticsStorage {
   call_count: number;
@@ -181,11 +209,31 @@ export interface CommitSettingsView extends CommitSettings {
   default_prompt: string;
 }
 
-export interface TokenPricingSettings {
+export interface ModelPrice {
   input_per_million: number;
   output_per_million: number;
-  cache_read_per_million: number;
-  cache_write_per_million: number;
+  cache_read_per_million: number | null;
+  cache_write_per_million: number | null;
+  currency: "USD" | "CNY";
+  updated_at_ms: number;
+}
+
+export interface ModelPriceEntry {
+  provider_url: string;
+  model_id: string;
+  channel_name: string;
+  last_call_ms: number | null;
+  price: ModelPrice | null;
+}
+
+export interface ModelPriceInput {
+  provider_url: string;
+  model_id: string;
+  input_per_million: number;
+  output_per_million: number;
+  cache_read_per_million?: number | null;
+  cache_write_per_million?: number | null;
+  currency: "USD" | "CNY";
 }
 
 export type PluginRuntimeState = "uninitialized" | "initializing" | "ready" | "failed" | "unsupported";
@@ -373,22 +421,36 @@ export interface OverviewMetrics {
   cache_read_tokens: number;
   cache_write_tokens: number;
   output_tokens: number;
+  costs: CurrencyCost[];
+  unpriced_calls: number;
+  avg_ttft_ms: number | null;
+  output_tokens_per_second: number | null;
 }
 
-export type TokenUsageGranularity = "minute" | "hour" | "day";
+export interface CurrencyCost {
+  currency: string;
+  amount: number;
+}
 
-export interface OverviewTokenUsageBucket {
+export type OverviewGranularity = "minute" | "hour" | "day";
+
+export interface OverviewBucket {
   bucket_start_ms: number;
   input_tokens: number;
   cache_read_tokens: number;
   cache_write_tokens: number;
   output_tokens: number;
+  calls: number;
+  failed_calls: number;
+  avg_ttft_ms: number | null;
+  output_tokens_per_second: number | null;
+  costs: CurrencyCost[];
 }
 
 export interface Overview {
   metrics: OverviewMetrics;
-  token_usage_granularity: TokenUsageGranularity;
-  token_usage_series: OverviewTokenUsageBucket[];
+  granularity: OverviewGranularity;
+  series: OverviewBucket[];
 }
 
 export interface LlmCall {
@@ -420,8 +482,12 @@ export interface LlmCall {
   cache_read_tokens: number | null;
   cache_write_tokens: number | null;
   reasoning_tokens: number | null;
+  usage?: { context_input_tokens?: number | null } | null;
   message_count: number;
   tool_count: number;
+  launched_tool_count: number | null;
+  run_kind: string | null;
+  subagent_kind: string | null;
   http_status: number | null;
   error_kind: string | null;
   error_message: string | null;
@@ -492,6 +558,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  magpie: () => request<MagpieCatalog | null>("/providers/magpie"),
+  connectMagpie: () => request<void>("/providers/magpie", {method: "POST"}),
+  disconnectMagpie: () => request<void>("/providers/magpie", {method: "DELETE"}),
+  selectMagpieModels: (ids: string[]) => request<void>("/providers/magpie/selection", {method: "PUT", body: JSON.stringify(ids)}),
   models: () => request<Model[]>("/models"),
   createModels: (models: ModelInput[]) => request<Model[]>("/models", { method: "POST", body: JSON.stringify({ models }) }),
   reorderModels: (modelHashes: string[]) => request<Model[]>("/models/order", { method: "PUT", body: JSON.stringify({ model_hashes: modelHashes }) }),
@@ -542,20 +612,19 @@ export const api = {
     await writeText(text);
   },
   setCursorEnabled: (enabled: boolean) => request<CursorHarnessStatus>("/harness/cursor/enabled", { method: "PUT", body: JSON.stringify({ enabled }) }),
-  calls: () => request<LlmCall[]>("/llm-calls?limit=200"),
+  workspaceExtensionStatus: () => request<WorkspaceExtensionStatus>("/harness/cursor/workspace-extension/status"),
+  installWorkspaceExtension: () => request<WorkspaceExtensionStatus>("/harness/cursor/workspace-extension/install", { method: "POST" }),
+  saveWorkspaceExtensionVsix: () => request<{ saved_to: string }>("/harness/cursor/workspace-extension/vsix", { method: "POST" }),
+  calls: () => request<LlmCall[]>("/llm-calls?limit=500"),
+  pairBrowserDevTools: () => request<{ token: string }>("/browser-devtools/pair", { method: "POST" }),
   call: (id: string) => request<CallDetail>(`/llm-calls/${encodeURIComponent(id)}`),
-  openCallDetails: async (id: string) => {
-    const url = new URL(window.location.href);
-    url.hash = `/calls/${encodeURIComponent(id)}`;
-    await request<void>("/desktop/open-external-url", { method: "POST", body: JSON.stringify({ url: url.toString() }) });
-  },
   openExternalUrl: (url: string) => request<void>("/desktop/open-external-url", { method: "POST", body: JSON.stringify({ url }) }),
   observability: () => request<{ detailed: boolean }>("/settings/observability"),
   setObservability: (detailed: boolean) => request<{ detailed: boolean }>("/settings/observability", { method: "PUT", body: JSON.stringify({ detailed }) }),
   ports: () => request<PortSettings>("/settings/ports"),
   setPorts: (settings: PortSettings) => request<PortSettings>("/settings/ports", { method: "PUT", body: JSON.stringify(settings) }),
-  externalApiSettings: () => request<ExternalApiSettings>("/settings/external-api"),
-  setExternalApiSettings: (settings: ExternalApiSettings) => request<ExternalApiSettings>("/settings/external-api", { method: "PUT", body: JSON.stringify(settings) }),
+  externalApiSettings: () => request<ExternalApiView>("/settings/external-api"),
+  setExternalApiSettings: (settings: ExternalApiSettings) => request<ExternalApiView>("/settings/external-api", { method: "PUT", body: JSON.stringify(settings) }),
   statisticsStorage: () => request<StatisticsStorage>("/settings/storage/statistics"),
   clearStatisticsStorage: (scope: StatisticsStorageScope) => request<StatisticsStorage>("/settings/storage/statistics", { method: "DELETE", body: JSON.stringify({ scope }) }),
   proxySettings: () => request<ProxySettings>("/settings/proxy"),
@@ -564,8 +633,11 @@ export const api = {
   setTabSettings: (settings: TabSettings) => request<TabSettings>("/settings/tab", { method: "PUT", body: JSON.stringify(settings) }),
   desktopSettings: () => request<DesktopSettings>("/settings/desktop"),
   setDesktopSettings: (settings: DesktopSettings) => request<DesktopSettings>("/settings/desktop", { method: "PUT", body: JSON.stringify(settings) }),
+  visionSettings: () => request<VisionSettings>("/settings/vision"),
+  setVisionSettings: (settings: VisionSettings) => request<VisionSettings>("/settings/vision", { method: "PUT", body: JSON.stringify(settings) }),
   commitSettings: (locale: Locale) => request<CommitSettingsView>("/settings/commit", { headers: { "accept-language": locale } }),
   setCommitSettings: (settings: CommitSettings) => request<CommitSettingsView>("/settings/commit", { method: "PUT", body: JSON.stringify(settings) }),
-  pricingSettings: () => request<TokenPricingSettings>("/settings/pricing"),
-  setPricingSettings: (settings: TokenPricingSettings) => request<TokenPricingSettings>("/settings/pricing", { method: "PUT", body: JSON.stringify(settings) }),
+  modelPrices: () => request<ModelPriceEntry[]>("/model-prices"),
+  setModelPrice: (input: ModelPriceInput) => request<ModelPrice>("/model-prices", { method: "PUT", body: JSON.stringify(input) }),
+  deleteModelPrice: (key: { provider_url: string; model_id: string }) => request<void>("/model-prices", { method: "DELETE", body: JSON.stringify(key) }),
 };

@@ -33,6 +33,7 @@ pub(crate) fn failure(call: &ToolCall, error: String) -> Result<ToolCompletion> 
             call_id: call.call_id.clone(),
             content: error.clone(),
             is_error: true,
+            parts: Vec::new(),
             image: None,
         },
         pb::tool_call::Tool::McpToolCall(pb::McpToolCall {

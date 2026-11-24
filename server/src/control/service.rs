@@ -17,20 +17,21 @@ use crate::{
     model::{
         ContentPart, CursorRunTraceArtifact, CursorRunTraceSummary, LlmCallRequest,
         LlmCallResponseChunk, LlmCallSummary, ModelConfig, ModelConfigInput, ModelInvocation,
-        ModelRequest, ModelSpec, ModelType, Overview, ProjectedContent, ProjectedMessage,
-        PromptSpec, ProviderType, Role,
+        ModelPrice, ModelPriceEntry, ModelRequest, ModelSpec, ModelType, Overview,
+        ProjectedContent, ProjectedMessage, PromptSpec, ProviderType, Role,
     },
     plugin::{PluginDescriptor, PluginRegistry, PluginRuntime, PluginRuntimeStatus},
     provider::{is_valid_response_event, ModelEvent, Provider},
     store::{
         CommitSettings, DesktopSettings, ExternalApiSettings, PortSettings, ProxySettings,
-        ProxySettingsInput, StatisticsStorage, Store, TabSettings, TokenPricingSettings,
+        ProxySettingsInput, StatisticsStorage, Store, TabSettings,
     },
     Error, Result,
 };
 
 #[derive(Clone)]
 pub struct ControlService {
+    pub(super) magpie: crate::provider::magpie::Magpie,
     store: Store,
     cursor_harness: CursorHarness,
     provider: Arc<dyn Provider>,
@@ -74,6 +75,7 @@ pub struct LegacyModelImportPreviewItem {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ModelDiscoveryInput {
+    pub model_hash: Option<String>,
     #[serde(rename = "type")]
     pub model_type: ModelType,
     pub base_url: String,
@@ -152,7 +154,8 @@ impl ControlService {
         app_version: String,
     ) -> Result<Self> {
         Ok(Self {
-            cursor_harness: CursorHarness::new(store.clone())?,
+            cursor_harness: CursorHarness::new(store.clone(), app_version.clone())?,
+            magpie: crate::provider::magpie::Magpie::managed(store.clone())?,
             store,
             provider,
             plugin_runtime,
@@ -161,6 +164,10 @@ impl ControlService {
             app_version,
             model_tests: Arc::new(Mutex::new(BTreeMap::new())),
         })
+    }
+
+    pub(crate) fn magpie(&self) -> &crate::provider::magpie::Magpie {
+        &self.magpie
     }
 
     pub fn cursor_harness(&self) -> &CursorHarness {
@@ -377,7 +384,7 @@ impl ControlService {
     }
 
     pub async fn models(&self) -> Result<Vec<ModelConfig>> {
-        self.store.models().await
+        self.store.configured_models().await
     }
 
     pub async fn overview(
@@ -397,7 +404,8 @@ impl ControlService {
     }
 
     pub async fn reorder_models(&self, model_hashes: &[String]) -> Result<Vec<ModelConfig>> {
-        self.store.reorder_models(model_hashes).await
+        self.store.reorder_models(model_hashes).await?;
+        self.models().await
     }
 
     pub async fn delete_model(&self, model_hash: &str) -> Result<()> {
@@ -463,7 +471,7 @@ impl ControlService {
         } else {
             let configured = self
                 .store
-                .model(model_hash)
+                .configured_model(model_hash)
                 .await?
                 .ok_or_else(|| Error::RunNotFound(format!("model {model_hash}")))?;
             configured.configure(&mut model);
@@ -577,8 +585,50 @@ impl ControlService {
     }
 
     pub async fn discover_models(&self, input: &ModelDiscoveryInput) -> Result<DiscoveredModels> {
-        let client = self.clients.default_client().await?;
         let base_url = crate::model::normalize_request_url(&input.base_url)?;
+        let origin = Url::parse(&base_url)
+            .expect("validated model discovery URL")
+            .origin();
+        let mut api_key = input.api_key.trim();
+        let mut custom_headers = &input.custom_headers;
+        let saved;
+        let mut saved_credentials = false;
+        let reuse_headers = input.custom_headers_enabled && custom_headers.is_null();
+        if let Some(hash) = input
+            .model_hash
+            .as_deref()
+            .filter(|_| api_key.is_empty() || reuse_headers)
+        {
+            saved = self
+                .store
+                .model(hash)
+                .await?
+                .ok_or_else(|| Error::RunNotFound(format!("model {hash}")))?;
+            let saved_url = Url::parse(&saved.base_url)
+                .map_err(|error| Error::Config(format!("invalid saved model URL: {error}")))?;
+            if saved_url.origin() == origin {
+                saved_credentials = true;
+                if api_key.is_empty() {
+                    api_key = &saved.api_key;
+                }
+                if reuse_headers {
+                    custom_headers = &saved.custom_headers;
+                }
+            }
+        }
+        if api_key.is_empty() {
+            return Err(Error::Config(
+                "API key is required for model discovery".into(),
+            ));
+        }
+        let client = if saved_credentials {
+            crate::network::client_builder(&self.store)
+                .await?
+                .redirect(reqwest::redirect::Policy::none())
+                .build()?
+        } else {
+            self.clients.default_client().await?
+        };
         discover_models_from_endpoint(
             &client,
             match input.model_type {
@@ -586,9 +636,9 @@ impl ControlService {
                 ModelType::Anthropic => ProviderType::Anthropic,
             },
             &base_url,
-            &input.api_key,
-            if input.custom_headers_enabled {
-                &input.custom_headers
+            api_key,
+            if input.custom_headers_enabled && !custom_headers.is_null() {
+                custom_headers
             } else {
                 empty_json_object_ref()
             },
@@ -787,6 +837,23 @@ impl ControlService {
         self.store.set_desktop_settings(settings).await
     }
 
+    pub async fn vision_settings(&self) -> Result<crate::store::VisionSettings> {
+        self.store.vision_settings().await
+    }
+    pub async fn set_vision_settings(&self, settings: &crate::store::VisionSettings) -> Result<()> {
+        if let crate::store::VisionSettings::Model { model_id } = settings {
+            if !crate::run::vision::model_image_support(&self.store, Some(&self.plugins), model_id)
+                .await?
+                .0
+            {
+                return Err(Error::Config(format!(
+                    "selected vision model {model_id} does not accept images"
+                )));
+            }
+        }
+        self.store.set_vision_settings(settings).await
+    }
+
     pub async fn commit_settings(&self) -> Result<CommitSettings> {
         self.store.commit_settings().await
     }
@@ -795,15 +862,36 @@ impl ControlService {
         self.store.set_commit_settings(settings).await
     }
 
-    pub async fn pricing_settings(&self) -> Result<TokenPricingSettings> {
-        self.store.pricing_settings().await
+    pub async fn model_price_entries(&self) -> Result<Vec<ModelPriceEntry>> {
+        self.store.model_price_entries().await
     }
 
-    pub async fn set_pricing_settings(
+    #[allow(clippy::too_many_arguments)]
+    pub async fn set_model_price(
         &self,
-        settings: TokenPricingSettings,
-    ) -> Result<TokenPricingSettings> {
-        self.store.set_pricing_settings(settings).await
+        provider_url: &str,
+        model_id: &str,
+        input_per_million: f64,
+        output_per_million: f64,
+        cache_read_per_million: Option<f64>,
+        cache_write_per_million: Option<f64>,
+        currency: &str,
+    ) -> Result<ModelPrice> {
+        self.store
+            .set_model_price(
+                provider_url,
+                model_id,
+                input_per_million,
+                output_per_million,
+                cache_read_per_million,
+                cache_write_per_million,
+                currency,
+            )
+            .await
+    }
+
+    pub async fn clear_model_price(&self, provider_url: &str, model_id: &str) -> Result<()> {
+        self.store.clear_model_price(provider_url, model_id).await
     }
 }
 
@@ -865,6 +953,9 @@ fn official_call(trace: CursorRunTraceSummary) -> CallSummary {
             usage: None,
             message_count: 0,
             tool_count: 0,
+            launched_tool_count: None,
+            run_kind: None,
+            subagent_kind: None,
             request_bytes: Some(trace.request_bytes),
             response_bytes: trace.response_bytes,
             stream_event_count: trace.response_event_count,

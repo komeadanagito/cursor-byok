@@ -247,7 +247,17 @@ fn decode_tool_result(value: &Value) -> Result<ToolResultContent> {
             .and_then(Value::as_bool)
             .unwrap_or(false),
         image: None,
-        provider_parts: Vec::new(),
+        provider_parts: match part.get("experimental_content").and_then(Value::as_array) {
+            Some(parts) if parts.iter().any(|p| p["type"] == "image") => {
+                let MessageContent::Parts { parts } =
+                    decode_text(&serde_json::json!({"content":parts}))?
+                else {
+                    unreachable!()
+                };
+                parts
+            }
+            _ => Vec::new(),
+        },
     })
 }
 

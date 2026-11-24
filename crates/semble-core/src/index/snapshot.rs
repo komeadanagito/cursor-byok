@@ -1,5 +1,7 @@
 //! Versioned binary snapshot format and flattened runtime representation.
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{config::INDEX_FORMAT_VERSION, source::FileStamp, Chunk, ContentType, Error, Result};
@@ -11,6 +13,8 @@ pub struct IndexedFile {
     pub content_type: ContentType,
     pub chunks: Vec<Chunk>,
     pub definitions: Vec<IndexedDefinition>,
+    pub(crate) declarations: Vec<IndexedDeclaration>,
+    pub function_anchors: Vec<Option<usize>>,
     pub lexical_documents: Vec<IndexedLexicalDocument>,
     /// Row-major signed-byte unit vectors, one row per chunk.
     pub vectors: Vec<i8>,
@@ -33,6 +37,30 @@ pub struct IndexedDefinition {
     pub symbol: String,
     pub chunk: usize,
     pub implementation: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct IndexedDeclaration {
+    pub qualified_name: String,
+    pub span: LineSpan,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub(crate) struct LineSpan {
+    pub start: usize,
+    pub end: usize,
+}
+
+impl LineSpan {
+    fn is_valid(self) -> bool {
+        self.start > 0 && self.start <= self.end
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub(crate) struct DeclarationLocation {
+    pub file: usize,
+    pub span: LineSpan,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -59,6 +87,22 @@ impl IndexSnapshot {
             {
                 return Err(Error::CorruptIndex(format!(
                     "definition chunk is out of bounds in {}",
+                    file.path
+                )));
+            }
+            if file
+                .declarations
+                .iter()
+                .any(|declaration| !declaration.span.is_valid())
+            {
+                return Err(Error::CorruptIndex(format!(
+                    "invalid declaration span in {}",
+                    file.path
+                )));
+            }
+            if !valid_anchors(&file.function_anchors, file.chunks.len()) {
+                return Err(Error::CorruptIndex(format!(
+                    "invalid function anchors in {}",
                     file.path
                 )));
             }
@@ -124,7 +168,9 @@ pub struct LoadedIndex {
     pub metadata: LoadedMetadata,
     pub chunks: Vec<Chunk>,
     pub vectors: Vec<i8>,
+    pub function_anchors: Vec<Option<usize>>,
     pub lexical: super::SymbolIndex,
+    pub(crate) declarations: BTreeMap<String, Vec<DeclarationLocation>>,
     pub bm25: super::Bm25Index,
 }
 
@@ -133,6 +179,18 @@ impl LoadedIndex {
         snapshot.validate()?;
         let lexical = super::SymbolIndex::from_files(&mut snapshot.files);
         let bm25 = super::Bm25Index::from_files(&mut snapshot.files);
+        let mut declarations = BTreeMap::<_, Vec<_>>::new();
+        for (file, indexed) in snapshot.files.iter_mut().enumerate() {
+            for declaration in std::mem::take(&mut indexed.declarations) {
+                declarations
+                    .entry(declaration.qualified_name)
+                    .or_default()
+                    .push(DeclarationLocation {
+                        file,
+                        span: declaration.span,
+                    });
+            }
+        }
         let metadata = LoadedMetadata {
             source_identity: std::mem::take(&mut snapshot.source_identity),
             model_id: std::mem::take(&mut snapshot.model_id),
@@ -154,6 +212,18 @@ impl LoadedIndex {
             .iter_mut()
             .flat_map(|file| std::mem::take(&mut file.chunks))
             .collect::<Vec<_>>();
+        let mut offset = 0;
+        let function_anchors = snapshot
+            .files
+            .iter_mut()
+            .flat_map(|file| {
+                let start = offset;
+                offset += file.function_anchors.len();
+                std::mem::take(&mut file.function_anchors)
+                    .into_iter()
+                    .map(move |anchor| anchor.map(|anchor| start + anchor))
+            })
+            .collect();
         let vectors = snapshot
             .files
             .iter_mut()
@@ -163,7 +233,9 @@ impl LoadedIndex {
             metadata,
             chunks,
             vectors,
+            function_anchors,
             lexical,
+            declarations,
             bm25,
         })
     }
@@ -171,13 +243,25 @@ impl LoadedIndex {
     pub fn validate(&self) -> Result<()> {
         if self.metadata.dimensions == 0
             || self.vectors.len() != self.chunks.len() * self.metadata.dimensions
+            || !valid_anchors(&self.function_anchors, self.chunks.len())
             || !self.lexical.validate(self.chunks.len())
+            || self.declarations.values().flatten().any(|location| {
+                location.file >= self.metadata.files.len() || !location.span.is_valid()
+            })
             || !self.bm25.validate(self.chunks.len())
         {
             return Err(Error::CorruptIndex("invalid runtime index".into()));
         }
         Ok(())
     }
+}
+
+fn valid_anchors(anchors: &[Option<usize>], chunks: usize) -> bool {
+    anchors.len() == chunks
+        && anchors
+            .iter()
+            .enumerate()
+            .all(|(chunk, anchor)| anchor.is_none_or(|anchor| anchor < chunks && anchor != chunk))
 }
 
 #[cfg(test)]
@@ -210,6 +294,8 @@ mod tests {
                     content: "x".into(),
                 }],
                 definitions: Vec::new(),
+                declarations: Vec::new(),
+                function_anchors: vec![None],
                 lexical_documents: vec![super::super::lexical_document("x")],
                 vectors: vec![1],
             }],

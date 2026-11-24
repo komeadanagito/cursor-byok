@@ -15,7 +15,7 @@ use crate::{
     Result,
 };
 
-use super::{derived, roots::RootFrontier, turns::TurnFrontier};
+use super::{derived, roots::RootFrontier, turns::TurnFrontier, SubagentCompletions};
 
 #[derive(Clone)]
 pub struct CheckpointBuilder {
@@ -33,6 +33,7 @@ pub struct CheckpointBuilder {
     pub(super) roots: Option<RootFrontier>,
     pub(super) turn: Option<TurnFrontier>,
     pub(super) turns_initialized: bool,
+    pub(super) subagent_completions: SubagentCompletions,
 }
 
 impl CheckpointBuilder {
@@ -57,6 +58,7 @@ impl CheckpointBuilder {
             roots: None,
             turn: None,
             turns_initialized: false,
+            subagent_completions: SubagentCompletions::default(),
         }
     }
 
@@ -158,6 +160,7 @@ impl CheckpointBuilder {
         presentation: &PendingSteps,
     ) -> Result<pb::ConversationStateStructure> {
         self.record_background_subagents(presentation);
+        self.settle_finished_subagents();
         let root_ids = self.project_roots(messages).await?;
         let turn_ids = self.project_turns(mode, presentation).await?;
         let (todo_ids, plan_id) = self.build_derived_state(messages).await?;

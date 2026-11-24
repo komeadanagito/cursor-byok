@@ -25,6 +25,7 @@ async fn summarize_replaces_model_history_and_preserves_cursor_history() {
     let (_directory, store) = fixtures::temp_store().await;
     let model = store
         .create_model(&ModelConfigInput {
+            supports_images: true,
             sort_order: 0,
             display_name: "Test Model".into(),
             group_name: None,
@@ -174,12 +175,19 @@ async fn summarize_replaces_model_history_and_preserves_cursor_history() {
         .prompt
         .instructions
         .contains("compacting conversation history"));
-    assert_eq!(requests[1].history.len(), 3);
+    assert_eq!(requests[1].history.len(), 4);
+    assert!(requests[1].history[0]
+        .message_id
+        .starts_with("request-context:"));
     assert_eq!(
-        requests[1].history[2].message_id, "compaction:instruction",
+        requests[1].history.last().unwrap().message_id,
+        "compaction:instruction",
         "an assistant-terminated history gets the summarize instruction as its user tail"
     );
-    assert_eq!(requests[2].history.len(), 2);
+    assert_eq!(requests[2].history.len(), 3);
+    assert!(requests[2].history[1]
+        .message_id
+        .starts_with("request-context:"));
     let ProjectedContent::Parts(summary_parts) = &requests[2].history[0].content else {
         panic!("first post-compaction message must be the summary")
     };
@@ -187,8 +195,8 @@ async fn summarize_replaces_model_history_and_preserves_cursor_history() {
         matches!(summary_parts.as_slice(), [ContentPart::Text { text }]
         if text.contains("Durable summary"))
     );
-    let ProjectedContent::Parts(new_user_parts) = &requests[2].history[1].content else {
-        panic!("second post-compaction message must be the new runtime user")
+    let ProjectedContent::Parts(new_user_parts) = &requests[2].history[2].content else {
+        panic!("the new runtime user must follow the summary and DevTools context")
     };
     assert!(
         matches!(new_user_parts.as_slice(), [ContentPart::Text { text }]
@@ -201,6 +209,7 @@ async fn automatic_compaction_preflights_provider_input_and_records_rebuilt_toke
     let (_directory, store) = fixtures::temp_store().await;
     let model = store
         .create_model(&ModelConfigInput {
+            supports_images: true,
             sort_order: 0,
             display_name: "Auto Compact Model".into(),
             group_name: None,
@@ -316,6 +325,7 @@ async fn incremental_preflight_uses_conversation_anchor_across_model_switch() {
     let (_directory, store) = fixtures::temp_store().await;
     let model_a = store
         .create_model(&ModelConfigInput {
+            supports_images: true,
             sort_order: 0,
             display_name: "Anchor Model A".into(),
             group_name: None,
@@ -343,6 +353,7 @@ async fn incremental_preflight_uses_conversation_anchor_across_model_switch() {
         .unwrap();
     let model_b = store
         .create_model(&ModelConfigInput {
+            supports_images: true,
             sort_order: 1,
             display_name: "Anchor Model B".into(),
             group_name: None,
@@ -418,6 +429,7 @@ async fn irreducibly_oversized_current_input_fails_before_provider_dispatch() {
     let (_directory, store) = fixtures::temp_store().await;
     let model = store
         .create_model(&ModelConfigInput {
+            supports_images: true,
             sort_order: 0,
             display_name: "Overflow Model".into(),
             group_name: None,
@@ -474,8 +486,12 @@ async fn irreducibly_oversized_current_input_fails_before_provider_dispatch() {
     assert_eq!(output.summary_completed, 0);
 }
 
+#[path = "support/vision_cases.rs"]
+mod vision_cases;
+
 fn windowed_model(model_id: &str, context_window_tokens: Option<u64>) -> ModelConfigInput {
     ModelConfigInput {
+        supports_images: true,
         sort_order: 0,
         display_name: model_id.into(),
         group_name: None,

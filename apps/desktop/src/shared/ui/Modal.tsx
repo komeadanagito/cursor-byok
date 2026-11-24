@@ -95,7 +95,7 @@ export function Modal({ id, open, title, children, banner, busy, wide, compact, 
       {banner && <div className={styles.banner}>{banner}</div>}
       <ScrollableContent alwaysShowVertical className={styles.body} contentClassName={styles.bodyContent}>{children}</ScrollableContent>
       <footer>
-        <button type="button" className={controls.primary} disabled={busy} onClick={onClose}>{closeLabel}</button>
+        <button type="button" className={controls.secondary} disabled={busy} onClick={onClose}>{closeLabel}</button>
         {secondaryAction}
         {onSubmit && <button ref={submitButton} type="button" className={controls.primary} disabled={busy || submitDisabled} onClick={onSubmit}>{busy ? t("处理中…") : submitLabel}</button>}
       </footer>

@@ -218,9 +218,7 @@ pub fn tool_placeholder(name: &str, call_id: &str) -> Result<pb::ToolCall> {
         "todowrite" => Tool::UpdateTodosToolCall(pb::UpdateTodosToolCall::default()),
         "strreplace" | "editnotebook" | "write" => Tool::EditToolCall(pb::EditToolCall::default()),
         "readlints" => Tool::ReadLintsToolCall(pb::ReadLintsToolCall::default()),
-        "callmcptool" | "semblesearch" | "semblefindrelated" => {
-            Tool::McpToolCall(pb::McpToolCall::default())
-        }
+        "callmcptool" => Tool::McpToolCall(pb::McpToolCall::default()),
         "createplan" => Tool::CreatePlanToolCall(pb::CreatePlanToolCall::default()),
         "websearch" => Tool::WebSearchToolCall(pb::WebSearchToolCall::default()),
         "task" => Tool::TaskToolCall(pb::TaskToolCall::default()),
@@ -324,14 +322,7 @@ pub fn render_tool_call(call: &ToolCall, completed: bool) -> Result<pb::ToolCall
             })
         }
         Some(pb::tool_call::Tool::GrepToolCall(tool)) => {
-            tool.args = Some(pb::GrepArgs {
-                pattern: string("pattern"),
-                path: optional("path"),
-                glob: optional("glob"),
-                output_mode: optional("output_mode"),
-                tool_call_id: call.call_id.clone(),
-                ..Default::default()
-            })
+            tool.args = Some(super::request::grep_args(call)?);
         }
         Some(pb::tool_call::Tool::ReadToolCall(tool)) => {
             tool.args = Some(pb::ReadToolArgs {
@@ -392,33 +383,19 @@ pub fn render_tool_call(call: &ToolCall, completed: bool) -> Result<pb::ToolCall
         }
         Some(pb::tool_call::Tool::McpToolCall(tool)) => {
             tool.description = optional("description");
-            if let Some(tool_name) = semble_tool_name(&call.name) {
-                let mut arguments = call.arguments.as_object().cloned().unwrap_or_default();
-                arguments.remove("description");
-                tool.args = Some(pb::McpArgs {
-                    name: tool_name.into(),
-                    args: codec::json_object_to_prost(&arguments),
-                    tool_call_id: call.call_id.clone(),
-                    provider_identifier: "builtin-semble".into(),
-                    tool_name: tool_name.into(),
-                    server_identifier: "builtin-semble".into(),
-                    ..Default::default()
-                });
-            } else {
-                tool.args = Some(pb::McpArgs {
-                    name: optional("toolName").unwrap_or_default(),
-                    args: call
-                        .arguments
-                        .get("arguments")
-                        .and_then(Value::as_object)
-                        .map(codec::json_object_to_prost)
-                        .unwrap_or_default(),
-                    tool_call_id: call.call_id.clone(),
-                    tool_name: optional("toolName").unwrap_or_default(),
-                    server_identifier: string("server"),
-                    ..Default::default()
-                });
-            }
+            tool.args = Some(pb::McpArgs {
+                name: optional("toolName").unwrap_or_default(),
+                args: call
+                    .arguments
+                    .get("arguments")
+                    .and_then(Value::as_object)
+                    .map(codec::json_object_to_prost)
+                    .unwrap_or_default(),
+                tool_call_id: call.call_id.clone(),
+                tool_name: optional("toolName").unwrap_or_default(),
+                server_identifier: string("server"),
+                ..Default::default()
+            });
         }
         Some(pb::tool_call::Tool::CreatePlanToolCall(tool)) => {
             tool.args = Some(pb::CreatePlanArgs {
@@ -568,14 +545,6 @@ fn normalized(value: &str) -> String {
         .filter(|character| character.is_ascii_alphanumeric())
         .flat_map(char::to_lowercase)
         .collect()
-}
-
-fn semble_tool_name(name: &str) -> Option<&'static str> {
-    match normalized(name).as_str() {
-        "semblesearch" => Some("search"),
-        "semblefindrelated" => Some("find_related"),
-        _ => None,
-    }
 }
 
 fn now_ms() -> u64 {

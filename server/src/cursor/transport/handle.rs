@@ -30,6 +30,8 @@ pub struct TransportHandle {
     output: Arc<OutputHub>,
     conversation_id: Arc<OnceLock<String>>,
     parent: Arc<OnceLock<TransportParent>>,
+    pub(crate) image_reader:
+        Arc<OnceLock<crate::cursor::services::describe_image::CursorImageReader>>,
     trace: CursorTraceRecorder,
     lifecycle: TransportLifecycle,
     disconnect: CancellationToken,
@@ -48,6 +50,7 @@ impl TransportHandle {
             output,
             conversation_id: Arc::new(OnceLock::new()),
             parent: Arc::new(OnceLock::new()),
+            image_reader: Default::default(),
             trace,
             lifecycle: TransportLifecycle::new(),
             disconnect: CancellationToken::new(),
@@ -109,7 +112,7 @@ impl TransportHandle {
         let _ = self.commands.send(TransportCommand::Disconnect).await;
     }
 
-    pub fn subscribe(&self) -> tokio::sync::mpsc::UnboundedReceiver<Bytes> {
+    pub fn subscribe(&self) -> super::OutputSubscription {
         self.output.subscribe()
     }
 

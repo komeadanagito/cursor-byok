@@ -365,7 +365,9 @@ fn finish_reason(reason: FinishReason) -> &'static str {
 
 fn error_kind(error: &crate::Error) -> &'static str {
     match error {
-        crate::Error::Provider(_) | crate::Error::Http(_) => "provider",
+        crate::Error::Provider(_) | crate::Error::ProviderRefusal(_) | crate::Error::Http(_) => {
+            "provider"
+        }
         crate::Error::Cancelled => "cancelled",
         crate::Error::Database(_) | crate::Error::Store(_) => "store",
         _ => "internal",
@@ -391,6 +393,7 @@ mod tests {
         .unwrap();
         let model = store
             .create_model(&ModelConfigInput {
+                supports_images: true,
                 sort_order: 0,
                 display_name: "Test Model".into(),
                 group_name: None,

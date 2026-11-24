@@ -101,20 +101,20 @@ fn project_tool_round(
             if !calls.iter().any(|call| call.call_id == result.call_id) {
                 break;
             }
-            if !result_ids.insert(result.call_id.clone()) {
+            if !result_ids.insert(result.call_id.as_str()) {
                 return Err(Error::Protocol(format!(
                     "duplicate tool result call_id: {}",
                     result.call_id
                 )));
             }
-            results.push((messages[cursor].message_id.clone(), result.clone()));
+            results.push((&messages[cursor].message_id, result));
             cursor += 1;
         }
     }
 
     calls.sort_by_key(|call| call.index);
     for call in &calls {
-        if !result_ids.contains(&call.call_id) {
+        if !result_ids.contains(call.call_id.as_str()) {
             return Err(Error::Protocol(format!(
                 "assistant tool call has no result call_id: {}",
                 call.call_id
@@ -137,9 +137,9 @@ fn project_tool_round(
         results
             .into_iter()
             .map(|(message_id, result)| ProjectedMessage {
-                message_id,
+                message_id: message_id.clone(),
                 role: Role::Tool,
-                content: ProjectedContent::ToolResult(normalized_tool_result(&result)),
+                content: ProjectedContent::ToolResult(normalized_tool_result(result)),
             }),
     );
     Ok(Some((output, cursor)))

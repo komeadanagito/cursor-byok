@@ -9,6 +9,13 @@
   font-size: type.$font-size-xs;
   cursor: pointer;
   flex-shrink: 0;
+  height: var(--control-height, auto);
+  padding: 0 var(--control-inline-padding, 0);
+  border-radius: 5px;
+
+  &:hover:not(:has(input:disabled)) {
+    background: var(--control-hover-background, transparent);
+  }
 
   input {
     position: absolute;

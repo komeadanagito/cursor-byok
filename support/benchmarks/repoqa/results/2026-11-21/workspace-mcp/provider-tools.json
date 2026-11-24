@@ -1,0 +1,41 @@
+{
+  "public_fixture": "sourcegraph/scip-typescript syntax",
+  "cursor_wire_name": "user-cursor-byok.byok-workspace-symbols-extension-symbols-syntax-2e58d47553-find_referencing_symbols",
+  "provider_name": "a018c920803e938a_bols-syntax-2e58d47553-find_referencing_symbols",
+  "provider_name_length": 64,
+  "requests": [
+    {
+      "protocol": "messages",
+      "model": "devin/swe-2",
+      "http_status": 200,
+      "seconds": 2.089102374855429,
+      "function": "a018c920803e938a_bols-syntax-2e58d47553-find_referencing_symbols",
+      "arguments": {
+        "name_path_pattern": "newFunction",
+        "relative_path": "src/function.ts"
+      }
+    },
+    {
+      "protocol": "chat/completions",
+      "model": "devin/swe-2",
+      "http_status": 200,
+      "seconds": 1.2376805418170989,
+      "function": "a018c920803e938a_bols-syntax-2e58d47553-find_referencing_symbols",
+      "arguments": {
+        "name_path_pattern": "newFunction",
+        "relative_path": "src/function.ts"
+      }
+    },
+    {
+      "protocol": "responses",
+      "model": "codex/gpt-6.2-sol",
+      "http_status": 200,
+      "seconds": 3.106133457971737,
+      "function": "a018c920803e938a_bols-syntax-2e58d47553-find_referencing_symbols",
+      "arguments": {
+        "name_path_pattern": "newFunction",
+        "relative_path": "src/function.ts"
+      }
+    }
+  ]
+}

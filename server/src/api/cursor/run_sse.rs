@@ -5,14 +5,13 @@ use axum::{
 };
 use bytes::Bytes;
 use std::convert::Infallible;
-use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 
 use crate::{
     cursor::{
         protocol::connect::{self, END_STREAM_FLAG},
         services::observability::CursorTraceRecorder,
-        transport::{TransportHandle, TransportRegistry},
+        transport::{OutputSubscription, TransportHandle, TransportRegistry},
     },
     Result,
 };
@@ -41,7 +40,7 @@ pub async fn stream(registry: &TransportRegistry, request_id: &str) -> Result<Re
 }
 
 fn local_body_stream(
-    mut receiver: mpsc::UnboundedReceiver<Bytes>,
+    mut receiver: OutputSubscription,
     handle: TransportHandle,
     trace: Option<CursorTraceRecorder>,
 ) -> impl tokio_stream::Stream<Item = std::result::Result<Bytes, Infallible>> {
@@ -161,56 +160,32 @@ pub async fn upstream(
     Response::from_parts(parts, Body::from_stream(stream))
 }
 
-enum TraceStreamEvent {
-    Chunk(Bytes),
-    Finish(Option<String>),
-}
-
 struct TraceStreamSink {
-    sender: Option<mpsc::UnboundedSender<TraceStreamEvent>>,
+    trace: Option<CursorTraceRecorder>,
+    source: &'static str,
 }
 
 impl TraceStreamSink {
     fn new(trace: Option<CursorTraceRecorder>, source: &'static str) -> Self {
-        let Some(trace) = trace else {
-            return Self { sender: None };
-        };
-        let (sender, mut receiver) = mpsc::unbounded_channel();
-        tokio::spawn(async move {
-            while let Some(event) = receiver.recv().await {
-                match event {
-                    TraceStreamEvent::Chunk(chunk) => {
-                        trace.response_chunk(source, chunk);
-                    }
-                    TraceStreamEvent::Finish(error) => {
-                        trace.finish(error.as_deref());
-                        return;
-                    }
-                }
-            }
-            trace.finish(None);
-        });
-        Self {
-            sender: Some(sender),
-        }
+        Self { trace, source }
     }
 
     fn chunk(&self, chunk: &Bytes) {
-        if let Some(sender) = &self.sender {
-            let _ = sender.send(TraceStreamEvent::Chunk(chunk.clone()));
+        if let Some(trace) = &self.trace {
+            trace.response_chunk(self.source, chunk.clone());
         }
     }
 
     fn finish(&mut self, error: Option<String>) {
-        if let Some(sender) = self.sender.take() {
-            let _ = sender.send(TraceStreamEvent::Finish(error));
+        if let Some(trace) = self.trace.take() {
+            trace.finish(error.as_deref());
         }
     }
 }
 
 impl Drop for TraceStreamSink {
     fn drop(&mut self) {
-        if self.sender.is_some() {
+        if self.trace.is_some() {
             self.finish(Some(
                 "response stream dropped before completion".to_string(),
             ));

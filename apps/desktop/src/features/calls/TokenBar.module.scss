@@ -1,0 +1,25 @@
+.track {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 16px;
+}
+
+.fill {
+  display: flex;
+  gap: 1px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+
+  span {
+    min-width: 2px;
+    flex-basis: 0;
+  }
+}
+
+.thick .fill {
+  height: 10px;
+  border-radius: 4px;
+}

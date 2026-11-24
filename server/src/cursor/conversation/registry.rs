@@ -5,7 +5,9 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, Mutex, Notify};
 
 use crate::{
-    cursor::{prompting::PromptCompiler, transport::TransportHandle},
+    cursor::{
+        checkpoint::SubagentCompletions, prompting::PromptCompiler, transport::TransportHandle,
+    },
     model::{ConversationId, RunId},
     provider::Provider,
     run::{CommandResult, RunHandle},
@@ -23,6 +25,7 @@ pub struct ConversationRegistry {
 #[derive(Clone)]
 pub(crate) struct ConversationDependencies {
     pub store: Store,
+    pub plugins: Option<crate::plugin::PluginRegistry>,
     pub provider: Arc<dyn Provider>,
     pub compiler: PromptCompiler,
     pub web_cache: WebCache,
@@ -41,6 +44,7 @@ struct RegistryInner {
 struct ActiveRun {
     run_id: RunId,
     handle: RunHandle,
+    subagent_completions: SubagentCompletions,
 }
 
 impl ConversationRegistry {
@@ -50,6 +54,7 @@ impl ConversationRegistry {
         compiler: PromptCompiler,
         web_cache: WebCache,
         local_rules_dir: Option<std::path::PathBuf>,
+        plugins: Option<crate::plugin::PluginRegistry>,
     ) -> Self {
         Self {
             inner: Arc::new(RegistryInner {
@@ -59,6 +64,7 @@ impl ConversationRegistry {
                 dependencies: ConversationDependencies {
                     store,
                     provider,
+                    plugins,
                     compiler,
                     web_cache,
                     local_rules_dir,
@@ -84,12 +90,14 @@ impl ConversationRegistry {
         conversation_id: ConversationId,
         run_id: RunId,
         handle: RunHandle,
+        subagent_completions: SubagentCompletions,
     ) {
         let previous = self.inner.current.lock().await.insert(
             conversation_id,
             ActiveRun {
                 run_id: run_id.clone(),
                 handle,
+                subagent_completions,
             },
         );
         if let Some(previous) = previous.filter(|previous| previous.run_id != run_id) {
@@ -130,6 +138,11 @@ impl ConversationRegistry {
             return CommandResult::StaleTarget;
         }
         let pending = compiled.clone();
+        // Recorded before insertion: the Run may build the checkpoint that
+        // commits these messages before this call returns.
+        active
+            .subagent_completions
+            .extend(compiled.finished_subagents);
         let result = match compiled.delivery {
             MessageDelivery::Ignore => CommandResult::Applied,
             MessageDelivery::InsertMessages => {

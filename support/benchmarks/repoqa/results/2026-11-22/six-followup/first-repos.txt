@@ -1,0 +1,12 @@
+python-poetry/poetry
+locustio/locust
+ClickHouse/clickhouse-cpp
+polybar/polybar
+karatelabs/karate
+Password4j/password4j
+xenova/transformers.js
+date-fns/date-fns
+helix-editor/helix
+rust-lang/cargo
+fatedier/frp
+nsqio/nsq

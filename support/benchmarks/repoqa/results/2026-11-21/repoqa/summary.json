@@ -1,0 +1,278 @@
+{
+  "retrieval": [
+    {
+      "engine": "byok-rust",
+      "track": "description",
+      "queries": 60,
+      "hit_at_5": 20,
+      "hit_at_10": 26,
+      "p50_ms": 0.2812505
+    },
+    {
+      "engine": "byok-rust",
+      "track": "symbol",
+      "queries": 60,
+      "hit_at_5": 50,
+      "hit_at_10": 53,
+      "p50_ms": 0.017937500000000002
+    },
+    {
+      "engine": "upstream-python",
+      "track": "description",
+      "queries": 60,
+      "hit_at_5": 18,
+      "hit_at_10": 26,
+      "p50_ms": 1.4281460316851735
+    },
+    {
+      "engine": "upstream-python",
+      "track": "symbol",
+      "queries": 60,
+      "hit_at_5": 46,
+      "hit_at_10": 49,
+      "p50_ms": 1.7914579948410392
+    }
+  ],
+  "models": [
+    {
+      "protocol": "chat/completions",
+      "model": "devin/swe-2",
+      "phase": "append",
+      "requests": 6,
+      "correct": 2,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 36288,
+      "input_with_cache_reported": 49284,
+      "p50_seconds": 2.6805783121380955
+    },
+    {
+      "protocol": "chat/completions",
+      "model": "devin/swe-2",
+      "phase": "changed",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 2688,
+      "input_with_cache_reported": 49292,
+      "p50_seconds": 3.0586328745121136
+    },
+    {
+      "protocol": "chat/completions",
+      "model": "devin/swe-2",
+      "phase": "cold",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 2688,
+      "input_with_cache_reported": 48938,
+      "p50_seconds": 3.003852624911815
+    },
+    {
+      "protocol": "messages",
+      "model": "devin/swe-2",
+      "phase": "append",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 43392,
+      "input_with_cache_reported": 49284,
+      "p50_seconds": 2.8324401460122317
+    },
+    {
+      "protocol": "messages",
+      "model": "devin/swe-2",
+      "phase": "changed",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 2688,
+      "input_with_cache_reported": 49281,
+      "p50_seconds": 3.5211383539717644
+    },
+    {
+      "protocol": "messages",
+      "model": "devin/swe-2",
+      "phase": "cold",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 2688,
+      "input_with_cache_reported": 48941,
+      "p50_seconds": 3.1428586249239743
+    },
+    {
+      "protocol": "responses",
+      "model": "codex/gpt-6.2-sol",
+      "phase": "append",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 77824,
+      "input_with_cache_reported": 78859,
+      "p50_seconds": 1.400177166913636
+    },
+    {
+      "protocol": "responses",
+      "model": "codex/gpt-6.2-sol",
+      "phase": "changed",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 31488,
+      "input_with_cache_reported": 78866,
+      "p50_seconds": 1.3299363335827366
+    },
+    {
+      "protocol": "responses",
+      "model": "codex/gpt-6.2-sol",
+      "phase": "cold",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 5,
+      "cached_tokens": 26240,
+      "input_with_cache_reported": 78667,
+      "p50_seconds": 2.2263377915369347
+    },
+    {
+      "protocol": "responses",
+      "model": "devin/swe-2",
+      "phase": "append",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 36224,
+      "input_with_cache_reported": 49277,
+      "p50_seconds": 2.27449629153125
+    },
+    {
+      "protocol": "responses",
+      "model": "devin/swe-2",
+      "phase": "changed",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 6,
+      "cached_tokens": 2688,
+      "input_with_cache_reported": 49282,
+      "p50_seconds": 2.797180125140585
+    },
+    {
+      "protocol": "responses",
+      "model": "devin/swe-2",
+      "phase": "cold",
+      "requests": 6,
+      "correct": 3,
+      "answers": 6,
+      "cache_reported": 6,
+      "cache_hits": 5,
+      "cached_tokens": 2240,
+      "input_with_cache_reported": 48932,
+      "p50_seconds": 2.802891708444804
+    }
+  ],
+  "indexes": {
+    "byok-rust": {
+      "indexes": [
+        {
+          "chunks": 754,
+          "files": 27,
+          "ms": 70.968125,
+          "root": "psf/black"
+        },
+        {
+          "chunks": 467,
+          "files": 54,
+          "ms": 74.733958,
+          "root": "skypjack/uvw"
+        },
+        {
+          "chunks": 394,
+          "files": 56,
+          "ms": 38.130417,
+          "root": "square/retrofit"
+        },
+        {
+          "chunks": 234,
+          "files": 56,
+          "ms": 30.932000000000002,
+          "root": "axios/axios"
+        },
+        {
+          "chunks": 325,
+          "files": 11,
+          "ms": 32.166875,
+          "root": "tokio-rs/tracing"
+        },
+        {
+          "chunks": 874,
+          "files": 65,
+          "ms": 82.87941599999999,
+          "root": "junegunn/fzf"
+        }
+      ],
+      "cache_bytes": 3481905
+    },
+    "upstream-python": {
+      "indexes": [
+        {
+          "root": "psf/black",
+          "ms": 617.1137078199536,
+          "files": 27,
+          "chunks": 736
+        },
+        {
+          "root": "skypjack/uvw",
+          "ms": 1068.4560840018094,
+          "files": 54,
+          "chunks": 464
+        },
+        {
+          "root": "square/retrofit",
+          "ms": 502.99445795826614,
+          "files": 56,
+          "chunks": 393
+        },
+        {
+          "root": "axios/axios",
+          "ms": 45.58270797133446,
+          "files": 56,
+          "chunks": 233
+        },
+        {
+          "root": "tokio-rs/tracing",
+          "ms": 62.07316694781184,
+          "files": 11,
+          "chunks": 317
+        },
+        {
+          "root": "junegunn/fzf",
+          "ms": 828.1299590598792,
+          "files": 65,
+          "chunks": 861
+        }
+      ],
+      "cache_bytes": 6781190
+    }
+  }
+}

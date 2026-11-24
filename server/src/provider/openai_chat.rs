@@ -240,7 +240,8 @@ fn openai_chat_messages(instructions: &str, messages: &[ProjectedMessage]) -> Re
     if !instructions.is_empty() {
         output.push(json!({"role": "system", "content": instructions}));
     }
-    for message in messages {
+    let mut tool_images = Vec::new();
+    for (index, message) in messages.iter().enumerate() {
         let mut value = Map::new();
         value.insert(
             "role".into(),
@@ -293,18 +294,37 @@ fn openai_chat_messages(instructions: &str, messages: &[ProjectedMessage]) -> Re
                 }
             }
             ProjectedContent::ToolResult(result) => {
-                value.insert(
-                    "content".into(),
-                    if result.provider_parts.is_empty() {
-                        Value::String(result.content.clone())
-                    } else {
-                        chat_content(&Role::User, &result.provider_parts)?
-                    },
-                );
+                value.insert("content".into(), Value::String(result.content.clone()));
+                if result
+                    .provider_parts
+                    .iter()
+                    .any(|p| matches!(p, ContentPart::Image { .. }))
+                {
+                    tool_images.push(ContentPart::Text {
+                        text: format!("Images from tool call {}:", result.call_id),
+                    });
+                    tool_images.extend(
+                        result
+                            .provider_parts
+                            .iter()
+                            .filter(|p| matches!(p, ContentPart::Image { .. }))
+                            .cloned(),
+                    );
+                }
                 value.insert("tool_call_id".into(), Value::String(result.call_id.clone()));
             }
         }
         output.push(Value::Object(value));
+        // Chat accepts image_url only in user messages. All parallel tool replies
+        // must precede that user message to keep the assistant's calls paired.
+        if !tool_images.is_empty()
+            && messages
+                .get(index + 1)
+                .is_none_or(|next| next.role != Role::Tool)
+        {
+            output.push(json!({"role":"user", "content":chat_content(&Role::User,&tool_images)?}));
+            tool_images.clear();
+        }
     }
     Ok(output)
 }
@@ -439,6 +459,43 @@ pub(crate) fn openai_usage(value: &Value) -> Usage {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn chat_tool_images_follow_all_tool_replies_in_a_user_message() {
+        let result = |id: &str, parts: Vec<ContentPart>| ProjectedMessage {
+            message_id: id.into(),
+            role: Role::Tool,
+            content: ProjectedContent::ToolResult(crate::model::ToolResultContent {
+                call_id: id.into(),
+                name: "screen".into(),
+                content: format!("output {id}"),
+                is_error: false,
+                image: None,
+                provider_parts: parts,
+            }),
+        };
+        let messages = openai_chat_messages(
+            "",
+            &[
+                result(
+                    "first",
+                    vec![ContentPart::Image {
+                        mime_type: "image/png".into(),
+                        data: vec![1, 2, 3],
+                    }],
+                ),
+                result("second", vec![]),
+            ],
+        )
+        .unwrap();
+        assert_eq!(messages[0]["content"], "output first");
+        assert_eq!(messages[1]["tool_call_id"], "second");
+        assert_eq!(messages[2]["role"], "user");
+        assert_eq!(
+            messages[2]["content"][1]["image_url"]["url"],
+            "data:image/png;base64,AQID"
+        );
+    }
 
     #[test]
     fn observed_tool_calls_outrank_ordinary_stop_reasons() {

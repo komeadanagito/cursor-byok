@@ -30,6 +30,8 @@ server-go/log/
 .cursor-app-formatted/
 proto/extensions-cursor-app/
 cursor-tab-server/cursor-tab-server-linux-amd64.tar
+/apps/workspace-symbols/bin/
+/apps/workspace-symbols/*.vsix
 /scripts/cursor-proto/proto/*
 !/scripts/cursor-proto/proto/agent_v1.proto
 !/scripts/cursor-proto/proto/aiserver_v1.proto

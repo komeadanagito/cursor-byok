@@ -29,6 +29,7 @@ use tower::ServiceExt;
 
 fn model_input() -> ModelConfigInput {
     ModelConfigInput {
+        supports_images: true,
         sort_order: 0,
         display_name: "Example".into(),
         group_name: Some("work".into()),
@@ -81,6 +82,60 @@ async fn setup() -> (
 }
 
 #[tokio::test]
+async fn management_model_responses_do_not_echo_saved_credentials() {
+    let (router, _, store, _directory) = setup().await;
+    let model = store.models().await.unwrap().remove(0);
+    let path = format!("/__byok-api__/api/models/{}", model.model_hash);
+    let mut input = model_input();
+    input.custom_headers_enabled = true;
+    input.custom_headers = json!({"X-Api-Token":"header-secret"});
+    let (status, body) = send(
+        router.clone(),
+        "PUT",
+        &path,
+        None,
+        serde_json::to_value(&input).unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let assert_redacted = |bytes: &[u8]| {
+        let value: Value = serde_json::from_slice(bytes).unwrap();
+        let model = if value.is_array() { &value[0] } else { &value };
+        assert!(model.get("api_key").is_none());
+        assert!(model.get("custom_headers").is_none());
+    };
+    assert_redacted(body.as_bytes());
+    let (status, body) = send(
+        router.clone(),
+        "GET",
+        "/__byok-api__/api/models",
+        None,
+        json!({}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_redacted(body.as_bytes());
+    let mut edited = serde_json::to_value(&input).unwrap();
+    edited["display_name"] = "Renamed".into();
+    edited.as_object_mut().unwrap().remove("api_key");
+    edited["custom_headers"] = Value::Null;
+    assert_eq!(
+        send(router.clone(), "PUT", &path, None, edited.clone())
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let updated = store.model(&model.model_hash).await.unwrap().unwrap();
+    assert_eq!(updated.api_key, "upstream");
+    assert_eq!(updated.custom_headers, input.custom_headers);
+    edited["base_url"] = "https://other.example/v1".into();
+    assert_eq!(
+        send(router, "PUT", &path, None, edited).await.0,
+        StatusCode::BAD_REQUEST
+    );
+}
+
+#[tokio::test]
 async fn management_settings_enable_the_external_route_without_restart() {
     let (router, _provider, _store, _directory) = setup().await;
     let (status, body) = send(
@@ -117,6 +172,22 @@ async fn management_settings_enable_the_external_route_without_restart() {
         .0,
         StatusCode::OK
     );
+}
+
+#[tokio::test]
+async fn magpie_is_an_opt_in_provider_without_changing_manual_models() {
+    let (router, _, store, _directory) = setup().await;
+    let (status, body) = send(
+        router,
+        "GET",
+        "/__byok-api__/api/providers/magpie",
+        None,
+        json!({}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(serde_json::from_str::<Value>(&body).unwrap(), Value::Null);
+    assert_eq!(store.models().await.unwrap().len(), 1);
 }
 
 async fn send(
@@ -750,6 +821,50 @@ async fn all_entry_and_upstream_protocol_pairs_preserve_cache_usage() {
         }
     }
     assert_eq!(fake.requests().len(), 18);
+    server.abort();
+}
+
+#[tokio::test]
+async fn model_discovery_reuses_saved_credentials_only_for_the_same_origin() {
+    let (app, _, store, _directory) = setup().await;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (sender, mut requests) = tokio::sync::mpsc::unbounded_channel();
+    let upstream = Router::new().route(
+        "/v1/models",
+        axum::routing::get(move |headers: HeaderMap| {
+            sender.send(headers).unwrap();
+            async { Json(json!({"data":[{"id":"listed-model"}]})) }
+        }),
+    );
+    let server = tokio::spawn(async move { axum::serve(listener, upstream).await.unwrap() });
+    let mut input = model_input();
+    input.base_url = format!("http://127.0.0.1:{port}");
+    input.custom_headers_enabled = true;
+    input.custom_headers = json!({"x-provider-token":"saved-header"});
+    let model = store.create_model(&input).await.unwrap();
+    let discover = |url: String| {
+        send(
+            app.clone(),
+            "POST",
+            "/__byok-api__/api/models/discover",
+            None,
+            json!({"type":"openai", "model_hash": model.model_hash, "base_url": url,
+                "api_key":"", "custom_headers_enabled":true, "custom_headers":null}),
+        )
+    };
+    let (status, body) = discover(input.base_url).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).unwrap()["models"],
+        json!(["listed-model"])
+    );
+    let headers = requests.try_recv().unwrap();
+    assert_eq!(headers[header::AUTHORIZATION], "Bearer upstream");
+    assert_eq!(headers["x-provider-token"], "saved-header");
+    let (status, _) = discover(format!("http://localhost:{port}")).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(requests.try_recv().is_err());
     server.abort();
 }
 

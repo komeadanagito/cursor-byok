@@ -281,6 +281,7 @@ impl Store {
         let row = sqlx::query(
             "SELECT usage_json, message_count FROM llm_calls
              WHERE conversation_id = ?
+               AND call_id NOT LIKE '%:vision'
                AND json_extract(usage_json, '$.context_input_tokens') IS NOT NULL
              ORDER BY created_at_ms DESC, rowid DESC
              LIMIT 1",
@@ -306,15 +307,17 @@ impl Store {
     }
 
     pub async fn llm_calls(&self, limit: i64) -> Result<Vec<LlmCallSummary>> {
-        let rows = sqlx::query("SELECT * FROM llm_calls ORDER BY created_at_ms DESC LIMIT ?")
-            .bind(limit.clamp(1, 500))
-            .fetch_all(&self.pool)
-            .await?;
+        let rows = sqlx::query(&format!(
+            "{CALL_SUMMARY_SQL} ORDER BY l.created_at_ms DESC LIMIT ?"
+        ))
+        .bind(limit.clamp(1, 500))
+        .fetch_all(&self.pool)
+        .await?;
         rows.into_iter().map(summary_from_row).collect()
     }
 
     pub async fn llm_call(&self, call_id: &str) -> Result<Option<LlmCallSummary>> {
-        sqlx::query("SELECT * FROM llm_calls WHERE call_id = ?")
+        sqlx::query(&format!("{CALL_SUMMARY_SQL} WHERE l.call_id = ?"))
             .bind(call_id)
             .fetch_optional(&self.pool)
             .await?
@@ -356,6 +359,21 @@ impl Store {
             .collect()
     }
 }
+
+const CALL_SUMMARY_SQL: &str = "SELECT
+    l.call_id, l.run_id, l.conversation_id, l.provider_call_index, l.model_hash,
+    l.provider_type, l.provider_url, l.request_type, l.request_url, l.model_id, l.display_name,
+    l.reasoning_effort, l.fast, l.status, l.finish_reason, l.created_at_ms, l.request_started_at_ms,
+    l.response_headers_at_ms, l.first_event_at_ms, l.first_text_at_ms, l.first_valid_response_at_ms,
+    l.finished_at_ms, l.queue_ms, l.ttfb_ms, l.ttft_ms, l.ttfr_ms, l.duration_ms, l.input_tokens,
+    l.output_tokens, l.total_tokens, l.cache_read_tokens, l.cache_write_tokens, l.reasoning_tokens,
+    l.usage_json, l.message_count, l.tool_count, l.request_bytes, l.response_bytes, l.stream_event_count,
+    l.http_status, l.error_kind, l.error_message, l.detailed, r.run_kind, r.subagent_kind,
+    CASE WHEN r.run_id IS NOT NULL THEN (
+        SELECT COUNT(*) FROM tool_rounds tr JOIN tool_round_calls tc USING (round_id)
+        WHERE tr.run_id = l.run_id AND tc.model_call_id = l.call_id
+    ) END AS launched_tool_count
+    FROM llm_calls l LEFT JOIN runs r ON r.run_id = l.run_id";
 
 fn as_i64(value: Option<u64>) -> Option<i64> {
     value.map(|value| value.min(i64::MAX as u64) as i64)
@@ -402,6 +420,9 @@ fn summary_from_row(row: sqlx::sqlite::SqliteRow) -> Result<LlmCallSummary> {
             .transpose()?,
         message_count: row.try_get("message_count")?,
         tool_count: row.try_get("tool_count")?,
+        launched_tool_count: row.try_get("launched_tool_count")?,
+        run_kind: row.try_get("run_kind")?,
+        subagent_kind: row.try_get("subagent_kind")?,
         request_bytes: row.try_get("request_bytes")?,
         response_bytes: row.try_get("response_bytes")?,
         stream_event_count: row.try_get("stream_event_count")?,
@@ -475,6 +496,7 @@ mod tests {
             ("call-a-1", "model-a", 100_u64, 3_usize),
             ("call-b", "model-b", 200_u64, 5_usize),
             ("call-a-2", "model-a", 300_u64, 7_usize),
+            ("call-reader:vision", "reader", 50_u64, 1_usize),
         ] {
             store
                 .start_llm_call(&NewLlmCall {

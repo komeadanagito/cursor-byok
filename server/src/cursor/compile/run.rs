@@ -32,6 +32,7 @@ struct ActionProjection {
     starts_turn: bool,
     compacting: bool,
     background_completion: bool,
+    finished_subagents: Vec<pb::BackgroundTaskCompletion>,
 }
 
 pub struct CursorRunContext {
@@ -43,6 +44,7 @@ pub struct CursorRunContext {
     pub checkpoint_prompt: PromptSpec,
     pub compacting: bool,
     pub background_completion: bool,
+    pub finished_subagents: Vec<pb::BackgroundTaskCompletion>,
 }
 
 pub(crate) struct PrepareDependencies<'a> {
@@ -52,6 +54,10 @@ pub(crate) struct PrepareDependencies<'a> {
     pub blob_sync: &'a BlobSynchronizer,
     pub context_sync: &'a RequestContextSynchronizer,
     pub local_rules_dir: Option<&'a std::path::Path>,
+}
+
+pub(crate) fn is_local_config_model_id(id: &str) -> bool {
+    crate::model::is_manual_model_id(id) || id.starts_with(crate::provider::magpie::PREFIX)
 }
 
 pub(crate) async fn prepare(
@@ -67,6 +73,15 @@ pub(crate) async fn prepare(
         context_sync,
         local_rules_dir,
     } = dependencies;
+    let mut model = model::requested_model(request)?;
+    if let Some(configured_model) = store.configured_model(&model.model_id).await? {
+        configured_model.configure(&mut model);
+    } else if is_local_config_model_id(&model.model_id) {
+        return Err(Error::Config(format!(
+            "BYOK model is unavailable: {}. Select an available model.",
+            model.model_id
+        )));
+    }
     checkpoint
         .import_prefetched(&request.pre_fetched_blobs)
         .await?;
@@ -120,6 +135,7 @@ pub(crate) async fn prepare(
         trace.artifact("history_projection", "byok_server", &encoded, summary);
     }
     let mut request_context = context::hydrate(request, context_sync).await?;
+    crate::cursor::tools::devtools::inject(&mut request_context);
     if let Some(rules_dir) = local_rules_dir {
         context::merge_local_rules(&mut request_context, rules_dir);
     }
@@ -133,16 +149,13 @@ pub(crate) async fn prepare(
         starts_turn,
         compacting,
         background_completion,
+        finished_subagents,
     } = action(request)?;
     let checkpoint_mode = if request.subagent_type_name.is_some() {
         Mode::Subagent
     } else {
         mode_from_proto(mode_number)?
     };
-    let mut model = model::requested_model(request)?;
-    if let Some(configured_model) = store.model(&model.model_id).await? {
-        configured_model.configure(&mut model);
-    }
     let dynamic = context::dynamic_mcp(request, &request_context)?;
     let subagent_model_overrides = model::overrides(request)?;
     let subagents_disabled = subagent_model_overrides
@@ -352,6 +365,7 @@ pub(crate) async fn prepare(
             checkpoint_prompt,
             compacting,
             background_completion,
+            finished_subagents,
         },
     ))
 }
@@ -419,6 +433,7 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
             starts_turn: false,
             compacting: false,
             background_completion: false,
+            finished_subagents: Vec::new(),
         });
     };
     match action {
@@ -446,6 +461,7 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
                     starts_turn: false,
                     compacting: true,
                     background_completion: false,
+                    finished_subagents: Vec::new(),
                 });
             }
             let mut context = action
@@ -471,6 +487,7 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
                 starts_turn: true,
                 compacting: false,
                 background_completion: false,
+                finished_subagents: Vec::new(),
             })
         }
         pb::conversation_action::Action::BackgroundTaskCompletionAction(action) => {
@@ -485,6 +502,7 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
                 starts_turn: true,
                 compacting: false,
                 background_completion: true,
+                finished_subagents: projection.finished_subagents,
             })
         }
         pb::conversation_action::Action::ExecutePlanAction(action) => execute_plan(action),
@@ -497,6 +515,7 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
             starts_turn: false,
             compacting: true,
             background_completion: false,
+            finished_subagents: Vec::new(),
         }),
         _ => Ok(ActionProjection {
             mode,
@@ -507,6 +526,7 @@ fn action(request: &pb::AgentRunRequest) -> Result<ActionProjection> {
             starts_turn: false,
             compacting: false,
             background_completion: false,
+            finished_subagents: Vec::new(),
         }),
     }
 }
@@ -556,6 +576,7 @@ fn execute_plan(action: &pb::ExecutePlanAction) -> Result<ActionProjection> {
         starts_turn: true,
         compacting: false,
         background_completion: false,
+        finished_subagents: Vec::new(),
     })
 }
 

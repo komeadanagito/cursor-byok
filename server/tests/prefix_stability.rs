@@ -140,7 +140,7 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
             .as_path(),
     )
     .unwrap();
-    assert_eq!(assets.mode(Mode::Agent).tools.len(), 21);
+    assert_eq!(assets.mode(Mode::Agent).tools.len(), 19);
     assert_eq!(
         assets
             .mode(Mode::Agent)
@@ -168,8 +168,6 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
             "FetchMcpResource",
             "SwitchMode",
             "CallMcpTool",
-            "SembleSearch",
-            "SembleFindRelated",
         ]
     );
     assert_mode(
@@ -191,10 +189,8 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
             "WebFetch",
             "WebSearch",
             "Write",
-            "SembleSearch",
-            "SembleFindRelated",
         ],
-        "98bb57a9ade7f1a572c5c5fe77a905a129d28ecfd42b8d318250f6486b09e1ec",
+        "658cb3ebf719528e98d50cc7959f30f3533555c2f277af52638e477d4b62f7fe",
     );
     assert_mode(
         &assets,
@@ -213,10 +209,8 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
             "Task",
             "FetchMcpResource",
             "CallMcpTool",
-            "SembleSearch",
-            "SembleFindRelated",
         ],
-        "9a7e0f9e0bd8ef0af01032fa311686f72c42ec260e3057f6fae5e68f5ed36fb8",
+        "25a95af0798b3622e4ff92874ead471c79d218daece7c48c00a8bff58f7abcbc",
     );
     assert_mode(
         &assets,
@@ -237,10 +231,8 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
             "WebFetch",
             "WebSearch",
             "Write",
-            "SembleSearch",
-            "SembleFindRelated",
         ],
-        "98bb57a9ade7f1a572c5c5fe77a905a129d28ecfd42b8d318250f6486b09e1ec",
+        "658cb3ebf719528e98d50cc7959f30f3533555c2f277af52638e477d4b62f7fe",
     );
     assert_mode(
         &assets,
@@ -263,10 +255,8 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
             "WebSearch",
             "Write",
             "GenerateImage",
-            "SembleSearch",
-            "SembleFindRelated",
         ],
-        "976b309dd91e314d4916439ebb9da8995751d011532e39934a1da7593dc78ccb",
+        "6b4223d58d3eae141ed6a91090e95825177db42a4199b68156e09b8d6e849e76",
     );
     assert_mode(
         &assets,
@@ -290,10 +280,8 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
             "SwitchMode",
             "UpdateCurrentStep",
             "CallMcpTool",
-            "SembleSearch",
-            "SembleFindRelated",
         ],
-        "6de1ee86a131ca093c7143f54fffcba2fc14b32ff45fd6f5e0df1347058ad744",
+        "9a4579aa3ffc358b99f3fd161e3bd247524beeb1e989caba3c16d659ff3b7744",
     );
     assert_mode(
         &assets,
@@ -303,7 +291,7 @@ fn every_prompt_mode_loads_the_captured_tool_set() {
     );
     assert_eq!(
         schema_digest(&assets.mode(Mode::Agent).tools),
-        "282a1dff7957090d0a75eac4a46474ac7cffa1b0937bdf97354544e729bb15c2"
+        "b97e1418401bb1550f01f365326d98f818fb0e73fe9d0532d1534d3a5bf691df"
     );
     let task = assets
         .mode(Mode::Agent)
@@ -481,7 +469,7 @@ fn image_generation_capability_controls_only_the_generate_image_definition() {
 }
 
 #[test]
-fn agent_system_prompt_is_static_and_substitutes_the_model_name() {
+fn agent_system_prompt_is_stable_when_the_model_display_name_changes() {
     let assets = PromptAssets::load(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("prompt/cursor")
@@ -495,7 +483,15 @@ fn agent_system_prompt_is_static_and_substitutes_the_model_name() {
         .prompt_spec(Mode::Agent, &model, &[], false)
         .unwrap();
     let prompt = &request.instructions;
-    assert!(prompt.contains("powered by Test Model"));
+    let before_rename = prompt.clone();
+    model.display_name = Some("Renamed UI label".into());
+    let renamed = compiler
+        .prompt_spec(Mode::Agent, &model, &[], false)
+        .unwrap();
+    assert_eq!(
+        renamed.instructions, before_rename,
+        "editing a display label must leave the Claude system prefix unchanged"
+    );
     assert!(!prompt.contains("test-model-hash"));
     assert!(!prompt.contains("{{FAKE_MODEL_NAME}}"));
     assert!(!prompt.contains("<user_info>"));
@@ -545,8 +541,6 @@ fn subagent_uses_the_agent_prompt_and_only_the_captured_tool_delta() {
             "SwitchMode",
             "UpdateCurrentStep",
             "CallMcpTool",
-            "SembleSearch",
-            "SembleFindRelated",
         ]
     );
     assert!(!request.tools.iter().any(|tool| tool.name == "Task"));

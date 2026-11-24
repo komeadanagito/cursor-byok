@@ -52,6 +52,7 @@ pub struct ProviderConfig {
 #[derive(Clone)]
 pub struct Config {
     pub listen_addr: SocketAddr,
+    pub inference_addr: SocketAddr,
     pub database_url: String,
     pub provider_request_timeout: Duration,
     pub provider_stream_idle_timeout: Duration,
@@ -69,10 +70,14 @@ pub enum ConsoleSource {
 
 impl Config {
     pub fn from_env() -> Result<Self> {
-        let listen_addr = env::var("CURSOR_LISTEN_ADDR")
+        let listen_addr: SocketAddr = env::var("CURSOR_CONTROL_ADDR")
+            .unwrap_or_else(|_| "127.0.0.1:3001".into())
+            .parse()
+            .map_err(|err| Error::Config(format!("invalid CURSOR_CONTROL_ADDR: {err}")))?;
+        let inference_addr = env::var("CURSOR_LISTEN_ADDR")
             .unwrap_or_else(|_| "127.0.0.1:3000".into())
             .parse()
-            .map_err(|error| Error::Config(format!("invalid CURSOR_LISTEN_ADDR: {error}")))?;
+            .map_err(|err| Error::Config(format!("invalid CURSOR_LISTEN_ADDR: {err}")))?;
         let request_timeout = match env::var("CURSOR_PROVIDER_TIMEOUT_SECONDS") {
             Ok(value) => Duration::from_secs(value.parse().map_err(|error| {
                 Error::Config(format!("invalid CURSOR_PROVIDER_TIMEOUT_SECONDS: {error}"))
@@ -105,6 +110,7 @@ impl Config {
         };
         Ok(Self {
             listen_addr,
+            inference_addr,
             database_url: database_url_from_env()?,
             provider_request_timeout: request_timeout,
             provider_stream_idle_timeout: DEFAULT_PROVIDER_STREAM_IDLE_TIMEOUT,
@@ -119,6 +125,7 @@ impl Config {
             listen_addr: "127.0.0.1:0"
                 .parse()
                 .expect("desktop listen address is static"),
+            inference_addr: SocketAddr::from(([127, 0, 0, 1], 0)),
             database_url: default_database_url()?,
             provider_request_timeout: DEFAULT_PROVIDER_REQUEST_TIMEOUT,
             provider_stream_idle_timeout: DEFAULT_PROVIDER_STREAM_IDLE_TIMEOUT,

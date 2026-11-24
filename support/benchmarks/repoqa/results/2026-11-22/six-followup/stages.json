@@ -1,0 +1,790 @@
+[
+  {
+    "id": "r04-client-tree-position-id",
+    "query": "On the client, where is the compact identifier for the current position in the component tree converted into base 32 after stripping its leading sentinel bit?",
+    "gold": [
+      "packages/react-reconciler/src/ReactFiberTreeContext.js",
+      99
+    ],
+    "same_file_at_each_stage": {
+      "dense": [
+        {
+          "rank": 3,
+          "lines": [
+            56,
+            72
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 5,
+          "lines": [
+            1,
+            21
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 11,
+          "lines": [
+            99,
+            109
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": true,
+          "body_of_gold": false
+        },
+        {
+          "rank": 29,
+          "lines": [
+            160,
+            174
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 33,
+          "lines": [
+            139,
+            156
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ],
+      "bm25": [
+        {
+          "rank": 2,
+          "lines": [
+            139,
+            156
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 3,
+          "lines": [
+            1,
+            21
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 5,
+          "lines": [
+            156,
+            160
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 10,
+          "lines": [
+            99,
+            109
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": true,
+          "body_of_gold": false
+        },
+        {
+          "rank": 13,
+          "lines": [
+            160,
+            174
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 37,
+          "lines": [
+            204,
+            228
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 48,
+          "lines": [
+            109,
+            123
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ],
+      "rerank": [
+        {
+          "rank": 1,
+          "lines": [
+            1,
+            21
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 17,
+          "lines": [
+            99,
+            109
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": true,
+          "body_of_gold": false
+        },
+        {
+          "rank": 48,
+          "lines": [
+            139,
+            156
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 72,
+          "lines": [
+            160,
+            174
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 88,
+          "lines": [
+            56,
+            72
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 94,
+          "lines": [
+            156,
+            160
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 100,
+          "lines": [
+            204,
+            228
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 103,
+          "lines": [
+            109,
+            123
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ]
+    },
+    "top10": [
+      [
+        "compiler/packages/react-mcp-server/src/tools/componentTree.ts",
+        22,
+        38
+      ],
+      [
+        "compiler/crates/react_compiler/src/entrypoint/program.rs",
+        1115,
+        1134
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberTreeContext.js",
+        1,
+        21
+      ],
+      [
+        "packages/react-server/src/ReactFizzTreeContext.js",
+        73,
+        84
+      ],
+      [
+        "compiler/crates/react_compiler_lowering/src/identifier_loc_index.rs",
+        23,
+        35
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberNewContext.js",
+        323,
+        342
+      ],
+      [
+        "compiler/crates/react_compiler_lowering/src/build_hir.rs",
+        644,
+        665
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberCommitWork.js",
+        1301,
+        1308
+      ],
+      [
+        "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+        3697,
+        3712
+      ],
+      [
+        "flow-typed/environments/dom.js",
+        1927,
+        1947
+      ]
+    ]
+  },
+  {
+    "id": "r07-edit-retain-local-state",
+    "query": "When a developer edits a component and the running app swaps in its new implementation, where is the decision made to retain its local state or start it over, based on its type and signature?",
+    "gold": [
+      "packages/react-refresh/src/ReactFreshRuntime.js",
+      145
+    ],
+    "same_file_at_each_stage": {},
+    "top10": [
+      [
+        "compiler/crates/react_compiler_inference/src/memoize_fbt_and_macro_operands_in_same_scope.rs",
+        329,
+        347
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/Flood/FlowTypes.ts",
+        60,
+        94
+      ],
+      [
+        "compiler/crates/react_compiler_inference/src/merge_overlapping_reactive_scopes_hir.rs",
+        181,
+        198
+      ],
+      [
+        "compiler/packages/snap/src/runner-watch.ts",
+        161,
+        172
+      ],
+      [
+        "packages/shared/ReactSerializationErrors.js",
+        177,
+        194
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberCommitEffects.js",
+        497,
+        518
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberHooks.js",
+        3149,
+        3167
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberApplyGesture.js",
+        795,
+        817
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/MergeReactiveScopesThatInvalidateTogether.ts",
+        422,
+        441
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/HIR/PropagateScopeDependenciesHIR.ts",
+        554,
+        570
+      ]
+    ]
+  },
+  {
+    "id": "r10-compiler-render-update-diagnostic",
+    "query": "Which React Compiler validation pass reports that evaluating a component can unconditionally schedule another evaluation by updating its own state?",
+    "gold": [
+      "compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateNoSetStateInRender.ts",
+      45
+    ],
+    "same_file_at_each_stage": {
+      "bm25": [
+        {
+          "rank": 5,
+          "lines": [
+            17,
+            44
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ],
+      "rerank": [
+        {
+          "rank": 17,
+          "lines": [
+            17,
+            44
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ]
+    },
+    "top10": [
+      [
+        "compiler/crates/react_compiler_reactive_scopes/src/build_reactive_function.rs",
+        144,
+        154
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts",
+        22,
+        48
+      ],
+      [
+        "compiler/scripts/build-eslint-docs.js",
+        1,
+        19
+      ],
+      [
+        "compiler/crates/react_compiler/src/entrypoint/pipeline.rs",
+        1630,
+        1648
+      ],
+      [
+        "compiler/packages/react-compiler-runtime/src/index.ts",
+        101,
+        135
+      ],
+      [
+        "compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts",
+        1713,
+        1728
+      ],
+      [
+        "compiler/crates/react_compiler_inference/src/infer_mutation_aliasing_effects.rs",
+        1991,
+        2013
+      ],
+      [
+        "compiler/packages/react-mcp-server/src/index.ts",
+        415,
+        481
+      ],
+      [
+        "compiler/crates/react_compiler_inference/src/flatten_scopes_with_hooks_or_use_hir.rs",
+        24,
+        36
+      ],
+      [
+        "compiler/crates/react_compiler_validation/src/validate_no_derived_computations_in_effects.rs",
+        1,
+        19
+      ]
+    ]
+  },
+  {
+    "id": "r11-client-promise-reuse-slot",
+    "query": "During a retried client render, where does React keep the earlier promise at the same position instead of replacing it with a newly created one?",
+    "gold": [
+      "packages/react-reconciler/src/ReactFiberThenable.js",
+      125
+    ],
+    "same_file_at_each_stage": {},
+    "top10": [
+      [
+        "packages/react-server/src/ReactFizzServer.js",
+        250,
+        259
+      ],
+      [
+        "packages/react-devtools-extensions/src/main/index.js",
+        285,
+        308
+      ],
+      [
+        "packages/react-server/src/ReactFlightServer.js",
+        3007,
+        3029
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberBeginWork.js",
+        983,
+        995
+      ],
+      [
+        "packages/react-dom-bindings/src/server/fizz-instruction-set/ReactDOMFizzInstructionSetShared.js",
+        606,
+        619
+      ],
+      [
+        "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+        6259,
+        6266
+      ],
+      [
+        "packages/react-reconciler/src/ReactFiberTreeContext.js",
+        22,
+        39
+      ],
+      [
+        "packages/react-server/src/ReactFizzServer.js",
+        3688,
+        3703
+      ],
+      [
+        "packages/react-server/src/ReactFizzTreeContext.js",
+        22,
+        39
+      ],
+      [
+        "packages/react-client/src/ReactFlightClient.js",
+        1319,
+        1331
+      ]
+    ]
+  },
+  {
+    "id": "v08-evict-retained-active-view",
+    "query": "Where is a retained component forgotten without immediately tearing it down when that instance is the one currently on screen?",
+    "gold": [
+      "packages/runtime-core/src/components/KeepAlive.ts",
+      218
+    ],
+    "same_file_at_each_stage": {
+      "dense": [
+        {
+          "rank": 10,
+          "lines": [
+            261,
+            277
+          ],
+          "anchor": [
+            79,
+            93
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 22,
+          "lines": [
+            93,
+            103
+          ],
+          "anchor": [
+            79,
+            93
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ],
+      "bm25": [
+        {
+          "rank": 13,
+          "lines": [
+            93,
+            103
+          ],
+          "anchor": [
+            79,
+            93
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 17,
+          "lines": [
+            426,
+            445
+          ],
+          "anchor": [
+            422,
+            426
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ],
+      "rerank": [
+        {
+          "rank": 2,
+          "lines": [
+            79,
+            93
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 21,
+          "lines": [
+            93,
+            103
+          ],
+          "anchor": [
+            79,
+            93
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 64,
+          "lines": [
+            261,
+            277
+          ],
+          "anchor": [
+            79,
+            93
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 79,
+          "lines": [
+            422,
+            426
+          ],
+          "anchor": [
+            0,
+            0
+          ],
+          "gold": false,
+          "body_of_gold": false
+        },
+        {
+          "rank": 89,
+          "lines": [
+            426,
+            445
+          ],
+          "anchor": [
+            422,
+            426
+          ],
+          "gold": false,
+          "body_of_gold": false
+        }
+      ]
+    },
+    "top10": [
+      [
+        "packages/runtime-core/src/apiAsyncComponent.ts",
+        1,
+        19
+      ],
+      [
+        "packages/runtime-core/src/component.ts",
+        101,
+        122
+      ],
+      [
+        "packages/compiler-core/src/parser.ts",
+        782,
+        799
+      ],
+      [
+        "packages/runtime-core/src/components/Suspense.ts",
+        690,
+        715
+      ],
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        79,
+        93
+      ],
+      [
+        "packages/reactivity/src/effect.ts",
+        116,
+        131
+      ],
+      [
+        "packages/runtime-core/src/apiSetupHelpers.ts",
+        522,
+        547
+      ],
+      [
+        "packages/runtime-core/src/componentPublicInstance.ts",
+        343,
+        361
+      ],
+      [
+        "packages/runtime-core/src/renderer.ts",
+        2607,
+        2625
+      ],
+      [
+        "packages/runtime-core/src/component.ts",
+        829,
+        850
+      ]
+    ]
+  },
+  {
+    "id": "v09-ancestor-error-stop",
+    "query": "After a component throws during execution, where does the runtime walk up its parents and stop handing the failure along when one of them returns false?",
+    "gold": [
+      "packages/runtime-core/src/errorHandling.ts",
+      112
+    ],
+    "same_file_at_each_stage": {},
+    "top10": [
+      [
+        "packages/compiler-ssr/src/transforms/ssrTransformComponent.ts",
+        204,
+        214
+      ],
+      [
+        "packages/runtime-core/src/helpers/resolveAssets.ts",
+        1,
+        21
+      ],
+      [
+        "packages/runtime-core/src/components/KeepAlive.ts",
+        422,
+        426
+      ],
+      [
+        "packages/reactivity/src/effect.ts",
+        541,
+        557
+      ],
+      [
+        "packages/runtime-core/src/scheduler.ts",
+        8,
+        22
+      ],
+      [
+        "packages/runtime-core/src/renderer.ts",
+        1306,
+        1323
+      ],
+      [
+        "packages/runtime-core/src/hydration.ts",
+        119,
+        137
+      ],
+      [
+        "packages/compiler-ssr/src/transforms/ssrTransformComponent.ts",
+        87,
+        91
+      ],
+      [
+        "packages/compiler-ssr/src/transforms/ssrTransformTransitionGroup.ts",
+        60,
+        79
+      ],
+      [
+        "packages/runtime-core/src/component.ts",
+        728,
+        740
+      ]
+    ]
+  }
+]

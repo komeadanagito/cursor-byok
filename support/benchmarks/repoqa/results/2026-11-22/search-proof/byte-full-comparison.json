@@ -1,0 +1,80 @@
+{
+  "bm25": {
+    "prepare": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 66.7335,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 12.669125,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "metrics": {
+      "description": {
+        "n": 20,
+        "top1": 11,
+        "top5": 19,
+        "top10": 19,
+        "p50_ms": 2.966833
+      },
+      "literal": {
+        "n": 20,
+        "top1": 12,
+        "top5": 20,
+        "top10": 20,
+        "p50_ms": 3.4109165
+      },
+      "symbol": {
+        "n": 20,
+        "top1": 20,
+        "top5": 20,
+        "top10": 20,
+        "p50_ms": 0.013562500000000002
+      }
+    }
+  },
+  "final": {
+    "prepare": [
+      {
+        "chunks": 45275,
+        "files": 4760,
+        "ms": 59.417083000000005,
+        "root": "$FULL_REPOS/react"
+      },
+      {
+        "chunks": 7933,
+        "files": 554,
+        "ms": 11.247125,
+        "root": "$FULL_REPOS/vuejs"
+      }
+    ],
+    "metrics": {
+      "description": {
+        "n": 20,
+        "top1": 11,
+        "top5": 19,
+        "top10": 19,
+        "p50_ms": 3.3207705
+      },
+      "literal": {
+        "n": 20,
+        "top1": 12,
+        "top5": 20,
+        "top10": 20,
+        "p50_ms": 3.4762915
+      },
+      "symbol": {
+        "n": 20,
+        "top1": 20,
+        "top5": 20,
+        "top10": 20,
+        "p50_ms": 0.0126875
+      }
+    }
+  }
+}

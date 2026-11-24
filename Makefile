@@ -7,6 +7,7 @@ check:
 	cargo clippy --workspace --all-targets -- -D warnings
 	cargo test --workspace --all-targets
 	npm --prefix apps/desktop run check
+	npm --prefix apps/workspace-symbols run check
 
 dev-web:
 	npm --prefix apps/desktop run dev:web

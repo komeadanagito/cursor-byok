@@ -1,0 +1,98 @@
+{
+  "py": {
+    "A": {
+      "language": "py",
+      "queries": 200,
+      "documents": 2200,
+      "hit_at_1": 10,
+      "hit_at_5": 75,
+      "hit_at_10": 132,
+      "p50_ms": 0.1630415,
+      "cold_index_ms": 187.40783299999998,
+      "files": {
+        "test.parquet": "95fe31bf2bc16fb55053275a15d374da0f22e5f0aa53c5c83dd350e6a39ab38f",
+        "queries.parquet": "052b54069b0553ea89e61a15bdce26f35265adeec337c0d9b7e30c2d4d1e1d30",
+        "corpus.parquet": "ae1ad54bfe4fdb73f203b9b85b400be8dbc5d84db2ca1bfa8fd9866f8d13980b"
+      }
+    },
+    "B": {
+      "language": "py",
+      "queries": 200,
+      "documents": 2200,
+      "hit_at_1": 9,
+      "hit_at_5": 75,
+      "hit_at_10": 130,
+      "p50_ms": 0.162667,
+      "cold_index_ms": 175.213208,
+      "files": {
+        "test.parquet": "95fe31bf2bc16fb55053275a15d374da0f22e5f0aa53c5c83dd350e6a39ab38f",
+        "queries.parquet": "052b54069b0553ea89e61a15bdce26f35265adeec337c0d9b7e30c2d4d1e1d30",
+        "corpus.parquet": "ae1ad54bfe4fdb73f203b9b85b400be8dbc5d84db2ca1bfa8fd9866f8d13980b"
+      }
+    }
+  },
+  "php": {
+    "A": {
+      "language": "php",
+      "queries": 200,
+      "documents": 2200,
+      "hit_at_1": 50,
+      "hit_at_5": 96,
+      "hit_at_10": 185,
+      "p50_ms": 0.23562500000000003,
+      "cold_index_ms": 217.2815,
+      "files": {
+        "php-test.parquet": "5f0665d8e7e1258652e71719fd2062776d89bb6764f6b59d7eb7e5561b6595d1",
+        "php-corpus.parquet": "925069c29b568979657ece624f9f067c7fdca46183b67dc019a3d1b9575d83c8",
+        "php-queries.parquet": "13e03a215853714ce7b4062398fea51546fa45c953a8ab76d642170015823b70"
+      }
+    },
+    "B": {
+      "language": "php",
+      "queries": 200,
+      "documents": 2200,
+      "hit_at_1": 50,
+      "hit_at_5": 96,
+      "hit_at_10": 183,
+      "p50_ms": 0.224063,
+      "cold_index_ms": 221.31504099999998,
+      "files": {
+        "php-test.parquet": "5f0665d8e7e1258652e71719fd2062776d89bb6764f6b59d7eb7e5561b6595d1",
+        "php-corpus.parquet": "925069c29b568979657ece624f9f067c7fdca46183b67dc019a3d1b9575d83c8",
+        "php-queries.parquet": "13e03a215853714ce7b4062398fea51546fa45c953a8ab76d642170015823b70"
+      }
+    }
+  },
+  "rb": {
+    "A": {
+      "language": "rb",
+      "queries": 200,
+      "documents": 2200,
+      "hit_at_1": 30,
+      "hit_at_5": 75,
+      "hit_at_10": 156,
+      "p50_ms": 0.1934585,
+      "cold_index_ms": 178.909292,
+      "files": {
+        "ruby-test.parquet": "dec726d4a1915d6ede004409d9933301643aabbb21685640f9e710663a0750de",
+        "ruby-corpus.parquet": "1ee78ed20c61fed72c9384bac4840a44d85f43679e9d788636f7b895d1dc8dfb",
+        "ruby-queries.parquet": "ac7faf0d3e8d68b82732e060b2cb6cc11abe09c9712ae52c47f0e22815fb037c"
+      }
+    },
+    "B": {
+      "language": "rb",
+      "queries": 200,
+      "documents": 2200,
+      "hit_at_1": 30,
+      "hit_at_5": 75,
+      "hit_at_10": 156,
+      "p50_ms": 0.18764599999999998,
+      "cold_index_ms": 178.451584,
+      "files": {
+        "ruby-test.parquet": "dec726d4a1915d6ede004409d9933301643aabbb21685640f9e710663a0750de",
+        "ruby-corpus.parquet": "1ee78ed20c61fed72c9384bac4840a44d85f43679e9d788636f7b895d1dc8dfb",
+        "ruby-queries.parquet": "ac7faf0d3e8d68b82732e060b2cb6cc11abe09c9712ae52c47f0e22815fb037c"
+      }
+    }
+  }
+}

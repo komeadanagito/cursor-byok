@@ -9,10 +9,7 @@ use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 
 use super::service::ControlService;
-use crate::{
-    model::{ModelConfig, ModelConfigInput},
-    Result,
-};
+use crate::{model::ModelConfigInput, Result};
 
 pub const FORMAT: &str = "cursor-byok-migration";
 pub const VERSION: u32 = 1;
@@ -69,41 +66,15 @@ pub async fn import(
     Ok(Json(service.migration_import(file).await?))
 }
 
-impl From<&ModelConfig> for ModelConfigInput {
-    fn from(model: &ModelConfig) -> Self {
-        ModelConfigInput {
-            sort_order: model.sort_order,
-            display_name: model.display_name.clone(),
-            group_name: model.group_name.clone(),
-            model_type: model.model_type,
-            base_url: model.base_url.clone(),
-            use_full_url: model.use_full_url,
-            api_key: model.api_key.clone(),
-            tooltip_data: model.tooltip_data.clone(),
-            model_id: model.model_id.clone(),
-            reasoning_effort: model.reasoning_effort.clone(),
-            openai_endpoint: model.openai_endpoint.clone(),
-            openai_extra_params_enabled: model.openai_extra_params_enabled,
-            openai_extra_params: model.openai_extra_params.clone(),
-            custom_headers_enabled: model.custom_headers_enabled,
-            custom_headers: model.custom_headers.clone(),
-            anthropic_extra_params_enabled: model.anthropic_extra_params_enabled,
-            anthropic_extra_params: model.anthropic_extra_params.clone(),
-            context_window_tokens: model.context_window_tokens,
-            max_completion_tokens: model.max_completion_tokens,
-            anthropic_max_tokens: model.anthropic_max_tokens,
-            anthropic_thinking_effort: model.anthropic_thinking_effort.clone(),
-            thinking_budget_tokens: model.thinking_budget_tokens,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::ModelConfig;
 
     fn model() -> ModelConfig {
         ModelConfig {
+            gateway_capabilities: None,
+            supports_images: true,
             model_hash: "hash".into(),
             sort_order: 3,
             display_name: "glm-5.3-官方".into(),
@@ -119,7 +90,7 @@ mod tests {
             openai_extra_params_enabled: true,
             openai_extra_params: serde_json::json!({"tool_stream": true}),
             custom_headers_enabled: true,
-            custom_headers: serde_json::json!({"X-ZCode-Agent": "glm"}),
+            custom_headers: serde_json::json!({"X-Test-Client": "test"}),
             anthropic_extra_params_enabled: false,
             anthropic_extra_params: serde_json::json!({}),
             context_window_tokens: Some(1_000_000),

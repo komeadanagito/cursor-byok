@@ -1,0 +1,914 @@
+[
+  {
+    "id": "r01-scheduler-ready-timers",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 3,
+      "B": 3
+    },
+    "rank_by_trial": {
+      "A": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "B": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    }
+  },
+  {
+    "id": "r02-ime-before-input",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r03-controlled-select-options",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r04-client-tree-position-id",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r05-flight-date-wire-format",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "r06-server-inline-style",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 10,
+      "B": 10
+    },
+    "rank_by_trial": {
+      "A": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "B": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
+    }
+  },
+  {
+    "id": "r07-edit-retain-local-state",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r08-commit-dispose-hook-effects",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "r09-external-store-legacy-client",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 6,
+      "B": 6
+    },
+    "rank_by_trial": {
+      "A": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "B": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ]
+    }
+  },
+  {
+    "id": "r10-compiler-render-update-diagnostic",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r11-client-promise-reuse-slot",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "r12-lazy-module-default",
+    "repo": "react",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v01-enqueue-post-render-callback",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v02-computed-global-version",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 6,
+      "B": 6
+    },
+    "rank_by_trial": {
+      "A": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "B": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ]
+    }
+  },
+  {
+    "id": "v03-select-array-or-set",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v04-ssr-teleport-target-buffer",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v05-template-context-prefix",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 10,
+      "B": 10
+    },
+    "rank_by_trial": {
+      "A": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "B": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
+    }
+  },
+  {
+    "id": "v06-script-default-local-binding",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v07-reordered-outlet-content",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v08-evict-retained-active-view",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v09-ancestor-error-stop",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v10-ignore-in-flight-event",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": null,
+      "B": null
+    },
+    "rank_by_trial": {
+      "A": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "B": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  {
+    "id": "v11-render-inherit-extra-attrs",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "v12-css-vars-on-teleports",
+    "repo": "vuejs",
+    "unique_ordered_lists": {
+      "A": 1,
+      "B": 1
+    },
+    "top10_order_changed": false,
+    "top1_changed": false,
+    "removed_chunks": [],
+    "added_chunks": [],
+    "first_rank": {
+      "A": 1,
+      "B": 1
+    },
+    "rank_by_trial": {
+      "A": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "B": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  }
+]

@@ -1,12 +1,15 @@
 //! Imports model definitions from the v0.0.49 YAML configuration.
-use std::{collections::HashSet, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+};
 
 use serde::Deserialize;
 
 use crate::{
     model::{
-        model_hash, normalize_model_input, normalize_request_url, ModelConfigInput, ModelType,
-        OPENAI_CHAT_ENDPOINT, OPENAI_RESPONSES_ENDPOINT,
+        model_fingerprint, normalize_model_input, normalize_request_url, ModelConfigInput,
+        ModelType, OPENAI_CHAT_ENDPOINT, OPENAI_RESPONSES_ENDPOINT,
     },
     Error, Result,
 };
@@ -86,17 +89,22 @@ impl Store {
             .models()
             .await?
             .into_iter()
-            .map(|model| model.model_hash)
-            .collect::<HashSet<_>>();
+            .map(|model| {
+                Ok((
+                    model_fingerprint(&ModelConfigInput::from(&model))?,
+                    model.model_hash,
+                ))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
         let mut seen = HashSet::with_capacity(inputs.len());
         let mut models = Vec::with_capacity(inputs.len());
         for input in inputs {
             let input = normalize_model_input(&input)?;
-            let hash = model_hash(&input)?;
+            let hash = model_fingerprint(&input)?;
             if seen.insert(hash.clone()) {
                 models.push(LegacyModelImportEntry {
-                    existing: existing.contains(&hash),
-                    model_hash: hash,
+                    existing: existing.contains_key(&hash),
+                    model_hash: existing.get(&hash).cloned().unwrap_or(hash),
                     input,
                 });
             }
@@ -156,6 +164,7 @@ fn model_input(model: LegacyModel) -> Result<ModelConfigInput> {
     let (base_url, openai_endpoint, use_full_url) =
         legacy_request_configuration(model_type, &model.base_url, &model.openai_endpoint)?;
     Ok(ModelConfigInput {
+        supports_images: true,
         sort_order: model.sort,
         display_name: model.display_name.clone(),
         group_name: None,

@@ -1,0 +1,114 @@
+{
+  "bm25": {
+    "prepare": [
+      {
+        "chunks": 754,
+        "files": 27,
+        "ms": 3.534833,
+        "root": "$REPOQA_RUNS/final-dev/corpus/psf/black"
+      },
+      {
+        "chunks": 472,
+        "files": 54,
+        "ms": 2.886,
+        "root": "$REPOQA_RUNS/final-dev/corpus/skypjack/uvw"
+      },
+      {
+        "chunks": 394,
+        "files": 56,
+        "ms": 3.9790829999999997,
+        "root": "$REPOQA_RUNS/final-dev/corpus/square/retrofit"
+      },
+      {
+        "chunks": 234,
+        "files": 56,
+        "ms": 2.26725,
+        "root": "$REPOQA_RUNS/final-dev/corpus/axios/axios"
+      },
+      {
+        "chunks": 325,
+        "files": 11,
+        "ms": 2.363125,
+        "root": "$REPOQA_RUNS/final-dev/corpus/tokio-rs/tracing"
+      },
+      {
+        "chunks": 874,
+        "files": 65,
+        "ms": 3.277542,
+        "root": "$REPOQA_RUNS/final-dev/corpus/junegunn/fzf"
+      }
+    ],
+    "metrics": {
+      "description": {
+        "n": 60,
+        "top1": 7,
+        "top5": 17,
+        "top10": 29,
+        "p50_ms": 0.25827100000000003
+      },
+      "symbol": {
+        "n": 60,
+        "top1": 55,
+        "top5": 60,
+        "top10": 60,
+        "p50_ms": 0.00925
+      }
+    }
+  },
+  "final": {
+    "prepare": [
+      {
+        "chunks": 754,
+        "files": 27,
+        "ms": 80.09125,
+        "root": "$REPOQA_RUNS/final-dev/corpus/psf/black"
+      },
+      {
+        "chunks": 472,
+        "files": 54,
+        "ms": 76.000125,
+        "root": "$REPOQA_RUNS/final-dev/corpus/skypjack/uvw"
+      },
+      {
+        "chunks": 394,
+        "files": 56,
+        "ms": 52.889292,
+        "root": "$REPOQA_RUNS/final-dev/corpus/square/retrofit"
+      },
+      {
+        "chunks": 234,
+        "files": 56,
+        "ms": 40.113749999999996,
+        "root": "$REPOQA_RUNS/final-dev/corpus/axios/axios"
+      },
+      {
+        "chunks": 325,
+        "files": 11,
+        "ms": 37.937708,
+        "root": "$REPOQA_RUNS/final-dev/corpus/tokio-rs/tracing"
+      },
+      {
+        "chunks": 874,
+        "files": 65,
+        "ms": 134.019416,
+        "root": "$REPOQA_RUNS/final-dev/corpus/junegunn/fzf"
+      }
+    ],
+    "metrics": {
+      "description": {
+        "n": 60,
+        "top1": 7,
+        "top5": 17,
+        "top10": 30,
+        "p50_ms": 0.313625
+      },
+      "symbol": {
+        "n": 60,
+        "top1": 55,
+        "top5": 60,
+        "top10": 60,
+        "p50_ms": 0.011687
+      }
+    }
+  }
+}

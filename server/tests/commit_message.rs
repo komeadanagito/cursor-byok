@@ -41,6 +41,7 @@ async fn commit_router(
 
 fn model_input(model_id: &str) -> ModelConfigInput {
     ModelConfigInput {
+        supports_images: true,
         sort_order: 1,
         display_name: "Qwen Flash".into(),
         group_name: None,

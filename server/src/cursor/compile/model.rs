@@ -96,6 +96,7 @@ fn from_requested(
         supports_image_generation: false,
         extra_params: serde_json::json!({}),
     };
+    let mut explicit_tier = None;
     for parameter in &model.parameters {
         match parameter.id.as_str() {
             "effort" | "reasoning" => {
@@ -108,6 +109,18 @@ fn from_requested(
             "fast" if parse_bool(parameter)? => {
                 spec.latency = ModelLatency::Fast;
             }
+            "service_tier" => {
+                explicit_tier = Some(match parameter.value.as_str() {
+                    "default" => ModelLatency::DefaultTier,
+                    "priority" | "fast" => ModelLatency::Fast,
+                    "ultrafast" => ModelLatency::Ultrafast,
+                    value => {
+                        return Err(Error::Protocol(format!(
+                            "invalid Cursor service tier {value}"
+                        )))
+                    }
+                });
+            }
             "context" => {
                 spec.context_window_tokens =
                     Some(parse_token_count(&parameter.value).ok_or_else(|| {
@@ -119,6 +132,9 @@ fn from_requested(
             }
             _ => {}
         }
+    }
+    if let Some(tier) = explicit_tier {
+        spec.latency = tier;
     }
     Ok(spec)
 }
@@ -137,6 +153,24 @@ fn parse_bool(parameter: &pb::requested_model::ModelParameterValue) -> Result<bo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn requested_ultrafast_is_separate_from_effort() {
+        let requested = pb::RequestedModel {
+            model_id: "responses-model".into(),
+            parameters: [("service_tier", "ultrafast"), ("reasoning", "high")]
+                .into_iter()
+                .map(|(id, value)| pb::requested_model::ModelParameterValue {
+                    id: id.into(),
+                    value: value.into(),
+                })
+                .collect(),
+            ..Default::default()
+        };
+        let model = from_requested(&requested, None).unwrap();
+        assert_eq!(serde_json::to_value(model.latency).unwrap(), "ultrafast");
+        assert_eq!(model.reasoning.effort.as_deref(), Some("high"));
+    }
 
     #[test]
     fn ignores_unknown_cursor_model_parameters() {

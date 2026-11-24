@@ -120,6 +120,7 @@ impl Provider for AnthropicProvider {
             let mut thinking_blocks = Vec::new();
             let mut finish = None;
             let mut saw_tool = false;
+            let mut refused = false;
             let mut terminal = false;
             let mut final_usage = None::<Usage>;
             while let Some(event) = tokio::select! {
@@ -208,7 +209,9 @@ impl Provider for AnthropicProvider {
                         if let Some(usage) = value.get("usage") {
                             merge_usage(final_usage.get_or_insert_default(), anthropic_usage(usage));
                         }
-                        finish = match value.pointer("/delta/stop_reason").and_then(Value::as_str) {
+                        let reason = value.pointer("/delta/stop_reason").and_then(Value::as_str);
+                        refused |= reason == Some("refusal");
+                        finish = match reason {
                             Some("tool_use") => Some(FinishReason::ToolUse),
                             Some("max_tokens" | "model_context_window_exceeded") => Some(FinishReason::Length),
                             Some("end_turn" | "stop_sequence" | "pause_turn" | "refusal") => Some(FinishReason::Stop),
@@ -234,13 +237,7 @@ impl Provider for AnthropicProvider {
                         if let Some(usage) = final_usage {
                             yield ModelEvent::Usage(usage);
                         }
-                        let finish = match finish {
-                            Some(FinishReason::Length) => FinishReason::Length,
-                            _ if saw_tool => FinishReason::ToolUse,
-                            Some(finish) => finish,
-                            None => FinishReason::Stop,
-                        };
-                        yield ModelEvent::Done(finish);
+                        yield ModelEvent::Done(final_finish(finish, saw_tool, refused)?);
                     }
                     _ => {}
                 }
@@ -259,19 +256,34 @@ impl Provider for AnthropicProvider {
                 }
                 if let Some(usage) = final_usage { yield ModelEvent::Usage(usage); }
                 terminal = true;
-                let finish = match finish {
-                    Some(FinishReason::Length) => FinishReason::Length,
-                    _ if saw_tool => FinishReason::ToolUse,
-                    Some(finish) => finish,
-                    None => FinishReason::Stop,
-                };
-                yield ModelEvent::Done(finish);
+                yield ModelEvent::Done(final_finish(finish, saw_tool, refused)?);
             }
             if !terminal {
                 Err(Error::Provider("Anthropic stream ended without message_stop".into()))?;
             }
         })
     }
+}
+
+fn final_finish(
+    finish: Option<FinishReason>,
+    saw_tool: bool,
+    refused: bool,
+) -> Result<FinishReason> {
+    if refused {
+        return if saw_tool {
+            Err(Error::ProviderRefusal(
+                "Anthropic refused the tool turn".into(),
+            ))
+        } else {
+            Ok(FinishReason::Stop)
+        };
+    }
+    Ok(match finish {
+        Some(FinishReason::Length) => FinishReason::Length,
+        _ if saw_tool => FinishReason::ToolUse,
+        reason => reason.unwrap_or(FinishReason::Stop),
+    })
 }
 
 fn close_anthropic_block(
@@ -318,12 +330,13 @@ fn apply_model(body: &mut Value, model: &crate::model::ModelSpec) -> Result<()> 
 
 fn merge_usage(total: &mut Usage, update: Usage) {
     merge_usage_field(&mut total.input_tokens, update.input_tokens);
-    merge_usage_field(&mut total.context_input_tokens, update.context_input_tokens);
     merge_usage_field(&mut total.output_tokens, update.output_tokens);
     merge_usage_field(&mut total.total_tokens, update.total_tokens);
     merge_usage_field(&mut total.cache_read_tokens, update.cache_read_tokens);
     merge_usage_field(&mut total.cache_write_tokens, update.cache_write_tokens);
     merge_usage_field(&mut total.reasoning_tokens, update.reasoning_tokens);
+    // Cache counts and uncached input can be reported in separate SSE events.
+    total.context_input_tokens = context_input_tokens(total);
     if let Some(request_tokens) = total
         .context_input_tokens
         .zip(total.output_tokens)
@@ -355,15 +368,12 @@ fn anthropic_messages(messages: &[ProjectedMessage]) -> Result<Vec<Value>> {
                 } else {
                     Value::Array(anthropic_parts(&Role::User, &result.provider_parts)?)
                 };
-                push_anthropic(
-                    &mut output,
-                    "user",
-                    vec![json!({
-                        "type": "tool_result",
-                        "tool_use_id": result.call_id,
-                        "content": content,
-                    })],
-                );
+                let mut block =
+                    json!({"type":"tool_result", "tool_use_id":result.call_id,"content":content});
+                if result.is_error {
+                    block["is_error"] = Value::Bool(true);
+                }
+                push_anthropic(&mut output, "user", vec![block]);
             }
             ProjectedContent::Assistant {
                 text,
@@ -486,25 +496,156 @@ pub(crate) fn anthropic_usage(value: &Value) -> Usage {
     let cache_write_tokens = value
         .get("cache_creation_input_tokens")
         .and_then(Value::as_u64);
-    let context_input_tokens = input_tokens.map(|input| {
-        input
-            .saturating_add(cache_read_tokens.unwrap_or_default())
-            .saturating_add(cache_write_tokens.unwrap_or_default())
-    });
-    Usage {
+    let mut usage = Usage {
         input_tokens,
-        context_input_tokens,
         output_tokens: value.get("output_tokens").and_then(Value::as_u64),
         total_tokens: value.get("total_tokens").and_then(Value::as_u64),
         cache_read_tokens,
         cache_write_tokens,
-        reasoning_tokens: None,
-    }
+        ..Usage::default()
+    };
+    usage.context_input_tokens = context_input_tokens(&usage);
+    usage
+}
+
+fn context_input_tokens(usage: &Usage) -> Option<u64> {
+    usage.input_tokens.map(|input| {
+        input
+            .saturating_add(usage.cache_read_tokens.unwrap_or_default())
+            .saturating_add(usage.cache_write_tokens.unwrap_or_default())
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn wire_prefix_survives_a_tool_round_and_refused_tools_are_never_authorized() {
+        use crate::model::{
+            ModelRequest, ModelSpec, PromptSpec, ToolCallContent, ToolResultContent,
+        };
+        use axum::{routing::post, Json, Router};
+        use tokio_util::sync::CancellationToken;
+        let (tx, mut rx) = tokio::sync::mpsc::channel(2);
+        let app = Router::new().route("/v1/messages", post(move |Json(body): Json<Value>| {
+            let tx = tx.clone();
+            async move {
+                tx.send(body).await.unwrap();
+                let events = [
+                    json!({"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"pending","name":"Read","input":{}}}),
+                    json!({"type":"content_block_stop","index":0}),
+                    json!({"type":"message_delta","delta":{"stop_reason":"refusal"},"usage":{"output_tokens":4}}),
+                    json!({"type":"message_stop"}),
+                ];
+                ([("content-type","text/event-stream")], events.iter().map(|event| format!("data: {event}\n\n")).collect::<String>())
+            }
+        }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}/v1/messages", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let provider = AnthropicProvider::new(
+            reqwest::Client::builder().no_proxy().build().unwrap(),
+            ProviderConfig {
+                kind: crate::config::ProviderKind::Anthropic,
+                request_url: url,
+                api_key: "test".into(),
+                custom_headers: Default::default(),
+                max_output_tokens: Some(512),
+                request_timeout: std::time::Duration::from_secs(2),
+                allowed_body_fields: None,
+            },
+        );
+        let mut invocation = ModelInvocation {
+            call_id: "call".into(),
+            run_id: "run".into(),
+            conversation_id: "thread".into(),
+            provider_call_index: 0,
+            request: ModelRequest {
+                model: ModelSpec::new("fixture"),
+                prompt: PromptSpec {
+                    instructions: "system".into(),
+                    tools: vec![crate::model::ToolDefinition {
+                        name: "Read".into(),
+                        description: "Read test fixtures".into(),
+                        parameters: json!({"type":"object"}),
+                    }],
+                },
+                history: vec![ProjectedMessage {
+                    message_id: "u".into(),
+                    role: Role::User,
+                    content: ProjectedContent::Parts(vec![ContentPart::Text {
+                        text: "read two fixtures".into(),
+                    }]),
+                }],
+            },
+        };
+        let cancellation = CancellationToken::new();
+        let first = provider
+            .stream(invocation.clone(), cancellation.clone())
+            .collect::<Vec<_>>()
+            .await;
+        let calls = ["ok", "failed"]
+            .iter()
+            .enumerate()
+            .map(|(index, id)| ToolCallContent {
+                index,
+                call_id: (*id).into(),
+                name: "Read".into(),
+                arguments: json!({"path":"file"}),
+            })
+            .collect();
+        invocation.request.history.push(ProjectedMessage {
+            message_id: "a".into(),
+            role: Role::Assistant,
+            content: ProjectedContent::Assistant {
+                text: String::new(),
+                thinking: String::new(),
+                replay_state: None,
+                calls,
+            },
+        });
+        for id in ["ok", "failed"] {
+            invocation.request.history.push(ProjectedMessage {
+                message_id: id.into(),
+                role: Role::Tool,
+                content: ProjectedContent::ToolResult(ToolResultContent {
+                    call_id: id.into(),
+                    name: "Read".into(),
+                    content: id.into(),
+                    is_error: id == "failed",
+                    image: None,
+                    provider_parts: Vec::new(),
+                }),
+            });
+        }
+        let (tx_events, _rx_events) = tokio::sync::mpsc::channel(16);
+        let failure = crate::run::consume_model_cycle(
+            provider.stream(invocation, cancellation.clone()),
+            &tx_events,
+            &cancellation,
+        )
+        .await;
+        let mut before = rx.recv().await.unwrap();
+        let after = rx.recv().await.unwrap();
+        before["messages"][0]["content"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("cache_control");
+        assert_eq!(before["messages"][0], after["messages"][0]);
+        assert_eq!(before["system"], after["system"]);
+        assert_eq!(before["tools"], after["tools"]);
+        assert_eq!(after["messages"][2]["content"][0]["tool_use_id"], "ok");
+        assert_eq!(after["messages"][2]["content"][1]["tool_use_id"], "failed");
+        assert_eq!(after["messages"][2]["content"][1]["is_error"], true);
+        assert!(!first
+            .iter()
+            .any(|e| matches!(e, Ok(ModelEvent::Done(FinishReason::ToolUse)))));
+        let failure = failure.expect_err("An Anthropic refusal must not authorize buffered tools");
+        assert!(!failure.retryable);
+        assert_eq!(failure.usage.unwrap().output_tokens, Some(4));
+        server.abort();
+    }
 
     #[test]
     fn cached_tokens_are_included_once_in_anthropic_context_input() {
@@ -518,6 +659,23 @@ mod tests {
         assert_eq!(usage.input_tokens, Some(10));
         assert_eq!(usage.context_input_tokens, Some(60));
         assert_eq!(usage.output_tokens, Some(5));
+    }
+
+    #[test]
+    fn split_usage_events_count_cache_reads_and_writes_in_the_request_total() {
+        let mut usage = Usage::default();
+        merge_usage(
+            &mut usage,
+            anthropic_usage(&json!({"input_tokens": 100, "output_tokens": 0})),
+        );
+        merge_usage(
+            &mut usage,
+            anthropic_usage(
+                &json!({"cache_read_input_tokens": 9500, "cache_creation_input_tokens": 400, "output_tokens": 17}),
+            ),
+        );
+        assert_eq!(usage.context_input_tokens, Some(10_000));
+        assert_eq!(usage.total_tokens, Some(10_017));
     }
 
     #[test]

@@ -14,7 +14,7 @@ use crate::{
             codec, compat,
             runtime::CursorToolRuntime,
             tool_call_result::{tool_result_channel, ToolResultReceiver, ToolResultSender},
-            ClientToolEvent, ToolDispatcher,
+            ToolDispatcher,
         },
         transport::{OrderedInbox, TransportHandle},
     },
@@ -351,10 +351,14 @@ impl ConversationRuntime {
                                         };
                                         match generation.tools.interaction_response(&message).await
                                         {
-                                            Ok(ClientToolEvent::Completed(completion)) => {
-                                                generation.results.send(*completion)
+                                            Ok(dispatched) => {
+                                                for message in &dispatched.messages {
+                                                    let _ = handle.emit(message);
+                                                }
+                                                if let Some(completion) = dispatched.completion {
+                                                    generation.results.send(completion);
+                                                }
                                             }
-                                            Ok(ClientToolEvent::Pending) => {}
                                             Err(error) => generation.results.send_error(error),
                                         }
                                     }
@@ -688,6 +692,7 @@ fn spawn_run_request(
                         event_id,
                         target_run_id: None,
                         messages: prepared.initial_messages.clone(),
+                        finished_subagents: context.finished_subagents.clone(),
                         delivery: MessageDelivery::InsertMessages,
                     },
                 )
@@ -737,10 +742,12 @@ fn spawn_run_request(
         }
         let pending = registry.take_pending(&prepared.conversation_id).await;
         if !pending.is_empty() {
-            let mut messages = pending
-                .into_iter()
-                .flat_map(|pending| pending.messages)
-                .collect::<Vec<_>>();
+            let completions = checkpoint.subagent_completions();
+            let mut messages = Vec::new();
+            for pending in pending {
+                completions.extend(pending.finished_subagents);
+                messages.extend(pending.messages);
+            }
             messages.extend(prepared.initial_messages);
             prepared.initial_messages = messages;
             if let Ok(checkpoint) = dependencies
@@ -765,10 +772,19 @@ fn spawn_run_request(
             return;
         }
         registry
-            .activate(conversation_id.clone(), run_id.clone(), run_handle.clone())
+            .activate(
+                conversation_id.clone(),
+                run_id.clone(),
+                run_handle.clone(),
+                checkpoint.subagent_completions(),
+            )
             .await;
         let cancellation = run_handle.cancellation();
-        let engine = RunEngine::new(dependencies.store.clone(), dependencies.provider.clone());
+        let engine = RunEngine::new(dependencies.store.clone(), dependencies.provider.clone())
+            .with_image_readers(
+                dependencies.plugins.clone(),
+                handle.image_reader.get().cloned(),
+            );
         let core_run = tokio::spawn(async move { engine.run(prepared, port, cancellation).await });
         let output = ConversationOutput::new(
             handle.clone(),

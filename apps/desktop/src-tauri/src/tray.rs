@@ -18,8 +18,17 @@ pub fn create(app: &mut App) -> tauri::Result<()> {
     let quit = MenuItem::with_id(app, QUIT_MENU_ID, "退出", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &separator, &quit])?;
 
-    TrayIconBuilder::with_id("main")
-        .icon(tauri::include_image!("./icons/32x32.png"))
+    // macOS draws template images in the menu bar's own ink (white on a dark
+    // bar, black on a light one); Windows and Linux trays have no such mode and
+    // keep the colored app icon.
+    #[cfg(target_os = "macos")]
+    let builder = TrayIconBuilder::with_id("main")
+        .icon(tauri::include_image!("./icons/tray-template.png"))
+        .icon_as_template(true);
+    #[cfg(not(target_os = "macos"))]
+    let builder = TrayIconBuilder::with_id("main").icon(tauri::include_image!("./icons/32x32.png"));
+
+    builder
         .tooltip("Cursor BYOK")
         .menu(&menu)
         .show_menu_on_left_click(cfg!(target_os = "macos"))

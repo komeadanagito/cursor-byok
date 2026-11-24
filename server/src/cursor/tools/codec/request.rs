@@ -89,27 +89,7 @@ pub fn request(id: u32, call: &ToolCall, context: &ExecContext) -> Result<pb::Ag
             path: string_aliased(&["path", "file_path", "filePath"])?,
             tool_call_id: call.call_id.clone(),
         }),
-        "grep" => Message::GrepArgs(pb::GrepArgs {
-            pattern: string("pattern")?,
-            path: optional_string("path"),
-            glob: optional_string("glob"),
-            output_mode: optional_string("output_mode"),
-            context_before: int("-B"),
-            context_after: int("-A"),
-            context: int("-C"),
-            case_insensitive: call.arguments.get("-i").and_then(Value::as_bool),
-            r#type: optional_string("type"),
-            head_limit: int("head_limit"),
-            multiline: call.arguments.get("multiline").and_then(Value::as_bool),
-            sort: optional_string("sort"),
-            sort_ascending: call
-                .arguments
-                .get("sort_ascending")
-                .and_then(Value::as_bool),
-            tool_call_id: call.call_id.clone(),
-            sandbox_policy: None,
-            offset: int("offset"),
-        }),
+        "grep" => Message::GrepArgs(grep_args(call)?),
         "glob" => Message::GrepArgs(pb::GrepArgs {
             pattern: String::new(),
             path: optional_string("target_directory"),
@@ -189,6 +169,49 @@ pub fn request(id: u32, call: &ToolCall, context: &ExecContext) -> Result<pb::Ag
         message,
         accept_hook_additional_contexts,
     ))
+}
+
+pub(super) fn grep_args(call: &ToolCall) -> Result<pb::GrepArgs> {
+    let string = |key: &str| {
+        call.arguments
+            .get(key)
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+    };
+    let boolean = |key: &str| call.arguments.get(key).and_then(Value::as_bool);
+    let count = |key: &str| -> Result<Option<i32>> {
+        call.arguments
+            .get(key)
+            .map(|value| {
+                value
+                    .as_f64()
+                    .filter(|n| n.fract() == 0.0 && (0.0..=f64::from(i32::MAX)).contains(n))
+                    .map(|n| n as i32)
+                    .ok_or_else(|| {
+                        Error::Protocol(format!("Grep {key} must be a non-negative 32-bit integer"))
+                    })
+            })
+            .transpose()
+    };
+    Ok(pb::GrepArgs {
+        pattern: string("pattern")
+            .ok_or_else(|| Error::Protocol("Grep is missing pattern".into()))?,
+        path: string("path"),
+        glob: string("glob"),
+        output_mode: string("output_mode"),
+        context_before: count("-B")?,
+        context_after: count("-A")?,
+        context: count("-C")?,
+        case_insensitive: boolean("-i"),
+        r#type: string("type"),
+        head_limit: count("head_limit")?,
+        multiline: boolean("multiline"),
+        sort: string("sort"),
+        sort_ascending: boolean("sort_ascending"),
+        tool_call_id: call.call_id.clone(),
+        sandbox_policy: None,
+        offset: count("offset")?,
+    })
 }
 
 pub(crate) fn edit_read_request(id: u32, call: &ToolCall) -> Result<pb::AgentServerMessage> {
@@ -541,6 +564,40 @@ mod tests {
     use crate::cursor::protocol::proto::agent::v1 as pb;
     use crate::cursor::tools::runtime::ExecContext;
     use crate::model::ToolCall;
+
+    #[test]
+    fn grep_card_and_exec_report_the_same_checked_search_parameters() {
+        let mut call = ToolCall {
+            index: 0,
+            call_id: "grep-1".into(),
+            model_call_id: "model".into(),
+            name: "Grep".into(),
+            arguments_text: String::new(),
+            argument_error: None,
+            arguments: json!({"pattern":"thing", "-i":true, "-C":4, "head_limit":10.0,"offset":20,"multiline":true,"output_mode":"content"}),
+        };
+        let message = request(1, &call, &ExecContext::default()).unwrap();
+        let Some(pb::agent_server_message::Message::ExecServerMessage(exec)) = message.message
+        else {
+            panic!("expected Exec")
+        };
+        let Some(pb::exec_server_message::Message::GrepArgs(args)) = exec.message else {
+            panic!("expected Grep")
+        };
+        let card = super::super::render_tool_call(&call, false).unwrap();
+        let Some(pb::tool_call::Tool::GrepToolCall(card)) = card.tool else {
+            panic!("expected Grep card")
+        };
+        assert_eq!(args.head_limit, Some(10));
+        assert_eq!(args.context, Some(4));
+        assert_eq!(args.offset, Some(20));
+        assert_eq!(args.case_insensitive, Some(true));
+        assert_eq!(Some(args), card.args);
+        call.arguments["head_limit"] = json!(2.5);
+        assert!(request(1, &call, &ExecContext::default()).is_err());
+        call.arguments["head_limit"] = json!(2147483648_i64);
+        assert!(request(1, &call, &ExecContext::default()).is_err());
+    }
 
     #[test]
     fn bash_is_encoded_as_a_shell_exec_request() {

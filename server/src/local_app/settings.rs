@@ -75,18 +75,6 @@ pub fn write_proxy_settings(proxy_url: &str) -> Result<()> {
     write(&settings)
 }
 
-pub fn clear_proxy_settings() -> Result<()> {
-    let mut settings = read()?;
-    let before = settings.len();
-    for key in KEYS {
-        settings.remove(key);
-    }
-    if settings.len() != before {
-        write(&settings)?;
-    }
-    Ok(())
-}
-
 pub fn settings_match(proxy_url: &str) -> Result<bool> {
     let settings = read()?;
     Ok(
@@ -99,20 +87,66 @@ pub fn settings_match(proxy_url: &str) -> Result<bool> {
     )
 }
 
-pub fn clear_stale_managed_settings() -> Result<()> {
-    let settings = read()?;
-    let managed_signature = settings.get(KEYS[2]) == Some(&Value::String("on".into()))
-        && settings.get(KEYS[3]) == Some(&Value::Bool(true))
-        && settings.get(KEYS[4]) == Some(&Value::Bool(true))
-        && settings.get(KEYS[5]) == Some(&Value::String(REMOTE_INFERENCE_ROUTE.into()));
-    let loopback = settings
-        .get(KEYS[0])
-        .and_then(Value::as_str)
-        .and_then(|value| value.parse::<reqwest::Url>().ok())
-        .and_then(|url| url.host_str().map(str::to_owned))
-        .is_some_and(|host| matches!(host.as_str(), "127.0.0.1" | "localhost" | "::1"));
-    if managed_signature && loopback {
-        clear_proxy_settings()?;
+pub fn clear_stale_managed_settings(port: u16) -> Result<()> {
+    let mut settings = read()?;
+    if remove_managed(&mut settings, port) {
+        write(&settings)?;
     }
     Ok(())
+}
+
+fn remove_managed(settings: &mut BTreeMap<String, Value>, port: u16) -> bool {
+    let url = Value::String(format!("http://127.0.0.1:{port}"));
+    if port == 0 || settings.get(KEYS[1]) != Some(&url) || settings.get(KEYS[0]) != Some(&url) {
+        return false;
+    }
+    settings.remove(KEYS[0]);
+    settings.remove(KEYS[1]);
+    for (key, expected) in [
+        (KEYS[2], Value::String("on".into())),
+        (KEYS[3], Value::Bool(true)),
+        (KEYS[4], Value::Bool(true)),
+        (KEYS[5], Value::String(REMOTE_INFERENCE_ROUTE.into())),
+    ] {
+        if settings.get(key) == Some(&expected) {
+            settings.remove(key);
+        }
+    }
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disconnect_removes_the_owned_loopback_proxy_even_if_the_route_was_changed() {
+        let url = Value::String("http://127.0.0.1:12345".into());
+        let mut settings = BTreeMap::from([
+            (KEYS[0].into(), url.clone()),
+            (KEYS[1].into(), url),
+            (KEYS[5].into(), Value::String("never".into())),
+        ]);
+        assert!(remove_managed(&mut settings, 12345));
+        assert!(!settings.contains_key(KEYS[0]));
+        assert_eq!(settings[KEYS[5]], "never");
+        let mut other = BTreeMap::from([(
+            KEYS[0].into(),
+            Value::String("http://127.0.0.1:8080".into()),
+        )]);
+        assert!(!remove_managed(&mut other, 12345));
+        assert!(other.contains_key(KEYS[0]));
+    }
+
+    #[test]
+    fn disconnect_preserves_matching_urls_owned_by_another_proxy() {
+        let other_url = Value::String("http://127.0.0.1:8080".into());
+        let mut settings = BTreeMap::from([
+            (KEYS[0].into(), other_url.clone()),
+            (KEYS[1].into(), other_url),
+        ]);
+        let original = settings.clone();
+        assert!(!remove_managed(&mut settings, 12345));
+        assert_eq!(settings, original);
+    }
 }

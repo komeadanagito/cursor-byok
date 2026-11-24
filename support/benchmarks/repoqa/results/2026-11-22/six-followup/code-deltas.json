@@ -1,0 +1,85 @@
+{
+  "full24": {
+    "A": [
+      8,
+      11,
+      15
+    ],
+    "B": [
+      8,
+      12,
+      17
+    ],
+    "questions": 24,
+    "gained": 2,
+    "lost": 0,
+    "per_repo_delta": {
+      "react": 2,
+      "vuejs": 0
+    },
+    "cluster_bootstrap_mean_delta_bounds": [
+      0,
+      0.16666666666666666
+    ]
+  },
+  "first12": {
+    "A": [
+      8,
+      27,
+      61
+    ],
+    "B": [
+      8,
+      27,
+      70
+    ],
+    "questions": 120,
+    "gained": 9,
+    "lost": 0,
+    "per_repo_delta": {
+      "python-poetry/poetry": 1,
+      "locustio/locust": 0,
+      "ClickHouse/clickhouse-cpp": 1,
+      "polybar/polybar": 2,
+      "karatelabs/karate": 0,
+      "Password4j/password4j": 1,
+      "xenova/transformers.js": 1,
+      "date-fns/date-fns": 0,
+      "helix-editor/helix": 0,
+      "rust-lang/cargo": 2,
+      "fatedier/frp": 1,
+      "nsqio/nsq": 0
+    },
+    "cluster_bootstrap_mean_delta_bounds": [
+      0.03333333333333333,
+      0.11666666666666667
+    ]
+  },
+  "sealed6": {
+    "A": [
+      5,
+      13,
+      30
+    ],
+    "B": [
+      5,
+      14,
+      37
+    ],
+    "questions": 60,
+    "gained": 8,
+    "lost": 1,
+    "per_repo_delta": {
+      "pyg-team/pytorch_geometric": 1,
+      "drogonframework/drogon": 1,
+      "GoogleContainerTools/jib": 1,
+      "langchain-ai/langchainjs": 2,
+      "cloudflare/pingora": 0,
+      "projectdiscovery/nuclei": 2
+    },
+    "cluster_bootstrap_mean_delta_bounds": [
+      0.06666666666666667,
+      0.16666666666666669
+    ]
+  }
+}

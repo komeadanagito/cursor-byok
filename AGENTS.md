@@ -68,10 +68,10 @@ cargo test --workspace --all-targets
 npm --prefix apps/desktop run check
 ```
 
-For changes under `server/plugins/`, also run the plugin's own tests:
+For changes under a plugin directory, also run that plugin's own tests:
 
 ```bash
-cd server/plugins/build-in/<plugin> && deno test --allow-all
+cd <plugin directory> && deno test --allow-all
 ```
 
 Storage work additionally needs a measurement on a real database copy, before and after — row counts and file size, not just green tests.

@@ -244,7 +244,7 @@ fn wire_content(content: &ProjectedContent, model: &str) -> Result<Value> {
             "toolCallId": result.call_id,
             "toolName": result.name,
             "result": result.content,
-            "experimental_content": [{"type":"text", "text":result.content}],
+            "experimental_content": if result.provider_parts.is_empty() {json!([{"type":"text", "text":result.content}])} else {wire_content(&ProjectedContent::Parts(result.provider_parts.clone()), model)?},
             "isError": result.is_error,
         }]),
     })

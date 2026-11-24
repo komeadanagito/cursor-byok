@@ -13,3 +13,6 @@ pub(crate) use break_messages::{
     compile_injection, compile_user_message_action, user_message_id, RuntimeAction,
 };
 pub use run::*;
+
+#[cfg(test)]
+pub(super) use model::requested_model;

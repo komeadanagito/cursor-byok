@@ -12,6 +12,8 @@ export type ModelSelectOption = {
   group: string;
   icon?: IconProps["icon"];
   iconSrc?: string;
+  /** A monochrome logo drawn in the text color; wins over `icon`. */
+  iconMask?: string | null;
 };
 
 type ModelSelectProps = {
@@ -224,7 +226,7 @@ export function ModelSelect(props: ModelSelectProps) {
                 {selected.has(item.option.value) && <Icon icon={checkIcon} size="0.875em" />}
               </span>
               <span className={styles.option}>
-                {(item.option.icon || item.option.iconSrc) && <Icon icon={item.option.icon} src={item.option.iconSrc} />}
+                {(item.option.icon || item.option.iconSrc || item.option.iconMask) && <Icon icon={item.option.icon} src={item.option.iconSrc} mask={item.option.iconMask} />}
                 <span>{item.option.label}</span>
               </span>
             </label>}</VirtualList></div>

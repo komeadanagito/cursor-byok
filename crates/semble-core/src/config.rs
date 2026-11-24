@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 /// Current persisted snapshot format. Incompatible changes must bump this value.
-pub const INDEX_FORMAT_VERSION: u32 = 7;
+pub const INDEX_FORMAT_VERSION: u32 = 11;
 
 /// Search and persistence settings shared by every indexed repository.
 #[derive(Clone, Debug)]

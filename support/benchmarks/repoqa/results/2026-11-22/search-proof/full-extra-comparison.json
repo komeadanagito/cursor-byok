@@ -1,0 +1,110 @@
+{
+  "bm25": {
+    "prepare": [
+      {
+        "chunks": 679,
+        "files": 39,
+        "ms": 4.777375,
+        "root": "$EXTRA_REPOS/requests"
+      },
+      {
+        "chunks": 1490,
+        "files": 226,
+        "ms": 6.644166,
+        "root": "$EXTRA_REPOS/axios"
+      },
+      {
+        "chunks": 4005,
+        "files": 402,
+        "ms": 7.964707999999999,
+        "root": "$EXTRA_REPOS/zod"
+      },
+      {
+        "chunks": 2330,
+        "files": 308,
+        "ms": 8.518208,
+        "root": "$EXTRA_REPOS/axum"
+      }
+    ],
+    "quality_by_repo": {
+      "requests": {
+        "top1": 15,
+        "top5": 20,
+        "top10": 20,
+        "total": 20
+      },
+      "axios": {
+        "top1": 11,
+        "top5": 17,
+        "top10": 19,
+        "total": 20
+      },
+      "zod": {
+        "top1": 0,
+        "top5": 6,
+        "top10": 11,
+        "total": 20
+      },
+      "axum": {
+        "top1": 4,
+        "top5": 10,
+        "top10": 14,
+        "total": 20
+      }
+    }
+  },
+  "final": {
+    "prepare": [
+      {
+        "chunks": 679,
+        "files": 39,
+        "ms": 4.336125,
+        "root": "$EXTRA_REPOS/requests"
+      },
+      {
+        "chunks": 1490,
+        "files": 226,
+        "ms": 3.124042,
+        "root": "$EXTRA_REPOS/axios"
+      },
+      {
+        "chunks": 4005,
+        "files": 402,
+        "ms": 6.852874999999999,
+        "root": "$EXTRA_REPOS/zod"
+      },
+      {
+        "chunks": 2330,
+        "files": 308,
+        "ms": 7.397709,
+        "root": "$EXTRA_REPOS/axum"
+      }
+    ],
+    "quality_by_repo": {
+      "requests": {
+        "top1": 15,
+        "top5": 20,
+        "top10": 20,
+        "total": 20
+      },
+      "axios": {
+        "top1": 11,
+        "top5": 17,
+        "top10": 19,
+        "total": 20
+      },
+      "zod": {
+        "top1": 0,
+        "top5": 6,
+        "top10": 11,
+        "total": 20
+      },
+      "axum": {
+        "top1": 4,
+        "top5": 10,
+        "top10": 14,
+        "total": 20
+      }
+    }
+  }
+}

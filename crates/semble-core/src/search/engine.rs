@@ -88,6 +88,33 @@ impl SearchEngine {
         let index = self
             .repository
             .load_for_search(&root, &identity, &content)?;
+        if let Some(locations) = index.declarations.get(request.query.trim()) {
+            let results = locations
+                .iter()
+                .take(request.top_k)
+                .map(|location| {
+                    let file_path = &index.metadata.files[location.file].path;
+                    let start = location.span.start;
+                    let end = location.span.end;
+                    Ok(SearchResult {
+                        file_path: file_path.clone(),
+                        start_line: start,
+                        end_line: end,
+                        score: 1.0,
+                        content: source_span(
+                            &root.join(file_path),
+                            start,
+                            end,
+                            request.max_snippet_lines,
+                        )?,
+                    })
+                })
+                .collect::<Result<_>>()?;
+            return Ok(SearchResponse {
+                query: request.query,
+                results,
+            });
+        }
         if !request.query.contains(char::is_whitespace) {
             let exact = index
                 .lexical
@@ -121,7 +148,25 @@ impl SearchEngine {
         } else {
             NATURAL_LANGUAGE_SEMANTIC_WEIGHT
         };
-        let fused = rrf::fuse(&semantic, &lexical_ranking, semantic_weight);
+        let mut fused = rrf::fuse(&semantic, &lexical_ranking, semantic_weight);
+        let literal_query = is_literal_query(&request.query);
+        if !symbol_query && !literal_query {
+            let declarations = fused
+                .iter()
+                .filter_map(|(&chunk, &score)| {
+                    index.function_anchors[chunk].map(|declaration| (chunk, declaration, score))
+                })
+                .collect::<Vec<_>>();
+            for (chunk, declaration, score) in declarations {
+                // An attached comment describes the implementation; unlike a body chunk,
+                // it cannot itself show the implementation in a returned snippet.
+                if chunk < declaration {
+                    fused.remove(&chunk);
+                }
+                let current = fused.entry(declaration).or_default();
+                *current = current.max(score);
+            }
+        }
         let definitions = if !symbol_query {
             index
                 .lexical
@@ -129,7 +174,7 @@ impl SearchEngine {
         } else {
             Vec::new()
         };
-        let strong_lexical = if symbol_query || !is_literal_query(&request.query) {
+        let strong_lexical = if symbol_query || !literal_query {
             Vec::new()
         } else {
             strong_lexical_matches(
@@ -143,7 +188,13 @@ impl SearchEngine {
         let ranked = prioritize_evidence(
             strong_lexical,
             definitions,
-            rerank(fused, &index.chunks, &request.query, request.top_k),
+            rerank(
+                fused,
+                &index.chunks,
+                &index.function_anchors,
+                &request.query,
+                request.top_k,
+            ),
             request.top_k,
         );
         response(
@@ -436,12 +487,17 @@ fn rank_scores(scores: &[f32], limit: usize, exclude_zero: bool) -> Vec<usize> {
     let mut indices = (0..scores.len())
         .filter(|index| !exclude_zero || scores[*index] > 0.0)
         .collect::<Vec<_>>();
-    indices.sort_by(|left, right| {
+    let order = |left: &usize, right: &usize| {
         scores[*right]
             .total_cmp(&scores[*left])
             .then_with(|| left.cmp(right))
-    });
-    indices.truncate(limit.min(indices.len()));
+    };
+    if limit < indices.len() {
+        // Rank only the requested prefix; exact ties still use source order.
+        indices.select_nth_unstable_by(limit, order);
+        indices.truncate(limit);
+    }
+    indices.sort_unstable_by(order);
     indices
 }
 
@@ -499,14 +555,30 @@ fn chunk_content(
     if !chunk.content.is_empty() {
         return Ok(snippet(&chunk.content, lines));
     }
-    let path = root.join(&chunk.file_path);
-    let source = std::fs::read_to_string(&path).map_err(|error| Error::io(&path, error))?;
-    let available = chunk.end_line.saturating_sub(chunk.start_line) + 1;
+    source_span(
+        &root.join(&chunk.file_path),
+        chunk.start_line,
+        chunk.end_line,
+        lines,
+    )
+}
+
+fn source_span(
+    path: &Path,
+    start: usize,
+    end: usize,
+    lines: Option<usize>,
+) -> Result<Option<String>> {
+    if lines == Some(0) {
+        return Ok(None);
+    }
+    let source = std::fs::read_to_string(path).map_err(|error| Error::io(path, error))?;
+    let available = end.saturating_sub(start) + 1;
     let limit = lines.unwrap_or(available).min(available);
     Ok(Some(
         source
             .lines()
-            .skip(chunk.start_line.saturating_sub(1))
+            .skip(start.saturating_sub(1))
             .take(limit)
             .collect::<Vec<_>>()
             .join("\n"),
@@ -641,6 +713,76 @@ mod tests {
             .results
             .iter()
             .any(|result| result.file_path == "src/definitions.rs"));
+    }
+
+    #[test]
+    fn qualified_methods_resolve_to_their_own_declarations_after_reopening() {
+        let (source, cache, engine) = fixture();
+        fs::write(
+            source.path().join("src/workers.ts"),
+            "export class AReporter {\n  run() { return 'report'; }\n}\n\nexport class ZWorker {\n  run() { return 'work'; }\n}\n",
+        )
+        .unwrap();
+        fs::write(
+            source.path().join("src/callers.ts"),
+            "// ZWorker.run AReporter.run\nexport const description = 'ZWorker.run';\n",
+        )
+        .unwrap();
+        engine.prepare(source.path(), &[ContentType::Code]).unwrap();
+        drop(engine);
+        let reopened =
+            SearchEngine::with_embedder(SembleConfig::new(cache.path()), Arc::new(KeywordEmbedder));
+
+        for (query, line, snippet) in [
+            ("ZWorker.run", 6, "  run() { return 'work'; }"),
+            ("AReporter.run", 2, "  run() { return 'report'; }"),
+        ] {
+            let response = reopened
+                .search(SearchRequest::new(query, source.path()))
+                .unwrap();
+            let locations: Vec<_> = response
+                .results
+                .iter()
+                .map(|hit| {
+                    (
+                        hit.file_path.as_str(),
+                        hit.start_line,
+                        hit.end_line,
+                        hit.content.as_deref(),
+                    )
+                })
+                .collect();
+            assert_eq!(locations, [("src/workers.ts", line, line, Some(snippet))]);
+        }
+    }
+
+    #[test]
+    fn qualified_declarations_keep_scope_and_do_not_hide_same_names_in_other_files() {
+        let (source, _cache, engine) = fixture();
+        fs::write(
+            source.path().join("src/first.py"),
+            "class Outer:\n    class Runner:\n        @staticmethod\n        def run():\n            return 1\n",
+        )
+        .unwrap();
+        fs::write(
+            source.path().join("src/second.py"),
+            "class Outer:\n    class Runner:\n        def run(self):\n            return 2\n",
+        )
+        .unwrap();
+        fs::write(
+            source.path().join("src/decoy.py"),
+            "class Runner:\n    def run(self):\n        return 3\n",
+        )
+        .unwrap();
+        let response = engine
+            .search(SearchRequest::new("Outer.Runner.run", source.path()))
+            .unwrap();
+        let locations: Vec<_> = response
+            .results
+            .iter()
+            .map(|hit| (hit.file_path.as_str(), hit.start_line, hit.end_line))
+            .collect();
+        assert_eq!(locations, [("src/first.py", 4, 5), ("src/second.py", 3, 4)]);
     }
 
     #[test]
@@ -794,6 +936,130 @@ mod tests {
             .unwrap();
         assert_eq!(response.results.len(), 1);
         assert_ne!(response.results[0].file_path, "src/auth.rs");
+    }
+
+    #[test]
+    fn a_documented_behavior_returns_its_implementation_among_the_first_two_snippets() {
+        let source = tempfile::tempdir().unwrap();
+        let cache = tempfile::tempdir().unwrap();
+        let prose =
+            "/** A dormant lease is renewed before its holder can spend the reserved balance. */";
+        fs::write(
+            source.path().join("ledger.ts"),
+            format!(
+                "{prose}\nexport function apply(entry: Entry) {{ return entry.transfer(); }}\n"
+            ),
+        )
+        .unwrap();
+        fs::write(source.path().join("notes.ts"), format!("{prose}\n")).unwrap();
+        let mut config = SembleConfig::new(cache.path());
+        config.desired_chunk_bytes = 60;
+        for engine in [
+            SearchEngine::with_embedder(config.clone(), Arc::new(KeywordEmbedder)),
+            SearchEngine::with_embedder(config, Arc::new(KeywordEmbedder)),
+        ] {
+            let mut request = SearchRequest::new(
+                "where is a dormant lease renewed before spending a reserved balance",
+                source.path(),
+            );
+            request.top_k = 2;
+            let hits = engine.search(request).unwrap().results;
+            assert!(
+                hits.iter().any(|r| r.file_path == "ledger.ts"
+                    && r.content.as_deref().unwrap().contains("function apply")),
+                "only found {:?}",
+                hits.iter()
+                    .map(|r| (&r.file_path, r.start_line, r.end_line))
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn natural_language_can_find_a_declaration_from_a_split_function_body() {
+        let source = tempfile::tempdir().unwrap();
+        let cache = tempfile::tempdir().unwrap();
+        fs::write(
+            source.path().join("pipeline.rs"),
+            concat!(
+                "fn execute_pipeline() {\n",
+                "    let state = read_input();\n",
+                "    let token = read_token();\n",
+                "    let result = enforce_authentication_policy(token);\n",
+                "    complete(state, result);\n",
+                "}\n",
+                "fn unrelated() { publish_metric(); }\n",
+            ),
+        )
+        .unwrap();
+        let mut config = SembleConfig::new(cache.path());
+        config.desired_chunk_bytes = 65;
+        for engine in [
+            SearchEngine::with_embedder(config.clone(), Arc::new(KeywordEmbedder)),
+            SearchEngine::with_embedder(config, Arc::new(KeywordEmbedder)),
+        ] {
+            let mut request = SearchRequest::new(
+                "where does the authentication policy take effect",
+                source.path(),
+            );
+            request.top_k = 1;
+            let results = engine.search(request).unwrap().results;
+            assert_eq!(results[0].start_line, 1);
+            assert!(results[0]
+                .content
+                .as_deref()
+                .unwrap()
+                .contains("fn execute_pipeline"));
+        }
+    }
+
+    #[test]
+    fn exact_lookup_finds_typed_definitions_before_unrelated_mentions() {
+        let (source, _cache, engine) = fixture();
+        let cases = [
+            ("src/reader.h", "extract_frame", "template<typename T>\nT& extract_frame(T& frame) { return frame; }\n"),
+            ("src/Decoder.java", "decodeFrame", "class Decoder {\n  public byte[] decodeFrame(byte[] buffer) { return buffer; }\n}\n"),
+            ("src/decoder.go", "ReadFrame", "package file\nfunc (d *Decoder) ReadFrame(buffer []byte) []byte { return buffer }\n"),
+        ];
+        for (path, symbol, contents) in cases {
+            fs::write(source.path().join(path), contents).unwrap();
+            fs::write(
+                source.path().join(format!("src/{symbol}_references.rs")),
+                format!("fn references() {{\n    {symbol}();\n}}\n"),
+            )
+            .unwrap();
+        }
+        for (path, symbol, _) in cases {
+            let mut request = SearchRequest::new(symbol, source.path());
+            request.top_k = 1;
+            let hits = engine.search(request).unwrap().results;
+            assert_eq!(
+                hits[0].file_path, path,
+                "{symbol} must match its definition, not a mention"
+            );
+            assert!(
+                hits[0].score >= 1.0,
+                "{symbol} must be in the definition index"
+            );
+            assert!(hits[0].start_line <= 2 && hits[0].end_line >= 2);
+        }
+    }
+
+    #[test]
+    fn top_k_preserves_full_ranking_order_at_ties_and_zero_boundaries() {
+        let scores = [0.0, 2.0, 1.0, 2.0, -4.0, 2.0, 1.0];
+        let positive = [1, 3, 5, 2, 6];
+        let all = [1, 3, 5, 2, 6, 0, 4];
+        for limit in 0..=scores.len() + 1 {
+            assert_eq!(
+                rank_scores(&scores, limit, false),
+                all[..limit.min(all.len())]
+            );
+            assert_eq!(
+                rank_scores(&scores, limit, true),
+                positive[..limit.min(positive.len())]
+            );
+        }
     }
 
     #[test]

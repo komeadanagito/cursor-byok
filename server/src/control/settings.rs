@@ -3,14 +3,13 @@ use crate::Result;
 use axum::{
     extract::State,
     http::{header, HeaderMap},
-    Json,
+    Extension, Json,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::store::{
     CommitPromptLocale, CommitSettings, DesktopSettings, ExternalApiSettings, PortSettings,
     ProxySettings, ProxySettingsInput, StatisticsStorage, StatisticsStorageScope, TabSettings,
-    TokenPricingSettings,
 };
 
 use super::{ControlService, ObservabilitySettings};
@@ -37,17 +36,32 @@ pub async fn update_ports(
     Ok(Json(service.set_ports(settings).await?))
 }
 
+#[derive(Serialize)]
+pub struct ExternalApiView {
+    #[serde(flatten)]
+    settings: ExternalApiSettings,
+    base_url: Option<String>,
+}
+
 pub async fn get_external_api(
     State(service): State<ControlService>,
-) -> Result<Json<ExternalApiSettings>> {
-    Ok(Json(service.external_api_settings().await?))
+    address: Option<Extension<super::InferenceAddress>>,
+) -> Result<Json<ExternalApiView>> {
+    Ok(Json(ExternalApiView {
+        settings: service.external_api_settings().await?,
+        base_url: address.map(|Extension(address)| address.local_client_url()),
+    }))
 }
 
 pub async fn update_external_api(
     State(service): State<ControlService>,
+    address: Option<Extension<super::InferenceAddress>>,
     Json(settings): Json<ExternalApiSettings>,
-) -> Result<Json<ExternalApiSettings>> {
-    Ok(Json(service.set_external_api_settings(settings).await?))
+) -> Result<Json<ExternalApiView>> {
+    Ok(Json(ExternalApiView {
+        settings: service.set_external_api_settings(settings).await?,
+        base_url: address.map(|Extension(address)| address.local_client_url()),
+    }))
 }
 
 pub async fn get_storage(State(service): State<ControlService>) -> Result<Json<StatisticsStorage>> {
@@ -92,6 +106,19 @@ pub async fn update_tab(
     Json(settings): Json<TabSettings>,
 ) -> Result<Json<TabSettings>> {
     Ok(Json(service.set_tab_settings(settings).await?))
+}
+
+pub async fn get_vision(
+    State(service): State<ControlService>,
+) -> Result<Json<crate::store::VisionSettings>> {
+    Ok(Json(service.vision_settings().await?))
+}
+pub async fn update_vision(
+    State(service): State<ControlService>,
+    Json(settings): Json<crate::store::VisionSettings>,
+) -> Result<Json<crate::store::VisionSettings>> {
+    service.set_vision_settings(&settings).await?;
+    Ok(Json(settings))
 }
 
 pub async fn get_desktop(State(service): State<ControlService>) -> Result<Json<DesktopSettings>> {
@@ -146,19 +173,6 @@ pub async fn update_commit(
     let saved = service.set_commit_settings(settings).await?;
     let default_locale = saved.prompt_locale;
     Ok(Json(CommitSettingsView::new(saved, default_locale)))
-}
-
-pub async fn get_pricing_settings(
-    State(service): State<ControlService>,
-) -> Result<Json<TokenPricingSettings>> {
-    Ok(Json(service.pricing_settings().await?))
-}
-
-pub async fn update_pricing_settings(
-    State(service): State<ControlService>,
-    Json(settings): Json<TokenPricingSettings>,
-) -> Result<Json<TokenPricingSettings>> {
-    Ok(Json(service.set_pricing_settings(settings).await?))
 }
 
 fn requested_commit_locale(headers: &HeaderMap) -> CommitPromptLocale {

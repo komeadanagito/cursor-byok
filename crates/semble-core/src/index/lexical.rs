@@ -31,7 +31,7 @@ pub fn tokenize(text: &str) -> Vec<String> {
     let mut output = Vec::new();
     let mut index = 0;
     while index < bytes.len() {
-        if !bytes[index].is_ascii_alphabetic() && bytes[index] != b'_' {
+        if !bytes[index].is_ascii_alphanumeric() && bytes[index] != b'_' {
             index += 1;
             continue;
         }
@@ -128,13 +128,7 @@ impl SymbolIndex {
     }
 
     pub fn exact_symbol(&self, query: &str, chunks: &[Chunk], limit: usize) -> Vec<(usize, f32)> {
-        let symbol = query
-            .rsplit([':', '.', '>'])
-            .find(|part| !part.is_empty())
-            .unwrap_or(query)
-            .trim()
-            .to_ascii_lowercase();
-        self.rank_symbol(&symbol, chunks, limit)
+        self.rank_symbol(&query.trim().to_ascii_lowercase(), chunks, limit)
     }
 
     pub fn inferred_symbols(
@@ -457,6 +451,8 @@ mod tests {
             },
             content_type: crate::ContentType::Code,
             definitions: extract_definitions(&chunks),
+            declarations: Vec::new(),
+            function_anchors: vec![None; chunks.len()],
             lexical_documents: chunks
                 .iter()
                 .map(|chunk| super::super::lexical_document(&chunk.content))
@@ -484,6 +480,8 @@ mod tests {
             },
             content_type: crate::ContentType::Code,
             definitions: extract_definitions(&chunks),
+            declarations: Vec::new(),
+            function_anchors: vec![None; chunks.len()],
             lexical_documents: chunks
                 .iter()
                 .map(|chunk| super::super::lexical_document(&chunk.content))
@@ -518,6 +516,8 @@ mod tests {
             },
             content_type: crate::ContentType::Code,
             definitions: extract_definitions(&chunks),
+            declarations: Vec::new(),
+            function_anchors: vec![None; chunks.len()],
             lexical_documents: chunks
                 .iter()
                 .map(|chunk| super::super::lexical_document(&chunk.content))

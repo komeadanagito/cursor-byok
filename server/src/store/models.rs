@@ -1,10 +1,16 @@
 //! Persists model and provider configuration.
-use std::{collections::HashSet, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+};
 
 use sqlx::{Row, SqliteConnection};
 
 use crate::{
-    model::{model_hash, normalize_model_input, ModelConfig, ModelConfigInput, ModelType},
+    model::{
+        model_fingerprint, normalize_model_input, ModelConfig, ModelConfigInput, ModelType,
+        MANUAL_MODEL_PREFIX,
+    },
     Error, Result,
 };
 
@@ -16,7 +22,7 @@ const MODEL_COLUMNS: &str = r#"
     openai_extra_params_json, custom_headers_enabled, custom_headers_json,
     anthropic_extra_params_enabled, anthropic_extra_params_json, context_window_tokens,
     max_completion_tokens, anthropic_max_tokens, anthropic_thinking_effort,
-    thinking_budget_tokens, created_at_ms, updated_at_ms
+    thinking_budget_tokens, supports_images, created_at_ms, updated_at_ms
 "#;
 
 impl Store {
@@ -50,50 +56,48 @@ impl Store {
         if inputs.is_empty() {
             return Err(Error::Config("at least one model is required".into()));
         }
-        let mut normalized = Vec::with_capacity(inputs.len());
-        let mut hashes = HashSet::with_capacity(inputs.len());
-        for input in inputs {
-            let input = normalize_model_input(input)?;
-            let hash = model_hash(&input)?;
-            if !hashes.insert(hash.clone()) {
-                return Err(Error::Config("model configurations must be unique".into()));
-            }
-            normalized.push((hash, input));
-        }
-        let now = now_ms();
-        let mut session = self.write_session().await?;
-        let mut transaction = session.begin().await?;
-        for (hash, input) in &normalized {
-            insert_model(&mut transaction, hash, input, now).await?;
-        }
-        transaction.commit().await?;
-        session.committed();
-
-        let mut saved = Vec::with_capacity(normalized.len());
-        for (hash, _) in normalized {
-            saved.push(self.model(&hash).await?.expect("inserted model must exist"));
+        let inputs = inputs
+            .iter()
+            .map(normalize_model_input)
+            .collect::<Result<Vec<_>>>()?;
+        let ids = self.insert_new_models(&inputs, false).await?;
+        let mut saved = Vec::with_capacity(ids.len());
+        for id in ids {
+            saved.push(self.model(&id).await?.expect("inserted model must exist"));
         }
         Ok(saved)
     }
 
     pub async fn create_models_if_missing(&self, inputs: &[ModelConfigInput]) -> Result<usize> {
-        let mut normalized = Vec::with_capacity(inputs.len());
-        let mut hashes = HashSet::with_capacity(inputs.len());
-        for input in inputs {
-            let input = normalize_model_input(input)?;
-            let hash = model_hash(&input)?;
-            if hashes.insert(hash.clone()) {
-                normalized.push((hash, input));
-            }
-        }
+        let inputs = inputs
+            .iter()
+            .map(normalize_model_input)
+            .collect::<Result<Vec<_>>>()?;
+        Ok(self.insert_new_models(&inputs, true).await?.len())
+    }
+
+    async fn insert_new_models(
+        &self,
+        inputs: &[ModelConfigInput],
+        skip_existing: bool,
+    ) -> Result<Vec<String>> {
         let now = now_ms();
         let mut session = self.write_session().await?;
         let mut transaction = session.begin().await?;
-        let mut inserted = 0;
-        for (hash, input) in &normalized {
-            inserted += usize::from(
-                insert_model_with_conflict(&mut transaction, hash, input, now, true).await?,
-            );
+        let mut fingerprints = model_fingerprints(&mut transaction).await?;
+        let mut inserted = Vec::with_capacity(inputs.len());
+        for input in inputs {
+            let fingerprint = model_fingerprint(input)?;
+            if fingerprints.contains_key(&fingerprint) {
+                if skip_existing {
+                    continue;
+                }
+                return Err(Error::Config("model configurations must be unique".into()));
+            }
+            let id = format!("{MANUAL_MODEL_PREFIX}{}", uuid::Uuid::new_v4());
+            insert_model(&mut transaction, &id, input, now).await?;
+            fingerprints.insert(fingerprint, id.clone());
+            inserted.push(id);
         }
         transaction.commit().await?;
         session.committed();
@@ -105,33 +109,56 @@ impl Store {
         current_hash: &str,
         input: &ModelConfigInput,
     ) -> Result<ModelConfig> {
-        let current = self
-            .model(current_hash)
-            .await?
-            .ok_or_else(|| Error::RunNotFound(format!("model {current_hash}")))?;
-        let input = normalize_model_input(input)?;
-        let next_hash = model_hash(&input)?;
         let now = now_ms();
         let mut session = self.write_session().await?;
         let mut transaction = session.begin().await?;
-        if next_hash != current.model_hash {
-            sqlx::query("UPDATE llm_calls SET model_hash = NULL WHERE model_hash = ?")
-                .bind(&current.model_hash)
-                .execute(&mut *transaction)
-                .await?;
+        let query = format!("SELECT {MODEL_COLUMNS} FROM model_configs WHERE model_hash = ?");
+        let current = sqlx::query(&query)
+            .bind(current_hash)
+            .fetch_optional(&mut *transaction)
+            .await?
+            .map(model_from_row)
+            .transpose()?
+            .ok_or_else(|| Error::RunNotFound(format!("model {current_hash}")))?;
+        let mut input = input.clone();
+        let old_url = reqwest::Url::parse(&current.request_url()?).expect("validated model URL");
+        let new_url = crate::model::resolve_request_url(
+            input.model_type,
+            &input.base_url,
+            &input.openai_endpoint,
+            input.use_full_url,
+        )?;
+        let new_url = reqwest::Url::parse(&new_url).expect("validated model URL");
+        if old_url.origin() == new_url.origin() {
+            if input.api_key.trim().is_empty() {
+                input.api_key = current.api_key;
+            }
+            if input.custom_headers.is_null() {
+                input.custom_headers = current.custom_headers;
+            }
+        } else if input.custom_headers.is_null() {
+            input.custom_headers = serde_json::json!({});
+        }
+        let input = normalize_model_input(&input)?;
+        let fingerprint = model_fingerprint(&input)?;
+        if model_fingerprints(&mut transaction)
+            .await?
+            .get(&fingerprint)
+            .is_some_and(|id| id != current_hash)
+        {
+            return Err(Error::Config("model configurations must be unique".into()));
         }
         let result = sqlx::query(
             r#"UPDATE model_configs SET
-                model_hash = ?, sort_order = ?, display_name = ?, group_name = ?, model_type = ?, base_url = ?,
+                sort_order = ?, display_name = ?, group_name = ?, model_type = ?, base_url = ?,
                 use_full_url = ?, api_key = ?, tooltip_data = ?, model_id = ?, reasoning_effort = ?,
                 openai_endpoint = ?, openai_extra_params_enabled = ?, openai_extra_params_json = ?,
                 custom_headers_enabled = ?, custom_headers_json = ?,
                 anthropic_extra_params_enabled = ?, anthropic_extra_params_json = ?,
                 context_window_tokens = ?, max_completion_tokens = ?, anthropic_max_tokens = ?,
-                anthropic_thinking_effort = ?, thinking_budget_tokens = ?, updated_at_ms = ?
+                anthropic_thinking_effort = ?, thinking_budget_tokens = ?, supports_images = ?, updated_at_ms = ?
             WHERE model_hash = ?"#,
         )
-        .bind(&next_hash)
         .bind(input.sort_order)
         .bind(&input.display_name)
         .bind(&input.group_name)
@@ -154,6 +181,7 @@ impl Store {
         .bind(input.anthropic_max_tokens.map(to_i64).transpose()?)
         .bind(&input.anthropic_thinking_effort)
         .bind(input.thinking_budget_tokens.map(to_i64).transpose()?)
+        .bind(input.supports_images)
         .bind(now)
         .bind(current_hash)
         .execute(&mut *transaction)
@@ -164,7 +192,7 @@ impl Store {
         transaction.commit().await?;
         session.committed();
         Ok(self
-            .model(&next_hash)
+            .model(current_hash)
             .await?
             .expect("updated model must exist"))
     }
@@ -232,31 +260,16 @@ async fn insert_model(
     input: &ModelConfigInput,
     now: i64,
 ) -> Result<()> {
-    insert_model_with_conflict(transaction, hash, input, now, false).await?;
-    Ok(())
-}
-
-async fn insert_model_with_conflict(
-    transaction: &mut SqliteConnection,
-    hash: &str,
-    input: &ModelConfigInput,
-    now: i64,
-    ignore_existing: bool,
-) -> Result<bool> {
-    let mut statement = String::from(
+    sqlx::query(
         r#"INSERT INTO model_configs(
             model_hash, sort_order, display_name, group_name, model_type, base_url, use_full_url, api_key, tooltip_data,
             model_id, reasoning_effort, openai_endpoint, openai_extra_params_enabled,
             openai_extra_params_json, custom_headers_enabled, custom_headers_json,
             anthropic_extra_params_enabled, anthropic_extra_params_json, context_window_tokens,
             max_completion_tokens, anthropic_max_tokens, anthropic_thinking_effort,
-            thinking_budget_tokens, created_at_ms, updated_at_ms
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
-    );
-    if ignore_existing {
-        statement.push_str(" ON CONFLICT(model_hash) DO NOTHING");
-    }
-    let result = sqlx::query(&statement)
+            thinking_budget_tokens, supports_images, created_at_ms, updated_at_ms
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+    )
         .bind(hash)
         .bind(input.sort_order)
         .bind(&input.display_name)
@@ -280,15 +293,34 @@ async fn insert_model_with_conflict(
         .bind(input.anthropic_max_tokens.map(to_i64).transpose()?)
         .bind(&input.anthropic_thinking_effort)
         .bind(input.thinking_budget_tokens.map(to_i64).transpose()?)
+        .bind(input.supports_images)
         .bind(now)
         .bind(now)
         .execute(&mut *transaction)
         .await?;
-    Ok(result.rows_affected() == 1)
+    Ok(())
+}
+
+async fn model_fingerprints(connection: &mut SqliteConnection) -> Result<HashMap<String, String>> {
+    let query = format!("SELECT {MODEL_COLUMNS} FROM model_configs");
+    sqlx::query(&query)
+        .fetch_all(connection)
+        .await?
+        .into_iter()
+        .map(|row| {
+            let model = model_from_row(row)?;
+            Ok((
+                model_fingerprint(&ModelConfigInput::from(&model))?,
+                model.model_hash,
+            ))
+        })
+        .collect()
 }
 
 fn model_from_row(row: sqlx::sqlite::SqliteRow) -> Result<ModelConfig> {
     Ok(ModelConfig {
+        gateway_capabilities: None,
+        supports_images: row.try_get("supports_images")?,
         model_hash: row.try_get("model_hash")?,
         sort_order: row.try_get("sort_order")?,
         display_name: row.try_get("display_name")?,
@@ -343,6 +375,7 @@ mod tests {
 
     fn model_input(group_name: Option<&str>) -> ModelConfigInput {
         ModelConfigInput {
+            supports_images: true,
             sort_order: 0,
             display_name: "Test Model".into(),
             group_name: group_name.map(String::from),
@@ -366,6 +399,66 @@ mod tests {
             anthropic_thinking_effort: None,
             thinking_budget_tokens: None,
         }
+    }
+
+    #[tokio::test]
+    async fn manual_model_can_be_marked_text_only_without_changing_its_id() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            directory.path().join("test.db").display()
+        ))
+        .await
+        .unwrap();
+        let mut input = serde_json::to_value(model_input(None)).unwrap();
+        let original = store
+            .create_model(&serde_json::from_value(input.clone()).unwrap())
+            .await
+            .unwrap();
+        input["supports_images"] = false.into();
+        let saved = store
+            .update_model(
+                &original.model_hash,
+                &serde_json::from_value(input).unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(saved.model_hash, original.model_hash);
+        assert_eq!(
+            serde_json::to_value(saved).unwrap()["supports_images"],
+            false
+        );
+    }
+
+    #[tokio::test]
+    async fn manual_model_edits_keep_the_existing_id_and_import_does_not_duplicate_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::connect(&format!(
+            "sqlite://{}",
+            dir.path().join("test.db").display()
+        ))
+        .await
+        .unwrap();
+        let original = store.create_model(&model_input(None)).await.unwrap();
+        let mut edited = model_input(None);
+        edited.display_name = "Renamed".into();
+        edited.api_key = "rotated".into();
+        let saved = store
+            .update_model(&original.model_hash, &edited)
+            .await
+            .unwrap();
+        assert_eq!(saved.model_hash, original.model_hash);
+        assert_eq!(
+            store
+                .model(&original.model_hash)
+                .await
+                .unwrap()
+                .unwrap()
+                .api_key,
+            "rotated"
+        );
+        assert_eq!(store.create_models_if_missing(&[edited]).await.unwrap(), 0);
+        assert_eq!(store.models().await.unwrap().len(), 1);
     }
 
     /// 分组名是纯展示字段:入库时去除首尾空白、空串归一为 NULL,

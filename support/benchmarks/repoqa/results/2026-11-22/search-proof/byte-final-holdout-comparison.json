@@ -1,0 +1,114 @@
+{
+  "bm25": {
+    "prepare": [
+      {
+        "chunks": 306,
+        "files": 13,
+        "ms": 3.278709,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/marshmallow-code/marshmallow"
+      },
+      {
+        "chunks": 1357,
+        "files": 156,
+        "ms": 3.947542,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/apache/logging-log4cxx"
+      },
+      {
+        "chunks": 1037,
+        "files": 84,
+        "ms": 5.162375,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/google/gson"
+      },
+      {
+        "chunks": 155,
+        "files": 11,
+        "ms": 2.1912089999999997,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/expressjs/express"
+      },
+      {
+        "chunks": 1019,
+        "files": 28,
+        "ms": 3.431458,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/rust-bakery/nom"
+      },
+      {
+        "chunks": 2502,
+        "files": 176,
+        "ms": 6.983333,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/caddyserver/caddy"
+      }
+    ],
+    "metrics": {
+      "description": {
+        "n": 60,
+        "top1": 4,
+        "top5": 18,
+        "top10": 32,
+        "p50_ms": 0.46727050000000003
+      },
+      "symbol": {
+        "n": 60,
+        "top1": 60,
+        "top5": 60,
+        "top10": 60,
+        "p50_ms": 0.013728999999999998
+      }
+    }
+  },
+  "final": {
+    "prepare": [
+      {
+        "chunks": 306,
+        "files": 13,
+        "ms": 39.090542,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/marshmallow-code/marshmallow"
+      },
+      {
+        "chunks": 1357,
+        "files": 156,
+        "ms": 197.885208,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/apache/logging-log4cxx"
+      },
+      {
+        "chunks": 1037,
+        "files": 84,
+        "ms": 111.949291,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/google/gson"
+      },
+      {
+        "chunks": 155,
+        "files": 11,
+        "ms": 23.973833,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/expressjs/express"
+      },
+      {
+        "chunks": 1019,
+        "files": 28,
+        "ms": 103.974666,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/rust-bakery/nom"
+      },
+      {
+        "chunks": 2502,
+        "files": 176,
+        "ms": 244.02675,
+        "root": "$REPOQA_RUNS/final-holdout/corpus/caddyserver/caddy"
+      }
+    ],
+    "metrics": {
+      "description": {
+        "n": 60,
+        "top1": 4,
+        "top5": 18,
+        "top10": 33,
+        "p50_ms": 0.277729
+      },
+      "symbol": {
+        "n": 60,
+        "top1": 60,
+        "top5": 60,
+        "top10": 60,
+        "p50_ms": 0.008709000000000001
+      }
+    }
+  }
+}

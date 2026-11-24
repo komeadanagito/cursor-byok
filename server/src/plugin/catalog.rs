@@ -42,16 +42,8 @@ impl PluginCatalog {
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(&installed, fs::Permissions::from_mode(0o700))?;
         }
-        // 内置插件按版本预装进 installed;版本一致时不写盘。
+        // 早期版本把内置插件预装进 installed;现在只做退役清理。
         super::builtin::install(&installed)?;
-        // 扫描顺序即优先级:debug 下源码目录优先,保证内置插件热改生效;
-        // 发布构建只有 installed 一个根。
-        #[cfg(debug_assertions)]
-        let roots = vec![
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("plugins/build-in"),
-            installed,
-        ];
-        #[cfg(not(debug_assertions))]
         let roots = vec![installed];
         Ok(Self {
             roots,
@@ -329,20 +321,4 @@ fn icon_data_url(directory: &Path, relative: &str) -> Result<String> {
         "data:{mime};base64,{}",
         STANDARD.encode(fs::read(path)?)
     ))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn repository_examples_have_valid_static_manifests() {
-        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("plugins/build-in");
-        let sdk = tempfile::tempdir().unwrap();
-        let catalog = PluginCatalog {
-            roots: vec![root],
-            definition_loader: PluginDefinitionLoader::for_test(sdk.path()).unwrap(),
-            app_version: env!("CARGO_PKG_VERSION").into(),
-        };
-        assert!(!catalog.manifests().is_empty());
-    }
 }

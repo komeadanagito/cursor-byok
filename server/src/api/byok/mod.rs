@@ -162,7 +162,7 @@ async fn generate(
         return api_error(StatusCode::NOT_FOUND, "model not found");
     };
     if let Some(native) = &state.native {
-        match state.store.model(&model.internal_id).await {
+        match state.store.configured_model(&model.internal_id).await {
             Ok(Some(config)) if protocol.provider_type() == config.provider_type() => {
                 return match native.forward(protocol, &headers, body, &config).await {
                     Ok(response) => response,

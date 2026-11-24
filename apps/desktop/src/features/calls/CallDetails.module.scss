@@ -1,38 +1,170 @@
 @use "../../styles/typography" as type;
 
 .root {
-  section { min-width: 0; }
-  h4 { margin: 12px 0 6px; color: var(--vscode-descriptionForeground); font-size: type.$font-size-xs; font-weight: 500; }
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 2px 6px 10px 18px;
+  padding: 12px 14px 14px 16px;
+  border-left: 2px solid var(--vscode-focusBorder);
+  background: color-mix(in srgb, var(--vscode-list-hoverBackground) 45%, transparent);
+  border-radius: 0 6px 6px 0;
+  cursor: auto;
+  container-type: inline-size;
 }
 
-.details {
+.failed { border-left-color: var(--vscode-errorForeground); }
+
+.facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  padding: 1px;
+  gap: 5px 28px;
   margin: 0;
-  overflow: hidden;
-  background: var(--vscode-sideBar-border);
-  border-radius: 6px;
 
   > div {
-    min-width: 0;
     display: grid;
-    grid-template-columns: 132px minmax(0, 1fr);
+    grid-template-columns: 96px minmax(0, 1fr);
     gap: 10px;
-    padding: 8px 10px;
-    background: var(--vscode-editorWidget-background);
+    min-width: 0;
   }
 
-  dt { color: var(--vscode-descriptionForeground); font-size: type.$font-size-xs; }
-  dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
-  code { white-space: pre-wrap; font-family: var(--oa-code-font); font-size: type.$font-size-xs; }
+  dt {
+    color: var(--vscode-descriptionForeground);
+    font-size: type.$font-size-2xs;
+    line-height: 20px;
+  }
+
+  dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--oa-code-font);
+    font-size: type.$font-size-2xs;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+    user-select: text;
+  }
 }
-.meta{
-  margin-bottom: 10px;
+
+.danger { color: var(--vscode-errorForeground); }
+
+@container (max-width: 620px) {
+  .facts { grid-template-columns: minmax(0, 1fr); }
 }
-.meta,
-.empty {
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+
+  h4 {
+    margin: 0;
+    color: var(--vscode-foreground);
+    font-size: type.$font-size-xs;
+    font-weight: 600;
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-2xs;
+  font-variant-numeric: tabular-nums;
+
+  span { display: inline-flex; align-items: center; gap: 6px; }
+  i { width: 8px; height: 8px; border-radius: 2px; }
+  strong { color: var(--vscode-foreground); font-weight: 600; }
+}
+
+.note {
   color: var(--vscode-descriptionForeground);
   font-size: type.$font-size-xs;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.segments {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 6px;
+
+  button {
+    height: 22px;
+    padding: 0 10px;
+    color: var(--vscode-descriptionForeground);
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    font-size: type.$font-size-2xs;
+    white-space: nowrap;
+
+    &:hover { color: var(--vscode-foreground); }
+
+    &[aria-selected="true"] {
+      color: var(--vscode-foreground);
+      background: var(--vscode-editorWidget-background);
+      box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+    }
+  }
+}
+
+.meta {
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-2xs;
+  font-variant-numeric: tabular-nums;
+}
+
+.spacer { flex: 1 1 auto; }
+
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  font-size: type.$font-size-2xs;
+
+  &:hover { color: var(--vscode-foreground); background: var(--vscode-list-hoverBackground); }
+}
+
+.headers,
+.emptyBody {
+  padding: 10px 12px;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 5px;
+  font-size: type.$font-size-2xs;
+}
+
+.emptyBody { color: var(--vscode-descriptionForeground); }
+
+.headers {
+  font-family: var(--oa-code-font);
+  line-height: 1.65;
+  user-select: text;
+
+  > div { display: flex; gap: 8px; }
+  span { flex: none; color: var(--vscode-descriptionForeground); }
+  span::after { content: ":"; }
+  code { min-width: 0; overflow-wrap: anywhere; font-family: inherit; }
 }

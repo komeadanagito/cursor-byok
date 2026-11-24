@@ -64,6 +64,9 @@ jobs:
         working-directory: apps/desktop
         run: npm run check
 
+      - name: Check workspace symbol extension
+        run: npm --prefix apps/workspace-symbols run check
+
       - name: Check release workflow scripts
         run: node --test .github/scripts/*.test.mjs
 

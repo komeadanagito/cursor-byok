@@ -31,9 +31,9 @@ export function OverviewTimeRangeFilter({ value, quick, customOpen, customStart,
   onRefresh: () => void;
 }) {
   const presets: Array<{ value: Exclude<OverviewRangePreset, "custom">; label: string }> = [
+    { value: "ten-minutes", label: t("近10分钟") },
     { value: "hour", label: t("近1小时") },
     { value: "today", label: t("近1自然日") },
-    { value: "ten-minutes", label: t("近10分钟") },
     { value: "week", label: t("近一周") },
     { value: "month", label: t("近一个月") },
   ];

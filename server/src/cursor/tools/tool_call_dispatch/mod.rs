@@ -1,9 +1,12 @@
 //! Dispatches Tool calls to their execution adapters.
+mod devtools;
 mod edit;
 mod exec;
 mod interaction;
 mod local;
-mod search;
+
+#[cfg(test)]
+mod devtools_tests;
 
 use std::collections::BTreeMap;
 
@@ -11,7 +14,6 @@ use crate::{
     cursor::protocol::proto::agent::v1 as pb,
     model::ToolCall,
     search::{WebFetch, WebSearch},
-    store::Store,
     Error, Result,
 };
 
@@ -26,9 +28,13 @@ pub(super) struct ToolStart {
     pub completion: Option<ToolCompletion>,
 }
 
-pub(super) enum InteractionContinuation {
-    Completed(Box<ToolCompletion>),
-    Pending,
+impl ToolStart {
+    fn pending() -> Self {
+        Self {
+            messages: Vec::new(),
+            completion: None,
+        }
+    }
 }
 
 pub(super) async fn start(
@@ -38,12 +44,14 @@ pub(super) async fn start(
     message_index: usize,
     dynamic_mcp: &BTreeMap<String, pb::McpToolDefinition>,
     context: &ExecContext,
-    store: Option<&Store>,
 ) -> Result<ToolStart> {
     if let Some(definition) = dynamic_mcp.get(&call.name) {
         return exec::start_dynamic(runtime, call, definition, context).await;
     }
 
+    if devtools::is_local_mcp(call) {
+        return devtools::start(runtime, results, call).await;
+    }
     if is_mcp_auth(call) {
         return interaction::start(runtime, call).await;
     }
@@ -64,7 +72,6 @@ pub(super) async fn start(
         "askquestion" | "websearch" | "webfetch" | "switchmode" | "createplan"
         | "generateimage" => interaction::start(runtime, call).await,
         "todowrite" | "updatecurrentstep" => local::start(call, message_index),
-        "semblesearch" | "semblefindrelated" => search::start(results, call, store.cloned()),
         _ => Ok(unavailable_tool(call)),
     }
 }
@@ -140,7 +147,10 @@ pub(super) async fn resume_interaction(
     fetch: &WebFetch,
     pending: PendingInteraction,
     response: &pb::InteractionResponse,
-) -> Result<InteractionContinuation> {
+) -> Result<ToolStart> {
+    if devtools::is_local_run(&pending.call) {
+        return devtools::resume(results, pending, response);
+    }
     interaction::resume(results, search, fetch, pending, response).await
 }
 

@@ -10,6 +10,12 @@ permissions:
   contents: read
 
 jobs:
+  workspace_symbols:
+    name: Build workspace-symbols VSIX
+    uses: ./.github/workflows/workspace-symbols.yml
+    permissions:
+      contents: read
+
   build:
     name: Build (${{ matrix.platform }})
     strategy:

@@ -3,6 +3,7 @@ members = [
     "server",
     "apps/desktop/src-tauri",
     "crates/semble-core",
+    "apps/semantic-mcp",
     "support/benchmarks/semble",
 ]
 resolver = "2"
@@ -23,3 +24,13 @@ incremental = false
 
 [profile.test.package."*"]
 debug = 0
+
+# byok-semantic ships inside the workspace-symbols VSIX, so its release build
+# trades build time for binary size. Only the release workflow uses it, so the
+# desktop app's release profile is untouched.
+[profile.vsix]
+inherits = "release"
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "z"

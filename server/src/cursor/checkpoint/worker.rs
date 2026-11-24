@@ -5,7 +5,8 @@ use crate::{
     cursor::{
         checkpoint::PendingSteps, protocol::proto::agent::v1 as pb, transport::TransportHandle,
     },
-    model::{CheckpointId, ToolRoundId},
+    model::{CanonicalMessage, CheckpointId, ToolRoundId},
+    run::CheckpointHistory,
     store::Store,
     Error, Result,
 };
@@ -51,6 +52,7 @@ pub(crate) struct CheckpointWorker {
 impl CheckpointWorker {
     pub fn spawn(
         store: Store,
+        history: CheckpointHistory,
         mut builder: CheckpointBuilder,
         handle: TransportHandle,
         mode: i32,
@@ -62,62 +64,67 @@ impl CheckpointWorker {
                 builder.record_context_tokens(job.context_tokens);
                 let presentation = job.presentation;
                 let ready = job.ready;
-                let result = match job.kind {
-                    CheckpointKind::Settled(checkpoint_id)
-                    | CheckpointKind::ToolSettled(checkpoint_id) => {
-                        publish_settled(
-                            &store,
-                            &mut builder,
-                            &handle,
-                            mode,
-                            checkpoint_id,
-                            &presentation,
-                        )
-                        .await
-                    }
-                    CheckpointKind::ToolStarted {
-                        round_id,
-                        stable_checkpoint_id,
-                    } => {
-                        publish_started(
-                            &store,
-                            &mut builder,
-                            &handle,
-                            mode,
+                let result = async {
+                    match job.kind {
+                        CheckpointKind::Settled(checkpoint_id)
+                        | CheckpointKind::ToolSettled(checkpoint_id) => {
+                            let messages = history.load(&store, checkpoint_id).await?;
+                            let checkpoint =
+                                builder.settled(&messages, mode, &presentation).await?;
+                            builder.publish(&handle, &checkpoint).await
+                        }
+                        CheckpointKind::ToolStarted {
                             round_id,
                             stable_checkpoint_id,
-                            &presentation,
-                        )
-                        .await
+                        } => {
+                            let round = store.tool_round(&round_id).await?.ok_or_else(|| {
+                                Error::Store(format!("checkpoint tool round not found: {round_id}"))
+                            })?;
+                            let messages = history.load(&store, stable_checkpoint_id).await?;
+                            let checkpoint = builder
+                                .staged_tool_round(
+                                    &messages,
+                                    mode,
+                                    &round.assistant,
+                                    &round.calls,
+                                    round.created_at_ms,
+                                    &presentation,
+                                )
+                                .await?;
+                            builder.publish(&handle, &checkpoint).await
+                        }
+                        CheckpointKind::Final {
+                            checkpoint_id,
+                            result,
+                        } => {
+                            let checkpoints = match history.load(&store, checkpoint_id).await {
+                                Ok(messages) => {
+                                    build_final(&mut builder, mode, &messages, &presentation).await
+                                }
+                                Err(error) => Err(error),
+                            };
+                            let _ = result.send(checkpoints);
+                            Ok(())
+                        }
+                        CheckpointKind::Compaction {
+                            checkpoint_id,
+                            summary,
+                            result,
+                        } => {
+                            let checkpoint = match history.load(&store, checkpoint_id).await {
+                                Ok(messages) => {
+                                    builder
+                                        .compacted(&messages, mode, &summary, &presentation)
+                                        .await
+                                }
+                                Err(error) => Err(error),
+                            };
+                            let _ = result.send(checkpoint);
+                            Ok(())
+                        }
                     }
-                    CheckpointKind::Final {
-                        checkpoint_id,
-                        result,
-                    } => {
-                        let checkpoints =
-                            build_final(&store, &mut builder, mode, checkpoint_id, &presentation)
-                                .await;
-                        let _ = result.send(checkpoints);
-                        Ok(())
-                    }
-                    CheckpointKind::Compaction {
-                        checkpoint_id,
-                        summary,
-                        result,
-                    } => {
-                        let messages = store.load_checkpoint_messages(checkpoint_id).await;
-                        let checkpoint = match messages {
-                            Ok(messages) => {
-                                builder
-                                    .compacted(&messages, mode, &summary, &presentation)
-                                    .await
-                            }
-                            Err(error) => Err(error),
-                        };
-                        let _ = result.send(checkpoint);
-                        Ok(())
-                    }
-                };
+                }
+                .await;
 
                 if let Err(error) = result {
                     if let Some(ready) = ready {
@@ -144,54 +151,18 @@ impl CheckpointWorker {
     }
 }
 
-async fn publish_settled(
-    store: &Store,
-    builder: &mut CheckpointBuilder,
-    handle: &TransportHandle,
-    mode: i32,
-    checkpoint_id: CheckpointId,
-    presentation: &PendingSteps,
-) -> Result<()> {
-    let messages = store.load_checkpoint_messages(checkpoint_id).await?;
-    let checkpoint = builder.settled(&messages, mode, presentation).await?;
-    builder.publish(handle, &checkpoint).await
-}
-
-async fn publish_started(
-    store: &Store,
-    builder: &mut CheckpointBuilder,
-    handle: &TransportHandle,
-    mode: i32,
-    round_id: ToolRoundId,
-    stable_checkpoint_id: CheckpointId,
-    presentation: &PendingSteps,
-) -> Result<()> {
-    let round = store
-        .tool_round(&round_id)
-        .await?
-        .ok_or_else(|| Error::Store(format!("checkpoint tool round not found: {round_id}")))?;
-    let messages = store.load_checkpoint_messages(stable_checkpoint_id).await?;
-    let checkpoint = builder
-        .staged_tool_round(
-            &messages,
-            mode,
-            &round.assistant,
-            &round.calls,
-            round.created_at_ms,
-            presentation,
-        )
-        .await?;
-    builder.publish(handle, &checkpoint).await
+impl Drop for CheckpointWorker {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
 }
 
 async fn build_final(
-    store: &Store,
     builder: &mut CheckpointBuilder,
     mode: i32,
-    checkpoint_id: CheckpointId,
+    messages: &[CanonicalMessage],
     presentation: &PendingSteps,
 ) -> Result<FinalCheckpoints> {
-    let messages = store.load_checkpoint_messages(checkpoint_id).await?;
     let (assistant, stable) = messages
         .split_last()
         .ok_or_else(|| Error::Store("final checkpoint contains no assistant".into()))?;
@@ -200,7 +171,7 @@ async fn build_final(
         .staged_final(stable, mode, assistant, started_at_ms, presentation)
         .await?;
     let settled = builder
-        .settled(&messages, mode, &PendingSteps::default())
+        .settled(messages, mode, &PendingSteps::default())
         .await?;
     Ok(FinalCheckpoints { staged, settled })
 }

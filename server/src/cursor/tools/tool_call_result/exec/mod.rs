@@ -91,18 +91,47 @@ pub(crate) fn from_exec(
     let tool = rendered.tool.ok_or_else(|| {
         Error::Protocol(format!("tool {} has no Cursor representation", call.name))
     })?;
-    Ok(ToolCompletion::new(
+    let mut completion = ToolCompletion::new(
         call,
         pending.started_at_ms,
         ToolResult {
             call_id: call.call_id.clone(),
             content,
             is_error,
+            parts: Vec::new(),
             image: None,
         },
         tool,
     )
-    .with_read_image(read_image))
+    .with_read_image(read_image);
+    if let Message::McpResult(result) = wire_result {
+        if let Some(pb::mcp_result::Result::Success(success)) = &result.result {
+            let images = success
+                .content
+                .iter()
+                .filter_map(|item| match &item.content {
+                    Some(pb::mcp_tool_result_content_item::Content::Image(image))
+                        if !image.data.is_empty() =>
+                    {
+                        Some(crate::model::ContentPart::Image {
+                            mime_type: image.mime_type.clone(),
+                            data: image.data.clone(),
+                        })
+                    }
+                    _ => None,
+                });
+            completion.result.parts.extend(images);
+            if !completion.result.parts.is_empty() {
+                completion.result.parts.insert(
+                    0,
+                    crate::model::ContentPart::Text {
+                        text: completion.result.content.clone(),
+                    },
+                );
+            }
+        }
+    }
+    Ok(completion)
 }
 
 fn read_image(message: &pb::exec_client_message::Message) -> Option<ReadImage> {
@@ -159,8 +188,62 @@ pub(crate) fn edit_failure(pending: PendingExec, error: String) -> Result<ToolCo
             call_id: call.call_id.clone(),
             content: error,
             is_error: true,
+            parts: Vec::new(),
             image: None,
         },
         pb::tool_call::Tool::EditToolCall(tool),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{ContentPart, ToolCall};
+    #[test]
+    fn mcp_screenshots_survive_the_tool_card_display_limit() {
+        let data = vec![32; 40_000];
+        let message = pb::exec_client_message::Message::McpResult(pb::McpResult {
+            result: Some(pb::mcp_result::Result::Success(pb::McpSuccess {
+                content: [data.clone(), vec![1, 2, 3]]
+                    .into_iter()
+                    .map(|data| pb::McpToolResultContentItem {
+                        content: Some(pb::mcp_tool_result_content_item::Content::Image(
+                            pb::McpImageContent {
+                                data,
+                                mime_type: "image/png".into(),
+                            },
+                        )),
+                    })
+                    .collect(),
+                ..Default::default()
+            })),
+        });
+        let pending = PendingExec {
+            call: ToolCall {
+                index: 0,
+                call_id: "screen".into(),
+                model_call_id: "main".into(),
+                name: "screen".into(),
+                arguments: serde_json::json!({}),
+                arguments_text: "{}".into(),
+                argument_error: None,
+            },
+            stage: ExecStage::DynamicMcp(Default::default()),
+            context: Default::default(),
+            started_at_ms: 0,
+            stdout: String::new(),
+            stderr: String::new(),
+        };
+        let completion = from_exec(pending, &message).unwrap();
+        let images: Vec<_> = completion
+            .result()
+            .parts
+            .iter()
+            .filter_map(|part| match part {
+                ContentPart::Image { data, .. } => Some(data.as_slice()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(images, [data.as_slice(), &[1, 2, 3]]);
+    }
 }

@@ -36,16 +36,8 @@ impl PromptCompiler {
         if !model.supports_image_generation {
             tools.retain(|tool| tool.name != "GenerateImage");
         }
-        let fake_model_name = model
-            .display_name
-            .as_deref()
-            .unwrap_or(model.model_id.as_str());
         Ok(PromptSpec {
-            instructions: self
-                .assets
-                .mode(mode)
-                .prompt
-                .replace("{{FAKE_MODEL_NAME}}", fake_model_name),
+            instructions: self.assets.mode(mode).prompt.clone(),
             tools,
         })
     }

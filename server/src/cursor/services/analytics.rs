@@ -19,6 +19,9 @@ const LOCAL_RULE: &str = "local_enabled";
 // dialect the local server cannot decode; pinning it off keeps runs on the
 // server-side loop this server implements.
 const LOCAL_LOOP_GATE: &str = "agent_host_local_loop";
+// Cursor discards background subagent completions while this gate is off, which
+// leaves the parent conversation waiting on a subagent that already finished.
+const LONG_RUNNING_JOBS_GATE: &str = "long_running_jobs";
 
 #[derive(Clone, PartialEq, Message)]
 struct BootstrapStatsigResponse {
@@ -62,6 +65,7 @@ fn patch_upstream(response: proxy::BufferedResponse) -> Result<Response<Body>> {
 
 fn patch_gates(config: &mut Value) -> Result<()> {
     force_gate(config, AGENT_RETRIES_GATE, true)?;
+    force_gate(config, LONG_RUNNING_JOBS_GATE, true)?;
     force_gate(config, LOCAL_LOOP_GATE, false)
 }
 
@@ -221,6 +225,23 @@ mod tests {
                 config["feature_gates"][&key]["value"],
                 json!(false),
                 "gate must be explicitly false under {hash_used}"
+            );
+        }
+    }
+
+    // With this gate off Cursor drops every background subagent completion, so
+    // the parent conversation never learns that its subagent finished.
+    #[test]
+    fn statsig_bootstrap_keeps_background_completions_flowing() {
+        for hash_used in ["djb2", "sha256", "none"] {
+            let mut config = json!({ "hash_used": hash_used, "feature_gates": {} });
+            let key = statsig_key(&config, LONG_RUNNING_JOBS_GATE);
+            config["feature_gates"][&key] = gate(&key, false);
+            patch_gates(&mut config).expect("patch config");
+            assert_eq!(
+                config["feature_gates"][&key]["value"],
+                json!(true),
+                "{hash_used}"
             );
         }
     }

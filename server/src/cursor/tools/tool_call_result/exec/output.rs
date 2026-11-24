@@ -1,4 +1,6 @@
 //! Parses and persists command execution output.
+use std::borrow::Cow;
+
 use crate::{cursor::protocol::proto::agent::v1 as pb, model::ToolCall, Error, Result};
 
 pub(super) fn output(
@@ -343,29 +345,33 @@ fn mcp(value: &pb::McpResult) -> Result<(String, bool)> {
 }
 
 fn mcp_content(success: &pb::McpSuccess) -> Result<String> {
-    let mut content = Vec::new();
+    let mut content = Vec::<Cow<'_, str>>::new();
+    let mut structured = success.structured_content.as_ref();
     for item in &success.content {
         match item.content.as_ref() {
             Some(pb::mcp_tool_result_content_item::Content::Text(text)) => {
                 if !text.text.is_empty() {
-                    content.push(text.text.clone());
+                    content.push(Cow::Borrowed(&text.text));
+                    structured = structured.filter(|value| !mirrors_mcp_content(&text.text, value));
                 }
                 if let Some(location) = &text.output_location {
-                    content.push(format!(
+                    content.push(Cow::Owned(format!(
                         "MCP output file: {} ({} bytes, {} lines)",
                         location.file_path, location.size_bytes, location.line_count
-                    ));
+                    )));
                 }
             }
-            Some(pb::mcp_tool_result_content_item::Content::Image(image)) => content.push(format!(
-                "MCP image: {} ({} bytes)",
-                image.mime_type,
-                image.data.len()
-            )),
+            Some(pb::mcp_tool_result_content_item::Content::Image(image)) => {
+                content.push(Cow::Owned(format!(
+                    "MCP image: {} ({} bytes)",
+                    image.mime_type,
+                    image.data.len()
+                )));
+            }
             None => {}
         }
     }
-    if let Some(structured) = &success.structured_content {
+    if let Some(structured) = structured {
         let value = serde_json::Value::Object(
             structured
                 .fields
@@ -373,13 +379,37 @@ fn mcp_content(success: &pb::McpSuccess) -> Result<String> {
                 .map(|(key, value)| (key.clone(), super::super::prost_json(value)))
                 .collect(),
         );
-        content.push(serde_json::to_string_pretty(&value)?);
+        content.push(Cow::Owned(serde_json::to_string_pretty(&value)?));
     }
     Ok(if content.is_empty() {
         "MCP tool completed without content".into()
     } else {
         content.join("\n\n")
     })
+}
+
+fn mirrors_mcp_content(text: &str, structured: &prost_types::Struct) -> bool {
+    use prost_types::value::Kind;
+
+    // FastMCP wraps string results as `{"result": text}` in structuredContent.
+    if structured.fields.len() == 1
+        && matches!(structured.fields.get("result").and_then(|value| value.kind.as_ref()),
+            Some(Kind::StringValue(result)) if result == text)
+    {
+        return true;
+    }
+    if !text.trim_start().starts_with('{') {
+        return false;
+    }
+    let Ok(serde_json::Value::Object(object)) = serde_json::from_str(text) else {
+        return false;
+    };
+    // Comparing in protobuf form also equates JSON integers with Struct's doubles.
+    let fields = crate::cursor::tools::codec::json_object_to_prost(&object);
+    fields.len() == structured.fields.len()
+        && fields
+            .iter()
+            .all(|(key, value)| structured.fields.get(key) == Some(value))
 }
 
 fn read_mcp(value: &pb::ReadMcpResourceExecResult) -> Result<(String, bool)> {
@@ -450,6 +480,77 @@ fn missing(name: &str) -> Error {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    fn mcp_text(text: &str) -> pb::McpToolResultContentItem {
+        pb::McpToolResultContentItem {
+            content: Some(pb::mcp_tool_result_content_item::Content::Text(
+                pb::McpTextContent {
+                    text: text.into(),
+                    output_location: None,
+                },
+            )),
+        }
+    }
+
+    fn mcp_structured(value: serde_json::Value) -> prost_types::Struct {
+        prost_types::Struct {
+            fields: crate::cursor::tools::codec::json_object_to_prost(value.as_object().unwrap())
+                .into_iter()
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn mcp_output_includes_wrapped_text_once_alongside_other_content() {
+        let symbols = r#"[{"name_path":"newFunction","relative_path":"src/function.ts"}]"#;
+        let success = pb::McpSuccess {
+            content: vec![mcp_text("Two callers found."), mcp_text(symbols)],
+            structured_content: Some(mcp_structured(json!({"result": symbols}))),
+            is_error: false,
+        };
+        assert_eq!(
+            mcp_content(&success).unwrap(),
+            format!("Two callers found.\n\n{symbols}")
+        );
+    }
+
+    #[test]
+    fn mcp_output_includes_the_same_json_object_once() {
+        let text = r#"{"locations":[{"path":"src/function.ts","line":1}],"complete":true}"#;
+        let success = pb::McpSuccess {
+            content: vec![mcp_text(text)],
+            structured_content: Some(mcp_structured(json!({
+                "complete": true,
+                "locations": [{"line": 1, "path": "src/function.ts"}]
+            }))),
+            is_error: false,
+        };
+        assert_eq!(mcp_content(&success).unwrap(), text);
+    }
+
+    #[test]
+    fn mcp_output_preserves_structured_fields_that_add_information() {
+        let text = r#"{"path":"src/function.ts"}"#;
+        let success = pb::McpSuccess {
+            content: vec![mcp_text(text)],
+            structured_content: Some(mcp_structured(json!({
+                "result": text,
+                "truncated": true
+            }))),
+            is_error: true,
+        };
+        let result = pb::McpResult {
+            result: Some(pb::mcp_result::Result::Success(success)),
+        };
+        let (output, is_error) = mcp(&result).unwrap();
+        let (original, structured) = output.split_once("\n\n").unwrap();
+        assert_eq!(original, text);
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(structured).unwrap(),
+            json!({"result": text, "truncated": true})
+        );
+        assert!(is_error);
+    }
 
     fn read_lints(paths: serde_json::Value) -> ToolCall {
         ToolCall {

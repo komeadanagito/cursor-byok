@@ -2,8 +2,10 @@
 
 mod bm25;
 mod builder;
+mod function_anchors;
 mod lexical;
 mod snapshot;
+mod typed_definitions;
 
 pub(crate) use bm25::{lexical_document, Bm25Index, Bm25Match};
 pub use builder::IndexRepository;

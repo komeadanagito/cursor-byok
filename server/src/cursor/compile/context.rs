@@ -146,34 +146,42 @@ async fn decode_part<T: Message + Default>(
         .map_err(|error| Error::Protocol(format!("invalid {name} context Blob: {error}")))
 }
 
-/// 把本地 md 规则目录(rules 服务的存储)合并进请求上下文,
-/// 使 BYOK 运行在 IDE 未携带这些规则时也能消费它们。
-/// 与 IDE 已发规则按内容去重;读取失败只告警,不影响运行。
+/// Adds desktop rules that Cursor did not already include in the request.
 pub fn merge_local_rules(context: &mut pb::RequestContext, rules_dir: &Path) {
-    let records = match crate::cursor::services::knowledge::RuleStore::open(rules_dir.into())
+    use crate::cursor::services::knowledge::RuleStore;
+
+    let records = RuleStore::open(rules_dir.into())
         .and_then(|store| store.list())
-    {
-        Ok(records) => records,
-        Err(error) => {
-            tracing::warn!(%error, "cannot read local rules; continuing without them");
-            return;
-        }
-    };
-    let existing = context
+        .inspect_err(|error| tracing::warn!(%error, "cannot read mirrored Cursor rules"))
+        .unwrap_or_default();
+    let personal = RuleStore::personal_rules(rules_dir)
+        .inspect_err(|error| tracing::warn!(%error, "cannot read personal BYOK rules"))
+        .unwrap_or_default();
+    let mut existing = context
         .rules
         .iter()
         .chain(context.non_file_rules.iter())
         .map(|rule| rule.content.trim().to_owned())
         .chain(context.cloud_rule.iter().map(|rule| rule.trim().to_owned()))
         .collect::<HashSet<_>>();
-    for record in records {
-        if record.knowledge.trim().is_empty() || existing.contains(record.knowledge.trim()) {
-            continue;
+    let repo_origins = context
+        .git_repos
+        .iter()
+        .filter_map(|repo| repo.remote_url.as_deref())
+        .map(str::trim)
+        .collect::<HashSet<_>>();
+    let mirrored = records.into_iter().filter_map(|record| {
+        let origin = record.git_origin.trim();
+        (origin.is_empty() || repo_origins.contains(origin)).then_some(record.knowledge)
+    });
+    for content in mirrored.chain(personal) {
+        let trimmed = content.trim();
+        if !trimmed.is_empty() && existing.insert(trimmed.to_owned()) {
+            context.non_file_rules.push(pb::CursorRule {
+                content,
+                ..Default::default()
+            });
         }
-        context.non_file_rules.push(pb::CursorRule {
-            content: record.knowledge,
-            ..Default::default()
-        });
     }
 }
 
@@ -289,13 +297,15 @@ pub fn compile_context(context: &pb::RequestContext, today: &str) -> String {
         ));
     }
     {
-        let servers = context
+        let mut servers = context
             .mcp_meta_tool_options
             .as_ref()
             .into_iter()
             .flat_map(|options| &options.mcp_descriptors)
             .filter_map(compile_mcp_descriptor)
             .collect::<Vec<_>>();
+        // Discovery order can change after an MCP reconnect without changing the catalog.
+        servers.sort_unstable();
         if !servers.is_empty() {
             sections.push(format!(
                 "<mcp_meta_tools>\nThe following MCP tools are available. Call a listed tool directly with CallMcpTool without calling GetMcpTools first. If a call returns an error, use it to correct the arguments or authentication and retry when appropriate.\n<mcp_meta_tool_servers>\n{}\n</mcp_meta_tool_servers>\n</mcp_meta_tools>",
@@ -310,7 +320,7 @@ fn compile_mcp_descriptor(server: &pb::McpDescriptor) -> Option<String> {
     if server.server_identifier.trim().is_empty() {
         return None;
     }
-    let tools = server
+    let mut tools = server
         .tools
         .iter()
         .filter(|tool| !tool.tool_name.trim().is_empty())
@@ -340,8 +350,21 @@ fn compile_mcp_descriptor(server: &pb::McpDescriptor) -> Option<String> {
     if tools.is_empty() {
         return None;
     }
+    tools.sort_unstable();
+    let instructions = server
+        .server_use_instructions
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            format!(
+                "<server_use_instructions>\n{}\n</server_use_instructions>\n",
+                xml(value)
+            )
+        })
+        .unwrap_or_default();
     Some(format!(
-        "<mcp_meta_tool_server name=\"{}\" identifier=\"{}\">\n<tools>\n{}\n</tools>\n</mcp_meta_tool_server>",
+        "<mcp_meta_tool_server name=\"{}\" identifier=\"{}\">\n{instructions}<tools>\n{}\n</tools>\n</mcp_meta_tool_server>",
         xml(if server.server_name.trim().is_empty() {
             &server.server_identifier
         } else {
@@ -499,13 +522,25 @@ pub fn dynamic_mcp(
             description: wire.description.clone(),
             parameters,
         };
-        if output
-            .insert(name.clone(), (wire.clone(), definition))
-            .is_some()
-        {
-            return Err(Error::Protocol(format!(
-                "duplicate MCP tool name after normalization: {name}"
-            )));
+        match output.entry(name) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert((wire.clone(), definition));
+            }
+            std::collections::btree_map::Entry::Occupied(entry) => {
+                let (previous, contract) = entry.get();
+                // A client may advertise the same tool in the run and request context,
+                // using JSON in one and a protobuf Value in the other.
+                if previous.name != wire.name
+                    || previous.provider_identifier != wire.provider_identifier
+                    || previous.tool_name != wire.tool_name
+                    || contract != &definition
+                {
+                    return Err(Error::Protocol(format!(
+                        "conflicting MCP definitions for {}",
+                        entry.key()
+                    )));
+                }
+            }
         }
     }
     Ok(output)
@@ -707,6 +742,72 @@ mod schema_tests {
     }
 
     #[test]
+    fn workspace_symbol_tool_announced_in_both_locations_has_one_unambiguous_route() {
+        let schema = json!({"type":"object", "properties":{"name_path_pattern":{"type":"string"}}});
+        let wire = pb::McpToolDefinition {
+            name: "serena_find_symbol".into(),
+            provider_identifier: "workspace-serena".into(),
+            tool_name: "find_symbol".into(),
+            input_schema_json: Some(schema.to_string()),
+            ..Default::default()
+        };
+        let request = pb::AgentRunRequest {
+            mcp_tools: Some(pb::McpTools {
+                mcp_tools: vec![wire.clone()],
+            }),
+            ..Default::default()
+        };
+        let mut context = pb::RequestContext {
+            tools: vec![pb::McpToolDefinition {
+                input_schema: Some(protobuf_value(&schema)),
+                input_schema_json: None,
+                ..wire
+            }],
+            ..Default::default()
+        };
+        let tools = dynamic_mcp(&request, &context).unwrap();
+        assert_eq!(tools.len(), 1);
+        assert_eq!(
+            tools["serena_find_symbol"].0.provider_identifier,
+            "workspace-serena"
+        );
+        context.tools[0].provider_identifier = "another-workspace".into();
+        assert!(dynamic_mcp(&request, &context).is_err());
+    }
+
+    #[test]
+    fn cursor_extension_tools_fit_the_provider_limit_and_keep_distinct_workspace_routes() {
+        let tool_name = "find_referencing_symbols";
+        let definitions = ["2e58d47553", "fe58d47553"].map(|root| {
+            let provider_identifier = format!("extension-symbols-syntax-{root}");
+            pb::McpToolDefinition {
+                name: format!(
+                    "user-cursor-byok.byok-workspace-symbols-{provider_identifier}-{tool_name}"
+                ),
+                provider_identifier,
+                tool_name: tool_name.into(),
+                input_schema_json: Some(r#"{"type":"object"}"#.into()),
+                ..Default::default()
+            }
+        });
+        let context = pb::RequestContext {
+            tools: definitions.to_vec(),
+            ..Default::default()
+        };
+        let request = pb::AgentRunRequest::default();
+        let compiled = dynamic_mcp(&request, &context).unwrap();
+        assert_eq!(compiled.len(), definitions.len());
+        for (name, (route, tool)) in &compiled {
+            assert!(name.len() <= 64, "provider cannot accept {name}");
+            assert!(name.ends_with(tool_name));
+            assert_eq!(&tool.name, name);
+            assert!(definitions.contains(route));
+            assert_eq!(normalize_tool_name(name), *name);
+        }
+        assert_eq!(compiled, dynamic_mcp(&request, &context).unwrap());
+    }
+
+    #[test]
     fn dynamic_mcp_schema_preserves_integer_constraints_for_model_requests() {
         let schema = json!({
             "anyOf": [{"type": "object", "properties": {
@@ -785,6 +886,61 @@ mod tests {
     }
 
     #[test]
+    fn rediscovering_the_same_mcp_directory_in_a_new_order_keeps_the_context_identical() {
+        let tool = |name: &str, description: &str| pb::McpToolDescriptor {
+            tool_name: name.into(),
+            description: Some(description.into()),
+            ..Default::default()
+        };
+        let server = |id: &str, tools| pb::McpDescriptor {
+            server_identifier: id.into(),
+            tools,
+            ..Default::default()
+        };
+        let mut context = pb::RequestContext {
+            mcp_meta_tool_options: Some(pb::McpMetaToolOptions {
+                mcp_descriptors: vec![
+                    server(
+                        "symbols-fixture",
+                        vec![
+                            tool("references", "Find uses"),
+                            tool("definition", "Find declaration"),
+                        ],
+                    ),
+                    server(
+                        "semantic-fixture",
+                        vec![tool("search", "Search the workspace")],
+                    ),
+                ],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        crate::cursor::tools::devtools::inject(&mut context);
+        let original = compile_context(&context, "2026-11-21");
+        assert!(original.contains("local_run") && original.contains("Find uses"));
+        // The model must learn where DevTools act (the desktop, not the workspace).
+        assert!(original.contains("<server_use_instructions>"));
+        let directory = &mut context
+            .mcp_meta_tool_options
+            .as_mut()
+            .unwrap()
+            .mcp_descriptors;
+        directory[0].tools.reverse();
+        directory.reverse();
+        crate::cursor::tools::devtools::inject(&mut context);
+        assert_eq!(original, compile_context(&context, "2026-11-21"));
+        let directory = &mut context
+            .mcp_meta_tool_options
+            .as_mut()
+            .unwrap()
+            .mcp_descriptors;
+        directory[0].tools[0].description =
+            Some("Search related code and return line numbers".into());
+        assert_ne!(original, compile_context(&context, "2026-11-21"));
+    }
+
+    #[test]
     fn merge_local_rules_appends_and_dedupes_by_content() {
         let directory = tempfile::tempdir().unwrap();
         std::fs::write(directory.path().join("a.md"), "shared rule").unwrap();
@@ -806,6 +962,76 @@ mod tests {
             contents,
             ["  shared rule  ", "local only rule"],
             "IDE-sent duplicate is kept once and blank local rules are skipped"
+        );
+    }
+
+    #[test]
+    fn desktop_rules_only_follow_their_own_workspace_repositories() {
+        let directory = tempfile::tempdir().unwrap();
+        let store =
+            crate::cursor::services::knowledge::RuleStore::open(directory.path().into()).unwrap();
+        for (id, git_origin) in [
+            ("global", ""),
+            ("here", "https://example.com/team/current.git"),
+            ("elsewhere", "https://example.com/team/other.git"),
+        ] {
+            store
+                .upsert(&crate::cursor::services::knowledge::RuleRecord {
+                    id: id.into(),
+                    knowledge: id.into(),
+                    title: id.into(),
+                    created_at: String::new(),
+                    is_generated: false,
+                    git_origin: git_origin.into(),
+                })
+                .unwrap();
+        }
+        let mut context = pb::RequestContext {
+            git_repos: vec![pb::GitRepoInfo {
+                remote_url: Some("https://example.com/team/current.git".into()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        merge_local_rules(&mut context, directory.path());
+        assert_eq!(
+            context
+                .non_file_rules
+                .iter()
+                .map(|rule| rule.content.as_str())
+                .collect::<Vec<_>>(),
+            ["global", "here"]
+        );
+        let mut without_repo = pb::RequestContext::default();
+        merge_local_rules(&mut without_repo, directory.path());
+        assert_eq!(
+            without_repo
+                .non_file_rules
+                .iter()
+                .map(|rule| rule.content.as_str())
+                .collect::<Vec<_>>(),
+            ["global"]
+        );
+    }
+
+    #[test]
+    fn personal_markdown_is_still_loaded_after_refreshing_cursor_rules() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = crate::cursor::services::knowledge::RuleStore::open(dir.path().into()).unwrap();
+        let personal = dir.path().join("personal");
+        std::fs::create_dir(&personal).unwrap();
+        std::fs::write(
+            personal.join("language.md"),
+            "Answer in the user's language.",
+        )
+        .unwrap();
+        store.replace_all(&[]).unwrap();
+        let mut context = pb::RequestContext::default();
+        merge_local_rules(&mut context, dir.path());
+        assert_eq!(context.non_file_rules.len(), 1);
+        assert_eq!(
+            context.non_file_rules[0].content,
+            "Answer in the user's language."
         );
     }
 

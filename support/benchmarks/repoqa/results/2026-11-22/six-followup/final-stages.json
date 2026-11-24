@@ -1,0 +1,429 @@
+[
+  {
+    "id": "r04-client-tree-position-id",
+    "target_file_candidates": {
+      "dense": [
+        {
+          "rank": 3,
+          "span": [
+            56,
+            72
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 5,
+          "span": [
+            1,
+            21
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 11,
+          "span": [
+            99,
+            109
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": true
+        },
+        {
+          "rank": 29,
+          "span": [
+            160,
+            174
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 33,
+          "span": [
+            139,
+            156
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        }
+      ],
+      "bm25": [
+        {
+          "rank": 2,
+          "span": [
+            1,
+            21
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 4,
+          "span": [
+            139,
+            156
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 6,
+          "span": [
+            99,
+            109
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": true
+        },
+        {
+          "rank": 7,
+          "span": [
+            156,
+            160
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 11,
+          "span": [
+            160,
+            174
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 16,
+          "span": [
+            56,
+            72
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 17,
+          "span": [
+            204,
+            228
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 33,
+          "span": [
+            174,
+            190
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        }
+      ],
+      "rerank": [
+        {
+          "rank": 1,
+          "span": [
+            1,
+            21
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 5,
+          "span": [
+            99,
+            109
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": true
+        },
+        {
+          "rank": 6,
+          "span": [
+            56,
+            72
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 7,
+          "span": [
+            139,
+            156
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 8,
+          "span": [
+            160,
+            174
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 19,
+          "span": [
+            156,
+            160
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 29,
+          "span": [
+            204,
+            228
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 49,
+          "span": [
+            174,
+            190
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "r07-edit-retain-local-state",
+    "target_file_candidates": {}
+  },
+  {
+    "id": "r10-compiler-render-update-diagnostic",
+    "target_file_candidates": {
+      "bm25": [
+        {
+          "rank": 4,
+          "span": [
+            17,
+            44
+          ],
+          "owner": [
+            45,
+            65
+          ],
+          "covers": false
+        }
+      ],
+      "rerank": [
+        {
+          "rank": 15,
+          "span": [
+            45,
+            65
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "r11-client-promise-reuse-slot",
+    "target_file_candidates": {}
+  },
+  {
+    "id": "v08-evict-retained-active-view",
+    "target_file_candidates": {
+      "dense": [
+        {
+          "rank": 10,
+          "span": [
+            261,
+            277
+          ],
+          "owner": [
+            79,
+            93
+          ],
+          "covers": false
+        },
+        {
+          "rank": 22,
+          "span": [
+            93,
+            103
+          ],
+          "owner": [
+            79,
+            93
+          ],
+          "covers": false
+        }
+      ],
+      "bm25": [
+        {
+          "rank": 12,
+          "span": [
+            93,
+            103
+          ],
+          "owner": [
+            79,
+            93
+          ],
+          "covers": false
+        },
+        {
+          "rank": 17,
+          "span": [
+            426,
+            445
+          ],
+          "owner": [
+            422,
+            426
+          ],
+          "covers": false
+        }
+      ],
+      "rerank": [
+        {
+          "rank": 2,
+          "span": [
+            79,
+            93
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 28,
+          "span": [
+            93,
+            103
+          ],
+          "owner": [
+            79,
+            93
+          ],
+          "covers": false
+        },
+        {
+          "rank": 29,
+          "span": [
+            422,
+            426
+          ],
+          "owner": [
+            0,
+            0
+          ],
+          "covers": false
+        },
+        {
+          "rank": 75,
+          "span": [
+            426,
+            445
+          ],
+          "owner": [
+            422,
+            426
+          ],
+          "covers": false
+        },
+        {
+          "rank": 96,
+          "span": [
+            261,
+            277
+          ],
+          "owner": [
+            79,
+            93
+          ],
+          "covers": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "v09-ancestor-error-stop",
+    "target_file_candidates": {}
+  }
+]

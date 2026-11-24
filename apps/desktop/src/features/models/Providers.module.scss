@@ -1,0 +1,395 @@
+@use "../../styles/typography" as type;
+
+// --- Title breadcrumb -------------------------------------------------------
+
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  // In a narrow header the detail goes first, then the name truncates; the way
+  // back to the list never shrinks.
+  > * { flex: none; }
+}
+
+.crumbName {
+  flex: 0 1 auto;
+  // Enough for a short name such as "Magpie"; past this the toolbar's search
+  // field narrows instead.
+  min-width: 4.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumbBack {
+  padding: 0;
+  color: var(--vscode-descriptionForeground);
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+
+  &:hover { color: var(--vscode-foreground); }
+}
+
+.crumbSeparator {
+  color: var(--vscode-descriptionForeground);
+  font-weight: normal;
+}
+
+.crumbDetail {
+  flex: 0 1000 auto;
+  min-width: 0;
+  margin-left: 4px;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-xs;
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- Rows shared by the provider list and a provider's models --------------
+
+.list {
+  --provider-divider: color-mix(in srgb, var(--vscode-foreground) 7%, transparent);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.providerList {
+  background: color-mix(in srgb, var(--vscode-editor-background), var(--vscode-foreground) 3%);
+  border-color: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--provider-divider);
+
+  &:first-child { border-top: 0; }
+}
+
+.clickable {
+  position: relative;
+  width: 100%;
+  min-height: 56px;
+  gap: 12px;
+  color: inherit;
+  background: none;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  & + &::before {
+    position: absolute;
+    inset: 0 14px auto 48px;
+    height: 1px;
+    background: var(--provider-divider);
+    content: "";
+  }
+
+  .name { font-weight: 600; }
+  &:hover { background: var(--vscode-list-hoverBackground); }
+  &:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+}
+
+.providerFooter {
+  flex-wrap: wrap;
+}
+
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vscode-gitDecoration-addedResourceForeground);
+
+  &[data-status="failed"] { background: var(--vscode-errorForeground); }
+}
+
+.logo {
+  color: var(--vscode-foreground);
+}
+
+.claudeLogo {
+  color: #d97757;
+}
+
+.magpieLogo img {
+  border-radius: 22%;
+}
+
+.text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  color: var(--vscode-foreground);
+  font-size: type.$font-size-base;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted .name { color: var(--vscode-descriptionForeground); }
+
+.detail {
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-2xs;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono { font-family: var(--oa-code-font); }
+
+.badge {
+  flex: none;
+  padding: 0 7px;
+  color: var(--vscode-descriptionForeground);
+  background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
+  border-radius: 99px;
+  font-size: type.$font-size-2xs;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex: none;
+  color: var(--vscode-descriptionForeground);
+}
+
+.context {
+  flex: none;
+  min-width: 44px;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-2xs;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+// --- Leading controls of a model row ---------------------------------------
+
+.handle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 24px;
+  padding: 0;
+  color: var(--vscode-descriptionForeground);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: grab;
+  opacity: .5;
+
+  .row:hover & { opacity: 1; }
+  &:disabled { cursor: not-allowed; opacity: .3; }
+}
+
+.check {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  span {
+    width: 16px;
+    height: 16px;
+    display: grid;
+    place-items: center;
+    color: var(--vscode-button-foreground);
+    background: var(--vscode-checkbox-background, var(--vscode-input-background));
+    border: 1px solid var(--vscode-checkbox-border, var(--vscode-input-border));
+    border-radius: 4px;
+  }
+
+  input:checked + span {
+    background: var(--vscode-button-background);
+    border-color: var(--vscode-button-background);
+  }
+
+  input:focus-visible + span { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+}
+
+.sortGhost { opacity: .35; }
+.sortChosen { background: var(--vscode-list-hoverBackground); }
+
+// --- Grouped models (Magpie's vendors) -------------------------------------
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// A vendor's header is the first row of its own card, so each card reads as
+// one provider rather than a label floating above a separate list.
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 10px 0 14px;
+  background: color-mix(in srgb, var(--vscode-foreground) 3%, transparent);
+  border-bottom: 1px solid var(--provider-divider);
+
+  strong { font-size: type.$font-size-xs; }
+
+  + .row { border-top: 0; }
+}
+
+.groupCount {
+  flex: 1 1 auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-2xs;
+  font-variant-numeric: tabular-nums;
+}
+
+.textButton {
+  flex: none;
+  padding: 2px 6px;
+  color: var(--vscode-textLink-foreground);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  font-size: type.$font-size-2xs;
+  cursor: pointer;
+
+  &:hover { background: var(--vscode-list-hoverBackground); }
+}
+
+// --- Empty and intro states ------------------------------------------------
+
+.empty {
+  padding: 28px 16px;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-xs;
+  text-align: center;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 16px;
+  text-align: center;
+
+  > span { max-width: 460px; color: var(--vscode-descriptionForeground); font-size: type.$font-size-xs; line-height: 1.6; }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 4px 0 6px;
+    padding: 0;
+    list-style: none;
+    color: var(--vscode-descriptionForeground);
+    font-size: type.$font-size-xs;
+    text-align: left;
+  }
+
+  li { display: flex; align-items: center; gap: 8px; }
+  li > :first-child { color: var(--vscode-gitDecoration-addedResourceForeground); }
+}
+
+// --- Page actions ----------------------------------------------------------
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 64px;
+  max-width: 200px;
+  height: var(--control-height, 25px);
+  padding: 0 8px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--control-background, var(--vscode-input-background));
+  border: 1px solid var(--control-border, var(--vscode-input-border, transparent));
+  border-radius: 5px;
+
+  &:hover { background: var(--control-hover-background, var(--control-background, var(--vscode-input-background))); }
+  &:focus-within { border-color: var(--vscode-focusBorder); }
+
+  input {
+    flex: 1 1 auto;
+    // A percentage width keeps the input's natural width as the field's
+    // preferred size while letting a crowded toolbar compress it to nothing.
+    width: 100%;
+    min-width: 0;
+    color: var(--vscode-input-foreground);
+    background: transparent;
+    border: 0;
+    outline: none;
+    font-size: type.$font-size-xs;
+  }
+}
+
+.segmented {
+  // overflow: hidden would otherwise let the toolbar squeeze its buttons away
+  // before the search field gives up any width.
+  flex: none;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 5px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 25px;
+    padding: 0 8px;
+    color: var(--vscode-descriptionForeground);
+    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--vscode-sideBar-border);
+    font-size: type.$font-size-xs;
+    white-space: nowrap;
+
+    &:last-child { border-right: 0; }
+    &:hover:not(:disabled) { color: var(--vscode-foreground); background: var(--vscode-list-hoverBackground); }
+    &:disabled { opacity: .5; cursor: not-allowed; }
+  }
+}

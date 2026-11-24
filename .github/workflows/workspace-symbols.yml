@@ -1,0 +1,110 @@
+# Builds the universal workspace-symbols VSIX: every byok-semantic platform
+# binary inside one package, plus a sha256 sidecar for the desktop installer.
+name: workspace-symbols
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  binaries:
+    name: byok-semantic (${{ matrix.dir }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, target: aarch64-apple-darwin, dir: darwin-arm64 }
+          - { os: macos-latest, target: x86_64-apple-darwin, dir: darwin-x64 }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl, dir: linux-x64 }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-musl, dir: linux-arm64 }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, dir: win32-x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install musl toolchain
+        if: startsWith(matrix.target, 'aarch64-unknown-linux-musl') || matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install target
+        run: rustup target add ${{ matrix.target }}
+      - name: Build byok-semantic
+        run: cargo build --profile vsix -p byok-semantic --target ${{ matrix.target }}
+      - name: Stage binary
+        shell: bash
+        run: |
+          BIN=byok-semantic
+          OUT="apps/workspace-symbols/bin/${{ matrix.dir }}"
+          [ "${{ matrix.os }}" = windows-latest ] && BIN=byok-semantic.exe
+          mkdir -p "$OUT"
+          cp "target/${{ matrix.target }}/vsix/$BIN" "$OUT/$BIN"
+          ls -la "$OUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: byok-semantic-${{ matrix.dir }}
+          path: apps/workspace-symbols/bin/
+          if-no-files-found: error
+          retention-days: 2
+
+  vsix:
+    name: Package universal VSIX
+    needs: binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: byok-semantic-*
+          # Each artifact was uploaded from bin/, so its root holds <platform>/.
+          path: apps/workspace-symbols/bin
+          merge-multiple: true
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check bundled binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          # upload/download-artifact drops the executable bit, so restore it
+          # here — the VSIX is packaged after this step.
+          for d in darwin-arm64 darwin-x64 linux-x64 linux-arm64; do
+            chmod +x "apps/workspace-symbols/bin/$d/byok-semantic"
+            test -f "apps/workspace-symbols/bin/$d/byok-semantic"
+          done
+          test -f apps/workspace-symbols/bin/win32-x64/byok-semantic.exe
+          for d in darwin-arm64 darwin-x64 linux-x64 linux-arm64 win32-x64; do
+            echo "== $d"; file "apps/workspace-symbols/bin/$d/"byok-semantic* | head -1
+          done
+          # musl output is reported as "statically linked" or "static-pie linked".
+          for d in linux-x64 linux-arm64; do
+            file "apps/workspace-symbols/bin/$d/byok-semantic" | grep -qE "statically linked|static-pie linked" \
+              || { echo "::error::$d byok-semantic is not statically linked"; exit 1; }
+          done
+      - name: Extension checks
+        run: npm --prefix apps/workspace-symbols run check
+      - name: Package VSIX
+        working-directory: apps/workspace-symbols
+        run: |
+          set -euo pipefail
+          npx --yes @vscode/vsce package --no-dependencies --out ../../byok-workspace-symbols.vsix
+          VERSION=$(node -p "require('../../apps/desktop/src-tauri/tauri.conf.json').version")
+          mv ../../byok-workspace-symbols.vsix "../../byok-workspace-symbols-$VERSION.vsix"
+          (cd ../.. && shasum -a 256 "byok-workspace-symbols-$VERSION.vsix" > "byok-workspace-symbols-$VERSION.vsix.sha256")
+          ls -la ../../byok-workspace-symbols-*
+      - name: Inspect VSIX contents
+        run: |
+          cd /tmp && rm -rf vsix-inspect && mkdir vsix-inspect && cd vsix-inspect
+          unzip -q "$GITHUB_WORKSPACE/byok-workspace-symbols-"*.vsix
+          find extension/bin -type f | sort
+          test -f extension/bin/win32-x64/byok-semantic.exe
+      - name: Upload VSIX artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: byok-workspace-symbols-vsix
+          path: |
+            byok-workspace-symbols-*.vsix
+            byok-workspace-symbols-*.vsix.sha256
+          if-no-files-found: error
+          retention-days: 5

@@ -65,6 +65,7 @@ pub(crate) fn failure_with_message(call: &ToolCall, error: String) -> ToolComple
             call_id: call.call_id.clone(),
             content: error.clone(),
             is_error: true,
+            parts: Vec::new(),
             image: None,
         },
         pb::tool_call::Tool::McpToolCall(pb::McpToolCall {

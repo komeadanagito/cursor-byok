@@ -31,8 +31,10 @@ pub fn llm_request(invocation: &ModelInvocation) -> Result<serde_json::Value> {
             "effort": request.model.reasoning.effort,
         },
         "latency": match request.model.latency {
+            ModelLatency::Standard => "standard",
+            ModelLatency::DefaultTier => "default",
             ModelLatency::Fast => "fast",
-            _ => "standard",
+            ModelLatency::Ultrafast => "ultrafast",
         },
         "maxOutputTokens": request.model.max_output_tokens,
         "cacheKey": invocation.conversation_id,

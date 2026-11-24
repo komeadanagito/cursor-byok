@@ -14,7 +14,7 @@ pub(super) struct ListedModel {
 pub(super) async fn list(store: &Store, plugins: &PluginRegistry) -> Result<Vec<ListedModel>> {
     let mut models = Vec::new();
     let mut ids = HashSet::new();
-    let mut configured = store.models().await?;
+    let mut configured = store.configured_models().await?;
     configured.sort_by(|left, right| {
         left.sort_order
             .cmp(&right.sort_order)

@@ -14,16 +14,18 @@ use parking_lot::Mutex;
 
 use crate::{
     cache::{load_runtime, load_snapshot, save_runtime, save_snapshot, CacheLayout},
-    chunk::chunk_source,
+    chunk::chunk_parsed_source,
     config::{SembleConfig, INDEX_FORMAT_VERSION},
     embedding::Embedder,
     index::extract_definitions,
-    language::detect_language,
+    language::{detect_language, parser_for},
     source::discover_files,
     ContentType, Error, Result,
 };
 
-use super::{lexical_document, IndexSnapshot, IndexedFile, LoadedIndex};
+use super::{
+    function_anchors, lexical_document, typed_definitions, IndexSnapshot, IndexedFile, LoadedIndex,
+};
 
 pub struct IndexRepository {
     config: SembleConfig,
@@ -142,12 +144,18 @@ impl IndexRepository {
             }
             let source = String::from_utf8_lossy(&bytes);
             let language = detect_language(&file.absolute_path);
-            let chunks = chunk_source(
+            let tree = language
+                .and_then(parser_for)
+                .and_then(|mut parser| parser.parse(source.as_ref(), None));
+            let (chunks, boundaries): (Vec<_>, Vec<_>) = chunk_parsed_source(
                 &source,
                 &file.relative_path,
                 language,
                 self.config.desired_chunk_bytes,
-            );
+                tree.as_ref(),
+            )
+            .into_iter()
+            .unzip();
             if chunks.is_empty() {
                 continue;
             }
@@ -161,11 +169,24 @@ impl IndexRepository {
                 .iter()
                 .map(|chunk| lexical_document(&chunk.content))
                 .collect();
+            let mut definitions = extract_definitions(&chunks);
+            let declarations = match (language, tree.as_ref()) {
+                (Some(language), Some(tree)) => {
+                    typed_definitions::extend(language, tree, &source, &chunks, &mut definitions)
+                }
+                _ => Vec::new(),
+            };
+            let function_anchors = tree.as_ref().map_or_else(
+                || vec![None; chunks.len()],
+                |tree| function_anchors::collect(tree, &boundaries),
+            );
             indexed.push(IndexedFile {
                 path: file.relative_path,
                 stamp: file.stamp,
                 content_type: file.content_type,
-                definitions: extract_definitions(&chunks),
+                definitions,
+                declarations,
+                function_anchors,
                 lexical_documents,
                 chunks,
                 vectors,

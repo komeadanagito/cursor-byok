@@ -160,12 +160,13 @@ pub fn decode(request: &ai::BidiAppendRequest) -> Result<DecodedAppend> {
         .map(|id| id.request_id.as_str())
         .filter(|id| !id.is_empty())
         .ok_or_else(|| Error::Protocol("BidiAppend request_id is required".into()))?;
-    let message = if !request.data_binary.is_empty() {
-        agent::AgentClientMessage::decode(request.data_binary.as_slice())?
+    let payload = if !request.data_binary.is_empty() {
+        std::borrow::Cow::Borrowed(request.data_binary.as_slice())
     } else if !request.data.is_empty() {
-        let payload = hex::decode(&request.data)
-            .map_err(|error| Error::Protocol(format!("invalid BidiAppend hex: {error}")))?;
-        agent::AgentClientMessage::decode(payload.as_slice())?
+        std::borrow::Cow::Owned(
+            hex::decode(&request.data)
+                .map_err(|error| Error::Protocol(format!("invalid BidiAppend hex: {error}")))?,
+        )
     } else {
         return Err(Error::Protocol(
             "BidiAppend contains no AgentClientMessage".into(),
@@ -174,7 +175,7 @@ pub fn decode(request: &ai::BidiAppendRequest) -> Result<DecodedAppend> {
     Ok(DecodedAppend {
         request_id: request_id.into(),
         seqno: request.append_seqno,
-        message,
+        message: agent::AgentClientMessage::decode(payload.as_ref())?,
     })
 }
 
@@ -182,12 +183,16 @@ pub async fn append(
     registry: &TransportRegistry,
     request: DecodedAppend,
     parent: Option<TransportParent>,
+    image_reader: Option<crate::cursor::services::describe_image::CursorImageReader>,
 ) -> Result<ai::BidiAppendResponse> {
     let replace_closing = request.model_id().is_some();
     let handle = registry
         .get_or_create_for_append(&request.request_id, replace_closing)
         .await?;
     let _admission = handle.admit()?;
+    if let Some(reader) = image_reader {
+        let _ = handle.image_reader.set(reader);
+    }
     if let Some(conversation_id) = request.conversation_id() {
         handle.set_conversation_id(conversation_id)?;
     }

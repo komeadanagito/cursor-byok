@@ -1,0 +1,34 @@
+{
+  "source": "https://huggingface.co/datasets/google/frames-benchmark/resolve/58d9fb6330f3ab1316d1eca12e5e8ef23dcc22ef/test.tsv",
+  "sha256": "4255093c93b595b5b04c7c8dde290b48ec87d72ca0fb0b760d9dd02740d669ff",
+  "k": 10,
+  "backends": [
+    {
+      "backend": "1.0.6",
+      "questions": 6,
+      "at_least_one": 2,
+      "matched_links": 2,
+      "expected_links": 20,
+      "p50_seconds": 6.2799302919999995,
+      "errors": 0
+    },
+    {
+      "backend": "current",
+      "questions": 6,
+      "at_least_one": 2,
+      "matched_links": 2,
+      "expected_links": 20,
+      "p50_seconds": 4.0020065625,
+      "errors": 0
+    },
+    {
+      "backend": "exa-anonymous",
+      "questions": 6,
+      "at_least_one": 3,
+      "matched_links": 4,
+      "expected_links": 20,
+      "p50_seconds": 1.3794086665000016,
+      "errors": 0
+    }
+  ]
+}

@@ -23,6 +23,8 @@ use super::{
 pub struct RunEngine {
     store: Store,
     provider: Arc<dyn Provider>,
+    plugins: Option<crate::plugin::PluginRegistry>,
+    cursor_reader: Option<crate::cursor::services::describe_image::CursorImageReader>,
 }
 
 /// Provider-visible tail appended when the committed history ends with the
@@ -33,7 +35,22 @@ const CONTINUE_INSTRUCTION: &str = "Continue from where you left off.";
 
 impl RunEngine {
     pub fn new(store: Store, provider: Arc<dyn Provider>) -> Self {
-        Self { store, provider }
+        Self {
+            store,
+            provider,
+            plugins: None,
+            cursor_reader: None,
+        }
+    }
+
+    pub(crate) fn with_image_readers(
+        mut self,
+        plugins: Option<crate::plugin::PluginRegistry>,
+        cursor: Option<crate::cursor::services::describe_image::CursorImageReader>,
+    ) -> Self {
+        self.plugins = plugins;
+        self.cursor_reader = cursor;
+        self
     }
 
     #[tracing::instrument(
@@ -185,7 +202,7 @@ impl RunEngine {
             if cancellation.is_cancelled() {
                 return (RunOutcome::Cancelled, usage);
             }
-            let messages = match self.store.load_checkpoint_messages(checkpoint).await {
+            let messages = match client.history.load(&self.store, checkpoint).await {
                 Ok(messages) => messages,
                 Err(error) => return (RunOutcome::Failed(error.into()), usage),
             };
@@ -223,6 +240,13 @@ impl RunEngine {
                     Err(outcome) => return (outcome, usage),
                 }
             }
+            let mut history = history;
+            if let Err(outcome) = self
+                .prepare_images(prepared, &mut history, cancellation)
+                .await
+            {
+                return (outcome, usage);
+            }
             let provider_call_index = match self.store.begin_provider_call(&prepared.run_id).await {
                 Ok(index) => index,
                 Err(error) => return (RunOutcome::Failed(error.into()), usage),
@@ -232,10 +256,6 @@ impl RunEngine {
                 checkpoint_id = checkpoint.0,
                 "starting model call"
             );
-            let mut history = history;
-            if let Err(error) = hydrate_tool_images(&self.store, &mut history).await {
-                return (RunOutcome::Failed(error.into()), usage);
-            }
             // The usage anchor counts persisted messages only; a transient
             // tail is provider-visible but never committed.
             let anchored_messages = history.len();
@@ -415,11 +435,11 @@ impl RunEngine {
                                 Ok((checkpoint, _)) => checkpoint,
                                 Err(outcome) => return (outcome, usage),
                             };
-                            let messages =
-                                match self.store.load_checkpoint_messages(checkpoint).await {
-                                    Ok(messages) => messages,
-                                    Err(error) => return (RunOutcome::Failed(error.into()), usage),
-                                };
+                            let messages = match client.history.load(&self.store, checkpoint).await
+                            {
+                                Ok(messages) => messages,
+                                Err(error) => return (RunOutcome::Failed(error.into()), usage),
+                            };
                             match self
                                 .auto_compact(prepared, checkpoint, &messages, client, cancellation)
                                 .await
@@ -759,6 +779,28 @@ impl RunEngine {
         }
     }
 
+    async fn prepare_images(
+        &self,
+        prepared: &PreparedRun,
+        history: &mut [crate::model::ProjectedMessage],
+        cancellation: &CancellationToken,
+    ) -> std::result::Result<(), RunOutcome> {
+        hydrate_tool_images(&self.store, history)
+            .await
+            .map_err(|err| RunOutcome::Failed(err.into()))?;
+        let readers = super::vision::ImageReaders {
+            store: &self.store,
+            provider: &*self.provider,
+            plugins: self.plugins.as_ref(),
+            cursor: self.cursor_reader.as_ref(),
+        };
+        tokio::select! {
+            biased;
+            _ = cancellation.cancelled() => Err(RunOutcome::Cancelled),
+            result = readers.prepare(prepared, history, cancellation) => result.map_err(|err| RunOutcome::Failed(err.into())),
+        }
+    }
+
     async fn auto_compact(
         &self,
         prepared: &PreparedRun,
@@ -789,15 +831,17 @@ impl RunEngine {
         emit(client, RunEvent::AutoCompactionStarted)
             .await
             .map_err(|_| client_failure())?;
+        let mut history = crate::model::project_messages(&compactable)
+            .map(|history| {
+                super::compaction::compaction_history(history, prepared.model.context_window_tokens)
+            })
+            .map_err(|error| RunOutcome::Failed(error.into()))?;
+        self.prepare_images(prepared, &mut history, cancellation)
+            .await?;
         let provider_call_index = self
             .store
             .begin_provider_call(&prepared.run_id)
             .await
-            .map_err(|error| RunOutcome::Failed(error.into()))?;
-        let history = crate::model::project_messages(&compactable)
-            .map(|history| {
-                super::compaction::compaction_history(history, prepared.model.context_window_tokens)
-            })
             .map_err(|error| RunOutcome::Failed(error.into()))?;
         let mut model = prepared.model.clone();
         model.max_output_tokens = Some(super::compaction::OUTPUT_TOKENS);
@@ -1060,6 +1104,7 @@ fn failure_message(failure: &RunFailure) -> String {
     match failure {
         RunFailure::Protocol(message)
         | RunFailure::Provider(message)
+        | RunFailure::ProviderRefusal(message)
         | RunFailure::Store(message)
         | RunFailure::Client(message) => message.clone(),
     }

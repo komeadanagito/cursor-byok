@@ -1,0 +1,461 @@
+{
+  "first12": {
+    "combined": {
+      "arms": {
+        "A": {
+          "queries": 240,
+          "top1": 121,
+          "top5": 146,
+          "top10": 181
+        },
+        "B": {
+          "queries": 240,
+          "top1": 121,
+          "top5": 146,
+          "top10": 190
+        },
+        "doc+number": {
+          "queries": 240,
+          "top1": 121,
+          "top5": 146,
+          "top10": 183
+        }
+      },
+      "A_to_B_at_10": {
+        "gains": 9,
+        "losses": 0,
+        "gained_queries": [
+          {
+            "repo": "ClickHouse/clickhouse-cpp",
+            "track": "description",
+            "id": 8
+          },
+          {
+            "repo": "Password4j/password4j",
+            "track": "description",
+            "id": 6
+          },
+          {
+            "repo": "fatedier/frp",
+            "track": "description",
+            "id": 8
+          },
+          {
+            "repo": "polybar/polybar",
+            "track": "description",
+            "id": 6
+          },
+          {
+            "repo": "polybar/polybar",
+            "track": "description",
+            "id": 9
+          },
+          {
+            "repo": "python-poetry/poetry",
+            "track": "description",
+            "id": 7
+          },
+          {
+            "repo": "rust-lang/cargo",
+            "track": "description",
+            "id": 0
+          },
+          {
+            "repo": "rust-lang/cargo",
+            "track": "description",
+            "id": 8
+          },
+          {
+            "repo": "xenova/transformers.js",
+            "track": "description",
+            "id": 4
+          }
+        ],
+        "lost_queries": []
+      }
+    },
+    "tracks": {
+      "description": {
+        "arms": {
+          "A": {
+            "queries": 120,
+            "top1": 8,
+            "top5": 27,
+            "top10": 61
+          },
+          "B": {
+            "queries": 120,
+            "top1": 8,
+            "top5": 27,
+            "top10": 70
+          },
+          "doc+number": {
+            "queries": 120,
+            "top1": 8,
+            "top5": 27,
+            "top10": 63
+          }
+        },
+        "A_to_B_at_10": {
+          "gains": 9,
+          "losses": 0,
+          "gained_queries": [
+            {
+              "repo": "ClickHouse/clickhouse-cpp",
+              "track": "description",
+              "id": 8
+            },
+            {
+              "repo": "Password4j/password4j",
+              "track": "description",
+              "id": 6
+            },
+            {
+              "repo": "fatedier/frp",
+              "track": "description",
+              "id": 8
+            },
+            {
+              "repo": "polybar/polybar",
+              "track": "description",
+              "id": 6
+            },
+            {
+              "repo": "polybar/polybar",
+              "track": "description",
+              "id": 9
+            },
+            {
+              "repo": "python-poetry/poetry",
+              "track": "description",
+              "id": 7
+            },
+            {
+              "repo": "rust-lang/cargo",
+              "track": "description",
+              "id": 0
+            },
+            {
+              "repo": "rust-lang/cargo",
+              "track": "description",
+              "id": 8
+            },
+            {
+              "repo": "xenova/transformers.js",
+              "track": "description",
+              "id": 4
+            }
+          ],
+          "lost_queries": []
+        }
+      },
+      "symbol": {
+        "arms": {
+          "A": {
+            "queries": 120,
+            "top1": 113,
+            "top5": 119,
+            "top10": 120
+          },
+          "B": {
+            "queries": 120,
+            "top1": 113,
+            "top5": 119,
+            "top10": 120
+          },
+          "doc+number": {
+            "queries": 120,
+            "top1": 113,
+            "top5": 119,
+            "top10": 120
+          }
+        },
+        "A_to_B_at_10": {
+          "gains": 0,
+          "losses": 0,
+          "gained_queries": [],
+          "lost_queries": []
+        }
+      }
+    }
+  },
+  "full24": {
+    "combined": {
+      "arms": {
+        "A": {
+          "queries": 24,
+          "top1": 8,
+          "top5": 11,
+          "top10": 15
+        },
+        "B": {
+          "queries": 24,
+          "top1": 8,
+          "top5": 12,
+          "top10": 17
+        }
+      },
+      "A_to_B_at_10": {
+        "gains": 2,
+        "losses": 0,
+        "gained_queries": [
+          {
+            "repo": "react",
+            "track": "domain",
+            "id": "r02-ime-before-input"
+          },
+          {
+            "repo": "react",
+            "track": "paraphrase",
+            "id": "r04-client-tree-position-id"
+          }
+        ],
+        "lost_queries": []
+      }
+    },
+    "tracks": {
+      "domain": {
+        "arms": {
+          "A": {
+            "queries": 8,
+            "top1": 2,
+            "top5": 2,
+            "top10": 5
+          },
+          "B": {
+            "queries": 8,
+            "top1": 2,
+            "top5": 3,
+            "top10": 6
+          }
+        },
+        "A_to_B_at_10": {
+          "gains": 1,
+          "losses": 0,
+          "gained_queries": [
+            {
+              "repo": "react",
+              "track": "domain",
+              "id": "r02-ime-before-input"
+            }
+          ],
+          "lost_queries": []
+        }
+      },
+      "paraphrase": {
+        "arms": {
+          "A": {
+            "queries": 8,
+            "top1": 0,
+            "top5": 2,
+            "top10": 2
+          },
+          "B": {
+            "queries": 8,
+            "top1": 0,
+            "top5": 2,
+            "top10": 3
+          }
+        },
+        "A_to_B_at_10": {
+          "gains": 1,
+          "losses": 0,
+          "gained_queries": [
+            {
+              "repo": "react",
+              "track": "paraphrase",
+              "id": "r04-client-tree-position-id"
+            }
+          ],
+          "lost_queries": []
+        }
+      },
+      "symbol": {
+        "arms": {
+          "A": {
+            "queries": 8,
+            "top1": 6,
+            "top5": 7,
+            "top10": 8
+          },
+          "B": {
+            "queries": 8,
+            "top1": 6,
+            "top5": 7,
+            "top10": 8
+          }
+        },
+        "A_to_B_at_10": {
+          "gains": 0,
+          "losses": 0,
+          "gained_queries": [],
+          "lost_queries": []
+        }
+      }
+    }
+  },
+  "sealed6": {
+    "combined": {
+      "arms": {
+        "A": {
+          "queries": 120,
+          "top1": 64,
+          "top5": 73,
+          "top10": 90
+        },
+        "B": {
+          "queries": 120,
+          "top1": 64,
+          "top5": 74,
+          "top10": 97
+        }
+      },
+      "A_to_B_at_10": {
+        "gains": 8,
+        "losses": 1,
+        "gained_queries": [
+          {
+            "repo": "GoogleContainerTools/jib",
+            "track": "description",
+            "id": 9
+          },
+          {
+            "repo": "cloudflare/pingora",
+            "track": "description",
+            "id": 0
+          },
+          {
+            "repo": "drogonframework/drogon",
+            "track": "description",
+            "id": 6
+          },
+          {
+            "repo": "langchain-ai/langchainjs",
+            "track": "description",
+            "id": 1
+          },
+          {
+            "repo": "langchain-ai/langchainjs",
+            "track": "description",
+            "id": 6
+          },
+          {
+            "repo": "projectdiscovery/nuclei",
+            "track": "description",
+            "id": 1
+          },
+          {
+            "repo": "projectdiscovery/nuclei",
+            "track": "description",
+            "id": 4
+          },
+          {
+            "repo": "pyg-team/pytorch_geometric",
+            "track": "description",
+            "id": 9
+          }
+        ],
+        "lost_queries": [
+          {
+            "repo": "cloudflare/pingora",
+            "track": "description",
+            "id": 7
+          }
+        ]
+      }
+    },
+    "tracks": {
+      "description": {
+        "arms": {
+          "A": {
+            "queries": 60,
+            "top1": 5,
+            "top5": 13,
+            "top10": 30
+          },
+          "B": {
+            "queries": 60,
+            "top1": 5,
+            "top5": 14,
+            "top10": 37
+          }
+        },
+        "A_to_B_at_10": {
+          "gains": 8,
+          "losses": 1,
+          "gained_queries": [
+            {
+              "repo": "GoogleContainerTools/jib",
+              "track": "description",
+              "id": 9
+            },
+            {
+              "repo": "cloudflare/pingora",
+              "track": "description",
+              "id": 0
+            },
+            {
+              "repo": "drogonframework/drogon",
+              "track": "description",
+              "id": 6
+            },
+            {
+              "repo": "langchain-ai/langchainjs",
+              "track": "description",
+              "id": 1
+            },
+            {
+              "repo": "langchain-ai/langchainjs",
+              "track": "description",
+              "id": 6
+            },
+            {
+              "repo": "projectdiscovery/nuclei",
+              "track": "description",
+              "id": 1
+            },
+            {
+              "repo": "projectdiscovery/nuclei",
+              "track": "description",
+              "id": 4
+            },
+            {
+              "repo": "pyg-team/pytorch_geometric",
+              "track": "description",
+              "id": 9
+            }
+          ],
+          "lost_queries": [
+            {
+              "repo": "cloudflare/pingora",
+              "track": "description",
+              "id": 7
+            }
+          ]
+        }
+      },
+      "symbol": {
+        "arms": {
+          "A": {
+            "queries": 60,
+            "top1": 59,
+            "top5": 60,
+            "top10": 60
+          },
+          "B": {
+            "queries": 60,
+            "top1": 59,
+            "top5": 60,
+            "top10": 60
+          }
+        },
+        "A_to_B_at_10": {
+          "gains": 0,
+          "losses": 0,
+          "gained_queries": [],
+          "lost_queries": []
+        }
+      }
+    }
+  }
+}

@@ -8,7 +8,7 @@ use crate::{
     Error, Result,
 };
 
-use super::{normalized, InteractionContinuation, ToolStart};
+use super::{normalized, ToolStart};
 use crate::cursor::tools::{
     runtime::{CursorToolRuntime, PendingInteraction},
     tool_call_result::{self as result, ToolResultSender},
@@ -28,7 +28,7 @@ pub(super) async fn resume(
     fetch: &WebFetch,
     pending: PendingInteraction,
     response: &pb::InteractionResponse,
-) -> Result<InteractionContinuation> {
+) -> Result<ToolStart> {
     if normalized(&pending.call.name) == "websearch"
         && matches!(
             response.result.as_ref(),
@@ -40,7 +40,7 @@ pub(super) async fn resume(
         )
     {
         start_web_search(results.clone(), search.clone(), pending)?;
-        return Ok(InteractionContinuation::Pending);
+        return Ok(ToolStart::pending());
     }
     if normalized(&pending.call.name) == "webfetch"
         && matches!(
@@ -53,11 +53,12 @@ pub(super) async fn resume(
         )
     {
         start_web_fetch(results.clone(), fetch.clone(), pending)?;
-        return Ok(InteractionContinuation::Pending);
+        return Ok(ToolStart::pending());
     }
-    Ok(InteractionContinuation::Completed(Box::new(
-        result::from_interaction(pending, response)?,
-    )))
+    Ok(ToolStart {
+        messages: Vec::new(),
+        completion: Some(result::from_interaction(pending, response)?),
+    })
 }
 
 fn start_web_fetch(

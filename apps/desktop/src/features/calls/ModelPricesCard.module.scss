@@ -1,0 +1,128 @@
+@use "../../styles/typography" as type;
+
+.card {
+  padding: 4px 0;
+  overflow-x: auto;
+}
+
+.table {
+  min-width: 640px;
+}
+
+// One grid for header and rows so the columns line up; the model column absorbs
+// spare width and the rate columns shrink first on a narrow window.
+.row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) repeat(4, minmax(64px, 96px)) 84px minmax(72px, 96px) 28px;
+  align-items: center;
+  column-gap: 8px;
+  min-height: 44px;
+  padding: 0 12px 0 16px;
+
+  & + & {
+    border-top: 1px solid color-mix(in srgb, var(--vscode-sideBar-border) 70%, transparent);
+  }
+}
+
+.header {
+  min-height: 34px;
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-2xs;
+
+  > span:not(:first-child) {
+    text-align: right;
+  }
+
+  > span:nth-child(6) {
+    text-align: left;
+    padding-left: 10px;
+  }
+}
+
+.modelCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo {
+  flex-shrink: 0;
+  color: var(--vscode-foreground);
+}
+
+.modelName {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.modelId {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: type.$font-size-xs;
+}
+
+.channel {
+  color: var(--vscode-descriptionForeground);
+  font-size: type.$font-size-2xs;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Cells read as a sheet: a faint fill marks them editable, the border only
+// appears on hover and focus.
+.rate {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: type.$font-size-xs;
+  background: color-mix(in srgb, var(--vscode-foreground) 4%, transparent);
+  border: 1px solid transparent;
+  border-radius: 5px;
+
+  &::placeholder {
+    color: color-mix(in srgb, var(--vscode-descriptionForeground) 70%, transparent);
+    text-align: left;
+  }
+
+  &:hover {
+    border-color: var(--vscode-sideBar-border);
+  }
+
+  &:focus {
+    background: var(--vscode-input-background);
+    border-color: var(--vscode-focusBorder);
+  }
+}
+
+.currency {
+  --control-height: 28px;
+  --control-background: transparent;
+  --control-hover-background: color-mix(in srgb, var(--vscode-foreground) 6%, transparent);
+  --control-border: transparent;
+
+  min-width: 0;
+}
+
+.cost {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: type.$font-size-xs;
+  white-space: nowrap;
+}
+
+.unpriced .cost {
+  color: var(--vscode-descriptionForeground);
+}
+
+.clear {
+  display: flex;
+  justify-content: center;
+}

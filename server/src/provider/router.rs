@@ -78,35 +78,37 @@ impl Provider for ProviderRouter {
                     (recorder, guard, provider.stream(routed, cancellation.clone()))
                 } else {
                     let mut routed = invocation.clone();
-                    let model = store.model(&selected).await?.ok_or_else(|| Error::Provider(format!("unknown model: {selected}")))?;
+                    let model = store.configured_model(&selected).await?.ok_or_else(|| Error::Provider(format!("unknown model: {selected}")))?;
                     let provider_type = model.provider_type();
                     let request_url = model.request_url()?;
                     model.configure(&mut routed.request.model);
+                    if routed.request.model.latency == ModelLatency::Ultrafast && provider_type != ProviderType::OpenAiResponses {
+                        Err(Error::Config("Ultrafast model selection requires OpenAI Responses".into()))?;
+                    }
                     routed.request.model.extra_params =
                         super::request_template::render_json_strings(
                             model.extra_params(),
                             &invocation.conversation_id,
                         );
                     routed.request.model.model_id = model.model_id.clone();
-                    let recorder = start_recorder(&store, &invocation, &model.model_hash, &model.display_name, provider_type, &request_url, &model.model_id).await?;
+                    let recorder = start_recorder(&store, &routed, &model.model_hash, &model.display_name, provider_type, &request_url, &model.model_id).await?;
                     let guard = recorder.cancel_on_drop();
                     let config = ProviderConfig {
                         kind: provider_kind(provider_type),
                         request_url,
                         api_key: model.api_key.clone(),
-                        custom_headers: if model.custom_headers_enabled {
-                            custom_headers(
-                                &model.custom_headers,
-                                &invocation.conversation_id,
-                            )?
-                        } else {
-                            reqwest::header::HeaderMap::new()
-                        },
+                        custom_headers: routed_request_headers(&model, &invocation.conversation_id)?,
                         max_output_tokens: model.max_output_tokens(),
                         request_timeout,
                         allowed_body_fields: None,
                     };
-                    let client = clients.provider_client(request_timeout).await?;
+                    let client = match clients.model_client(&model, request_timeout).await {
+                        Ok(client) => client,
+                        Err(error) => {
+                            recorder.failed(&error).await?;
+                            Err(error)?
+                        }
+                    };
                     let provider = build_observed(&config, recorder.clone(), client)?;
                     (recorder, guard, provider.stream(routed, cancellation.clone()))
                 };
@@ -217,7 +219,10 @@ async fn start_recorder(
             model_id: model_id.into(),
             display_name: display_name.into(),
             reasoning_effort: invocation.request.model.reasoning.effort.clone(),
-            fast: invocation.request.model.latency == ModelLatency::Fast,
+            fast: matches!(
+                invocation.request.model.latency,
+                ModelLatency::Fast | ModelLatency::Ultrafast
+            ),
             message_count: invocation.request.history.len(),
             tool_count: invocation.request.prompt.tools.len(),
             detailed: false,
@@ -306,6 +311,21 @@ fn root_error_message(error: &(dyn std::error::Error + 'static)) -> String {
         current = source;
     }
     current.to_string()
+}
+
+pub(super) fn routed_request_headers(
+    model: &crate::model::ModelConfig,
+    conversation_id: &str,
+) -> Result<reqwest::header::HeaderMap> {
+    let mut headers = if model.custom_headers_enabled {
+        custom_headers(&model.custom_headers, conversation_id)?
+    } else {
+        reqwest::header::HeaderMap::new()
+    };
+    if model.model_hash.starts_with(super::magpie::PREFIX) {
+        super::magpie::set_session_affinity(&mut headers, conversation_id)?;
+    }
+    Ok(headers)
 }
 
 pub(crate) fn custom_headers(

@@ -1,6 +1,6 @@
 //! Incremental BM25 document data and a compact runtime inverted index.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use serde::{Deserialize, Serialize};
 
@@ -71,14 +71,15 @@ impl Bm25Index {
         if limit == 0 || self.document_lengths.is_empty() {
             return Vec::new();
         }
-        let mut query_terms = HashMap::<String, u32>::new();
+        // Accumulate floating-point scores in the same term order every time.
+        let mut query_terms = BTreeMap::<String, u32>::new();
         for term in tokenize(query) {
             *query_terms.entry(term).or_default() += 1;
         }
         let corpus_size = self.document_lengths.len() as f32;
         let average_length = self.average_document_length.max(f32::EPSILON);
-        let mut scores = HashMap::<usize, f32>::new();
-        let mut matched_weight = HashMap::<usize, f32>::new();
+        let mut scores = vec![(0.0_f32, 0.0_f32); self.document_lengths.len()];
+        let mut touched = Vec::new();
         let mut query_weight = 0.0;
         for (term, query_frequency) in query_terms {
             let postings = self.postings.get(&term);
@@ -86,37 +87,46 @@ impl Bm25Index {
             let inverse_document_frequency =
                 (1.0 + (corpus_size - document_frequency + 0.5) / (document_frequency + 0.5)).ln();
             query_weight += inverse_document_frequency;
-            let Some(postings) = postings else {
+            let Some(postings) = postings.filter(|_| inverse_document_frequency > 0.0) else {
                 continue;
             };
+            let weight = query_frequency as f32 * inverse_document_frequency;
             for posting in postings {
                 let term_frequency = posting.frequency as f32;
                 let document_length = self.document_lengths[posting.document] as f32;
                 let normalized_frequency = term_frequency
                     / (K1 * (1.0 - B + B * document_length / average_length) + term_frequency);
-                *scores.entry(posting.document).or_default() +=
-                    query_frequency as f32 * inverse_document_frequency * normalized_frequency;
-                *matched_weight.entry(posting.document).or_default() += inverse_document_frequency;
+                let (score, matched_weight) = &mut scores[posting.document];
+                if *matched_weight == 0.0 {
+                    touched.push(posting.document);
+                }
+                *score += weight * normalized_frequency;
+                *matched_weight += inverse_document_frequency;
             }
         }
-        let mut ranked = scores
+        let order = |left: &usize, right: &usize| {
+            scores[*right]
+                .0
+                .total_cmp(&scores[*left].0)
+                .then_with(|| left.cmp(right))
+        };
+        if limit < touched.len() {
+            touched.select_nth_unstable_by(limit, order);
+            touched.truncate(limit);
+        }
+        touched.sort_unstable_by(order);
+        let query_weight = query_weight.max(f32::EPSILON);
+        touched
             .into_iter()
-            .filter(|(_, score)| *score > 0.0)
-            .map(|(document, score)| Bm25Match {
-                document,
-                score,
-                coverage: matched_weight.get(&document).copied().unwrap_or_default()
-                    / query_weight.max(f32::EPSILON),
+            .map(|document| {
+                let (score, matched_weight) = scores[document];
+                Bm25Match {
+                    document,
+                    score,
+                    coverage: matched_weight / query_weight,
+                }
             })
-            .collect::<Vec<_>>();
-        ranked.sort_by(|left, right| {
-            right
-                .score
-                .total_cmp(&left.score)
-                .then_with(|| left.document.cmp(&right.document))
-        });
-        ranked.truncate(limit.min(ranked.len()));
-        ranked
+            .collect()
     }
 
     pub(crate) fn validate(&self, chunks: usize) -> bool {
@@ -174,6 +184,8 @@ mod tests {
                 .collect(),
             chunks,
             definitions: Vec::new(),
+            declarations: Vec::new(),
+            function_anchors: vec![None; contents.len()],
             vectors: Vec::new(),
         }
     }
@@ -197,6 +209,41 @@ mod tests {
         assert_eq!(matches[0].coverage, 1.0);
         assert!(matches[1].coverage < matches[0].coverage);
         assert!(index.search("missing_identifier", 3).is_empty());
+    }
+
+    #[test]
+    fn a_numeric_literal_distinguishes_otherwise_identical_operations() {
+        let mut files = [indexed_file(&["retry_after(15)", "retry_after(90)"])];
+        let index = Bm25Index::from_files(&mut files);
+        assert_eq!(index.search("retry after 90 seconds", 1)[0].document, 1);
+        assert!(index.search("900", 2).is_empty());
+    }
+
+    #[test]
+    fn repeated_searches_return_identical_bm25_scores_and_coverage() {
+        let file = indexed_file(&[
+            "package keyed queue start retry throttle backoff",
+            "package keyed queue queue start retry",
+            "package keyed queue queue",
+            "package keyed throttle",
+            "package backoff backoff backoff",
+            "package",
+        ]);
+        let index = Bm25Index::from_files(&mut [file]);
+        let expected = index.search(
+            "retry queue backoff keyed package start throttle queue missing",
+            3,
+        );
+        assert_eq!(expected[0].document, 0);
+        for _ in 0..32 {
+            assert_eq!(
+                index.search(
+                    "retry queue backoff keyed package start throttle queue missing",
+                    3
+                ),
+                expected,
+            );
+        }
     }
 
     #[test]

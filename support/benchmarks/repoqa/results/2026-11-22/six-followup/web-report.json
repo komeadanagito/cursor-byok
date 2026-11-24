@@ -1,0 +1,352 @@
+{
+  "rows": [
+    {
+      "id": "12",
+      "gold": [
+        "Basibasy mine",
+        "Christmas",
+        "Titanium",
+        "William Gregor"
+      ],
+      "matched": {
+        "primary": [
+          "William Gregor"
+        ],
+        "secondary": [
+          "William Gregor"
+        ],
+        "fusion": [
+          "William Gregor"
+        ],
+        "gated": [
+          "William Gregor"
+        ]
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "primary": 4.003841875,
+        "secondary": 1.4117641249999977
+      }
+    },
+    {
+      "id": "13",
+      "gold": [
+        "Barbara Kingsolver",
+        "Belgian Congo",
+        "The Poisonwood Bible"
+      ],
+      "matched": {
+        "primary": [
+          "Belgian Congo"
+        ],
+        "secondary": [
+          "Belgian Congo"
+        ],
+        "fusion": [
+          "Belgian Congo"
+        ],
+        "gated": [
+          "Belgian Congo"
+        ]
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "secondary": 0.9851302500000045,
+        "primary": 4.004780542
+      }
+    },
+    {
+      "id": "14",
+      "gold": [
+        "2010\u201311 La Liga",
+        "Dani Alves",
+        "Lionel Messi",
+        "Mesut \u00d6zil"
+      ],
+      "matched": {
+        "primary": [
+          "Mesut \u00d6zil"
+        ],
+        "secondary": [],
+        "fusion": [],
+        "gated": [
+          "Mesut \u00d6zil"
+        ]
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "primary": 4.00166775,
+        "secondary": 1.1381188749999964
+      }
+    },
+    {
+      "id": "15",
+      "gold": [
+        "Boredom in Brno",
+        "Bratislava International Film Festival",
+        "Ji\u0159\u00ed Bro\u017eek",
+        "Roudnice nad Labem"
+      ],
+      "matched": {
+        "primary": [
+          "Bratislava International Film Festival"
+        ],
+        "secondary": [
+          "Bratislava International Film Festival"
+        ],
+        "fusion": [
+          "Bratislava International Film Festival"
+        ],
+        "gated": [
+          "Bratislava International Film Festival"
+        ]
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "secondary": 0.8614472920000011,
+        "primary": 4.001871625
+      }
+    },
+    {
+      "id": "16",
+      "gold": [
+        "James Cameron",
+        "List of tallest buildings in San Francisco",
+        "Solomon Sea"
+      ],
+      "matched": {
+        "primary": [
+          "List of tallest buildings in San Francisco"
+        ],
+        "secondary": [
+          "James Cameron"
+        ],
+        "fusion": [
+          "James Cameron",
+          "List of tallest buildings in San Francisco"
+        ],
+        "gated": [
+          "List of tallest buildings in San Francisco"
+        ]
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "primary": 4.003384209,
+        "secondary": 1.2438914170000004
+      }
+    },
+    {
+      "id": "17",
+      "gold": [
+        "Big 12 Conference",
+        "Leirion Gaylor Baird",
+        "Lincoln, Nebraska",
+        "List of presidents of the United States by education"
+      ],
+      "matched": {
+        "primary": [],
+        "secondary": [],
+        "fusion": [],
+        "gated": []
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "secondary": 2.0442228750000027,
+        "primary": 4.004556417
+      }
+    },
+    {
+      "id": "18",
+      "gold": [
+        "Arlington, Texas",
+        "List of United States cities by population",
+        "Rubik's Cube"
+      ],
+      "matched": {
+        "primary": [],
+        "secondary": [],
+        "fusion": [],
+        "gated": []
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "primary": 4.004605458,
+        "secondary": 1.393217583000009
+      }
+    },
+    {
+      "id": "19",
+      "gold": [
+        "Tom Ridge",
+        "United States Secretary of Homeland Security",
+        "United States federal executive departments"
+      ],
+      "matched": {
+        "primary": [],
+        "secondary": [
+          "Tom Ridge"
+        ],
+        "fusion": [
+          "Tom Ridge"
+        ],
+        "gated": []
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "secondary": 0.8573396669999909,
+        "primary": 4.005764375
+      }
+    },
+    {
+      "id": "20",
+      "gold": [
+        "Colosteidae",
+        "Deltaherpeton",
+        "Greererpeton",
+        "Pholidogaster"
+      ],
+      "matched": {
+        "primary": [],
+        "secondary": [
+          "Colosteidae",
+          "Deltaherpeton"
+        ],
+        "fusion": [
+          "Colosteidae",
+          "Deltaherpeton"
+        ],
+        "gated": []
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "primary": 4.002343417,
+        "secondary": 1.2838392080000034
+      }
+    },
+    {
+      "id": "21",
+      "gold": [
+        "Agnieszka Kotlarska",
+        "Ma\u0142gorzata Ro\u017cniecka",
+        "Miss International"
+      ],
+      "matched": {
+        "primary": [],
+        "secondary": [],
+        "fusion": [],
+        "gated": []
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "secondary": 1.0401345000000077,
+        "primary": 4.005966375
+      }
+    },
+    {
+      "id": "22",
+      "gold": [
+        "Broken Arrow, Oklahoma",
+        "List of United States cities by population",
+        "Norman, Oklahoma",
+        "Oklahoma City",
+        "Tulsa, Oklahoma"
+      ],
+      "matched": {
+        "primary": [],
+        "secondary": [],
+        "fusion": [],
+        "gated": []
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "primary": 4.003463458,
+        "secondary": 1.355471584
+      }
+    },
+    {
+      "id": "23",
+      "gold": [
+        "Chikhali, Latur district",
+        "Mahatma Gandhi",
+        "Panchayati raj"
+      ],
+      "matched": {
+        "primary": [],
+        "secondary": [
+          "Chikhali, Latur district"
+        ],
+        "fusion": [
+          "Chikhali, Latur district"
+        ],
+        "gated": []
+      },
+      "collapsed": false,
+      "errors": {},
+      "seconds": {
+        "secondary": 1.2438554160000024,
+        "primary": 4.003492958
+      }
+    }
+  ],
+  "expected": 43,
+  "gated_extra_calls": 0,
+  "latency_seconds": {
+    "primary": {
+      "p50": 4.0036674165,
+      "p95": 4.005966375
+    },
+    "secondary": {
+      "p50": 1.2438734165000014,
+      "p95": 2.0442228750000027
+    }
+  },
+  "arms": {
+    "primary": {
+      "hits": 5,
+      "gained_queries": 0,
+      "lost_queries": 0,
+      "paired_mean_recall_delta_ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    "secondary": {
+      "hits": 8,
+      "gained_queries": 3,
+      "lost_queries": 1,
+      "paired_mean_recall_delta_ci95": [
+        -0.034722222222222224,
+        0.19444444444444445
+      ]
+    },
+    "fusion": {
+      "hits": 9,
+      "gained_queries": 4,
+      "lost_queries": 1,
+      "paired_mean_recall_delta_ci95": [
+        -0.01388888888888889,
+        0.2222222222222222
+      ]
+    },
+    "gated": {
+      "hits": 5,
+      "gained_queries": 0,
+      "lost_queries": 0,
+      "paired_mean_recall_delta_ci95": [
+        0.0,
+        0.0
+      ]
+    }
+  }
+}

@@ -103,13 +103,15 @@ function applyEditorTheme(monaco: MonacoApi) {
   monaco.editor.setTheme("cursor-byok");
 }
 
-export function JsonEditor({ value, onChange, readOnly = false, autoFormat = true, detail = false, ariaLabel }: {
+export function JsonEditor({ value, onChange, readOnly = false, autoFormat = true, detail = false, ariaLabel, language = "json", height }: {
   value: string;
   onChange?: (value: string) => void;
   readOnly?: boolean;
   autoFormat?: boolean;
   detail?: boolean;
   ariaLabel: string;
+  language?: "json" | "plaintext";
+  height?: number;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -120,12 +122,14 @@ export function JsonEditor({ value, onChange, readOnly = false, autoFormat = tru
   const readOnlyRef = useRef(readOnly);
   const autoFormatRef = useRef(autoFormat);
   const ariaLabelRef = useRef(ariaLabel);
+  const languageRef = useRef(language);
   const changingRef = useRef(false);
   onChangeRef.current = onChange;
   valueRef.current = value;
   readOnlyRef.current = readOnly;
   autoFormatRef.current = autoFormat;
   ariaLabelRef.current = ariaLabel;
+  languageRef.current = language;
 
   const format = () => {
     const model = modelRef.current;
@@ -153,7 +157,7 @@ export function JsonEditor({ value, onChange, readOnly = false, autoFormat = tru
       const fontSize = Number.parseFloat(rootStyles.getPropertyValue("--json-editor-font-size"));
       const fontFamily = rootStyles.getPropertyValue("--oa-code-font").trim();
       const initialValue = autoFormatRef.current ? formatStructuredText(valueRef.current) : valueRef.current;
-      const model = monaco.editor.createModel(initialValue, "json");
+      const model = monaco.editor.createModel(initialValue, languageRef.current);
       const editor = monaco.editor.create(host, {
         model,
         theme: "cursor-byok",
@@ -223,10 +227,10 @@ export function JsonEditor({ value, onChange, readOnly = false, autoFormat = tru
     editorRef.current?.updateOptions({ readOnly, domReadOnly: readOnly, ariaLabel });
   }, [ariaLabel, readOnly]);
 
-  return <div ref={rootRef} className={[styles.root, detail && styles.detail].filter(Boolean).join(" ")}>
-    <div className={styles.toolbar}>
+  return <div ref={rootRef} className={[styles.root, detail && styles.detail].filter(Boolean).join(" ")} style={height === undefined ? undefined : { height }}>
+    {!readOnly && <div className={styles.toolbar}>
       <button type="button" className={styles.formatButton} onClick={format}>{t("格式化")}</button>
-    </div>
+    </div>}
     <div ref={hostRef} className={styles.host} />
   </div>;
 }

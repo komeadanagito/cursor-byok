@@ -1,0 +1,349 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "dataset_sha256": "c050a2ad90a7df89d9dc1f1c3b3b20683edd20a56293b35fcaae43dec115d681",
+  "extension_sha256": {
+    "extension.cjs": "bc28f3a0a2660b51cbf2b572d86d1486ab8d73d2899ab40a0cc1c75005f948c5",
+    "semantic.cjs": "2347c36c54353519d4c6ff6199426d7cd5f1d466c5185be65ccc84e8cb27f851",
+    "symbols.yml": "e45a701044f55f2b48c9e983941865e49e2d89b26d2cb6e9c2c74ccb98d7dad4"
+  },
+  "cache_bytes": 6868678,
+  "symbols": {
+    "scip_commit": "7f51391d9770c63be2449463c8eb89f98c9e1468",
+    "service": {
+      "ready_ms": 699.4444169104099,
+      "server": {
+        "name": "Serena",
+        "version": "2.1.0",
+        "websiteUrl": "https://oraios.github.io/serena"
+      }
+    },
+    "tools": [
+      {
+        "tool": "get_symbols_overview",
+        "ms": 137.16325000859797,
+        "data": {
+          "Function": [
+            "dynamicImport",
+            "useEverything"
+          ]
+        }
+      },
+      {
+        "tool": "find_symbol",
+        "ms": 102.60458290576935,
+        "data": [
+          {
+            "name_path": "newFunction",
+            "kind": "Function",
+            "relative_path": "src/function.ts",
+            "body_location": {
+              "start_line": 0,
+              "end_line": 0
+            }
+          }
+        ]
+      },
+      {
+        "tool": "find_referencing_symbols",
+        "ms": 318.6319579835981,
+        "data": {
+          "src/import.ts": {
+            "Function": [
+              {
+                "name_path": "dynamicImport",
+                "body_location": {
+                  "start_line": 16,
+                  "end_line": 18
+                },
+                "content_around_reference": "...  16:export function dynamicImport(): Promise<void> {\n  >  17:  return import('./function').then(c => c.newFunction())\n...  18:}"
+              },
+              {
+                "name_path": "useEverything",
+                "body_location": {
+                  "start_line": 6,
+                  "end_line": 14
+                },
+                "content_around_reference": "...  10:    Enum[Enum.A] +\n  >  11:    newFunction() +\n...  12:    namespace.a.value"
+              }
+            ],
+            "File": [
+              {
+                "name_path": "import",
+                "body_location": {
+                  "start_line": 0,
+                  "end_line": 20
+                },
+                "content_around_reference": "...   2:import { Enum } from './enum'\n  >   3:import { newFunction } from './function'\n...   4:import { newInterface as renamedInterface } from './interface'"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tool": "find_implementations",
+        "ms": 133.19083396345377,
+        "data": [
+          {
+            "name_path": "objectLiteralImplementation/interfaceMethod",
+            "kind": "Method",
+            "relative_path": "src/inheritance.ts",
+            "body_location": {
+              "start_line": 38,
+              "end_line": 40
+            }
+          },
+          {
+            "name_path": "infersInterface/interfaceMethod[0]",
+            "kind": "Method",
+            "relative_path": "src/object-literals-call-signatures.ts",
+            "body_location": {
+              "start_line": 16,
+              "end_line": 16
+            }
+          },
+          {
+            "name_path": "infersInterface/interfaceMethod[1]",
+            "kind": "Method",
+            "relative_path": "src/object-literals-call-signatures.ts",
+            "body_location": {
+              "start_line": 21,
+              "end_line": 21
+            }
+          },
+          {
+            "name_path": "handleShorthand/interfaceMethod[0]",
+            "kind": "Constant",
+            "relative_path": "src/object-literals-call-signatures.ts",
+            "body_location": {
+              "start_line": 67,
+              "end_line": 67
+            }
+          },
+          {
+            "name_path": "Subclass/interfaceMethod",
+            "kind": "Method",
+            "relative_path": "src/inheritance.ts",
+            "body_location": {
+              "start_line": 29,
+              "end_line": 31
+            }
+          }
+        ]
+      },
+      {
+        "tool": "find_symbol",
+        "ms": 105.54087511263788,
+        "data": []
+      }
+    ],
+    "reference_lines": [
+      4,
+      12,
+      18
+    ],
+    "restart": {
+      "ready_ms": 402.73437509313226,
+      "server": {
+        "name": "Serena",
+        "version": "2.1.0",
+        "websiteUrl": "https://oraios.github.io/serena"
+      },
+      "first_ms": 141.36100001633167
+    },
+    "broken_model_is_error": true,
+    "symbols_available_during_semantic_error": true,
+    "semantic_recovery": {
+      "ready_ms": 287.68041706644,
+      "server": {
+        "name": "semble",
+        "version": "0.7.3"
+      },
+      "first_ms": 172.1543341409415,
+      "hits": [
+        [
+          "src/function.ts",
+          1,
+          1
+        ],
+        [
+          "src/inheritance.ts",
+          37,
+          42
+        ],
+        [
+          "src/import.ts",
+          1,
+          19
+        ],
+        [
+          "src/object-literals-call-signatures.ts",
+          1,
+          13
+        ],
+        [
+          "src/accessors.ts",
+          39,
+          51
+        ],
+        [
+          "src/constructor.ts",
+          1,
+          35
+        ],
+        [
+          "src/enum.ts",
+          1,
+          8
+        ],
+        [
+          "src/type-alias.ts",
+          1,
+          20
+        ],
+        [
+          "src/object-literals-arrow-function.ts",
+          1,
+          29
+        ],
+        [
+          "src/interface.ts",
+          1,
+          17
+        ]
+      ],
+      "related_ms": 5.130167119204998
+    }
+  },
+  "semantic": {
+    "processes": [
+      {
+        "repo": "psf/black",
+        "cold": {
+          "ready_ms": 300.9964998345822,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 304.97158295474946
+        },
+        "reopen": {
+          "ready_ms": 301.31200002506375,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 121.8817918561399
+        }
+      },
+      {
+        "repo": "skypjack/uvw",
+        "cold": {
+          "ready_ms": 311.6055419668555,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 234.90608297288418
+        },
+        "reopen": {
+          "ready_ms": 272.9116249829531,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 142.40879099816084
+        }
+      },
+      {
+        "repo": "square/retrofit",
+        "cold": {
+          "ready_ms": 398.38166697882116,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 226.67262493632734
+        },
+        "reopen": {
+          "ready_ms": 382.9307500272989,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 160.51945905201137
+        }
+      },
+      {
+        "repo": "axios/axios",
+        "cold": {
+          "ready_ms": 394.6231671143323,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 207.46704214252532
+        },
+        "reopen": {
+          "ready_ms": 315.46154199168086,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 136.01237488910556
+        }
+      },
+      {
+        "repo": "tokio-rs/tracing",
+        "cold": {
+          "ready_ms": 315.0699590332806,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 194.83937486074865
+        },
+        "reopen": {
+          "ready_ms": 314.3711250741035,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 136.9658748153597
+        }
+      },
+      {
+        "repo": "junegunn/fzf",
+        "cold": {
+          "ready_ms": 348.31279097124934,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 346.6244169976562
+        },
+        "reopen": {
+          "ready_ms": 322.6236670743674,
+          "server": {
+            "name": "semble",
+            "version": "0.7.3"
+          },
+          "first_ms": 156.22345893643796
+        }
+      }
+    ],
+    "retrieval": {
+      "description": {
+        "queries": 60,
+        "hit_at_5": 18,
+        "hit_at_10": 26,
+        "hot_p50_ms": 2.3653960088267922
+      },
+      "symbol": {
+        "queries": 60,
+        "hit_at_5": 46,
+        "hit_at_10": 49,
+        "hot_p50_ms": 2.8890626272186637
+      }
+    }
+  }
+}

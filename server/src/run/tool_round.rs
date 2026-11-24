@@ -138,6 +138,7 @@ pub(super) async fn execute(
                         call_id: call.call_id.clone(),
                         content: "Tool execution was interrupted by a newer user message.".into(),
                         is_error: true,
+                        parts: Vec::new(),
                         image: None,
                     };
                     let committed = store

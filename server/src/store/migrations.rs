@@ -415,6 +415,14 @@ mod tests {
                 ..Migrator::DEFAULT
             };
             first_four.run(&pool).await.unwrap();
+            // A database written before model_prices still carries the global rate row.
+            sqlx::query(
+                "INSERT INTO service_settings(setting_key, value_json, updated_at_ms)
+                 VALUES ('token_pricing', '{\"input_per_million\":5}', 1)",
+            )
+            .execute(&pool)
+            .await
+            .unwrap();
             let checksum_before: Vec<u8> =
                 sqlx::query_scalar("SELECT checksum FROM _sqlx_migrations WHERE version = 1")
                     .fetch_one(&pool)
@@ -455,8 +463,26 @@ mod tests {
             .await
             .unwrap();
 
+            let token_pricing_rows: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM service_settings WHERE setting_key = 'token_pricing'",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+            let model_prices_exists: i64 = sqlx::query_scalar(
+                "SELECT EXISTS(
+                    SELECT 1 FROM sqlite_master
+                    WHERE type = 'table' AND name = 'model_prices'
+                 )",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+
             assert_eq!(checksum_after, checksum_before);
-            assert_eq!(versions, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            assert_eq!(versions, (1..=11).collect::<Vec<_>>());
+            assert_eq!(token_pricing_rows, 0);
+            assert_eq!(model_prices_exists, 1);
             assert_eq!(checkpoint_table_exists, 1);
             assert_eq!(argument_error_column_exists, 1);
         }

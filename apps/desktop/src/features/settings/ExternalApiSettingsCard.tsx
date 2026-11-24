@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type ExternalApiSettings } from "../../shared/api";
+import { api, type ExternalApiSettings, type ExternalApiView } from "../../shared/api";
 import { Button } from "../../shared/ui/Button";
 import { FormField, SecretTextInput } from "../../shared/ui/FormControls";
 import { Switch } from "../../shared/ui/Switch";
@@ -7,9 +7,9 @@ import { TitledCard } from "../../shared/ui/TitledCard";
 import { useMessage } from "../../shared/ui/message";
 import styles from "./ExternalApiSettingsCard.module.scss";
 
-export function ExternalApiSettingsCard({ servicePort }: { servicePort: number }) {
+export function ExternalApiSettingsCard() {
   const message = useMessage();
-  const [saved, setSaved] = useState<ExternalApiSettings | null>(null);
+  const [saved, setSaved] = useState<ExternalApiView | null>(null);
   const [draft, setDraft] = useState<ExternalApiSettings>({ enabled: false, api_key: "" });
   const [saving, setSaving] = useState(false);
 
@@ -34,7 +34,7 @@ export function ExternalApiSettingsCard({ servicePort }: { servicePort: number }
     }
   };
 
-  const address = `http://127.0.0.1:${servicePort}/byok/v1`;
+  const address = saved?.base_url ?? "—";
   const changed = saved && (saved.enabled !== draft.enabled || saved.api_key !== draft.api_key);
 
   return <TitledCard title={t("外部 API")} action={<Button size="small" variant="primary" disabled={!changed || saving} onClick={() => void save()}>

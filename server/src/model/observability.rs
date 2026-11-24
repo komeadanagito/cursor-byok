@@ -162,6 +162,9 @@ mod llm_call {
         pub usage: Option<serde_json::Value>,
         pub message_count: i64,
         pub tool_count: i64,
+        pub launched_tool_count: Option<i64>,
+        pub run_kind: Option<String>,
+        pub subagent_kind: Option<String>,
         pub request_bytes: Option<i64>,
         pub response_bytes: i64,
         pub stream_event_count: i64,
@@ -220,12 +223,47 @@ mod cursor_trace {
 }
 pub use cursor_trace::*;
 
+mod model_price {
+    //! Per (provider_url, model_id) pricing for provider_llm calls.
+
+    use serde::Serialize;
+
+    /// Stored rate row; NULL cache rates bill the same as fresh input.
+    #[derive(Clone, Debug, PartialEq, Serialize)]
+    pub struct ModelPrice {
+        pub input_per_million: f64,
+        pub output_per_million: f64,
+        pub cache_read_per_million: Option<f64>,
+        pub cache_write_per_million: Option<f64>,
+        pub currency: String,
+        pub updated_at_ms: i64,
+    }
+
+    /// One priced target: a (provider_url, model_id) seen in llm_calls.
+    #[derive(Clone, Debug, PartialEq, Serialize)]
+    pub struct ModelPriceEntry {
+        pub provider_url: String,
+        pub model_id: String,
+        pub channel_name: String,
+        pub last_call_ms: i64,
+        pub price: Option<ModelPrice>,
+    }
+}
+pub use model_price::*;
+
 mod overview {
     //! Read-only usage aggregates rendered by the desktop overview page.
 
     use serde::Serialize;
 
-    #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+    /// Estimated spend in one currency, accumulated from model_prices.
+    #[derive(Clone, Debug, Default, PartialEq, Serialize)]
+    pub struct CurrencyCost {
+        pub currency: String,
+        pub amount: f64,
+    }
+
+    #[derive(Clone, Debug, Default, PartialEq, Serialize)]
     pub struct OverviewMetrics {
         pub llm_calls: i64,
         pub successful_calls: i64,
@@ -236,40 +274,45 @@ mod overview {
         pub cache_read_tokens: i64,
         pub cache_write_tokens: i64,
         pub output_tokens: i64,
+        /// Cost per currency — USD and CNY are never summed together.
+        pub costs: Vec<CurrencyCost>,
+        /// Provider calls without a model_prices row, so their cost is unknown.
+        pub unpriced_calls: i64,
+        /// Mean time to first text over calls that produced text.
+        pub avg_ttft_ms: Option<f64>,
+        /// Mean of each finished call's output tokens per second after its first text.
+        pub output_tokens_per_second: Option<f64>,
     }
 
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
     #[serde(rename_all = "snake_case")]
-    pub enum TokenUsageGranularity {
+    pub enum OverviewGranularity {
         Minute,
         Hour,
         #[default]
         Day,
     }
 
-    #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
-    pub struct TokenUsageBucket {
+    /// One time slice of the overview, measured the same way as `OverviewMetrics`.
+    #[derive(Clone, Debug, Default, PartialEq, Serialize)]
+    pub struct OverviewBucket {
         pub bucket_start_ms: i64,
         pub input_tokens: i64,
         pub cache_read_tokens: i64,
         pub cache_write_tokens: i64,
         pub output_tokens: i64,
+        pub calls: i64,
+        pub failed_calls: i64,
+        pub avg_ttft_ms: Option<f64>,
+        pub output_tokens_per_second: Option<f64>,
+        pub costs: Vec<CurrencyCost>,
     }
 
-    impl TokenUsageBucket {
-        pub fn total_tokens(&self) -> i64 {
-            self.input_tokens
-                .saturating_add(self.cache_read_tokens)
-                .saturating_add(self.cache_write_tokens)
-                .saturating_add(self.output_tokens)
-        }
-    }
-
-    #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+    #[derive(Clone, Debug, Default, PartialEq, Serialize)]
     pub struct Overview {
         pub metrics: OverviewMetrics,
-        pub token_usage_granularity: TokenUsageGranularity,
-        pub token_usage_series: Vec<TokenUsageBucket>,
+        pub granularity: OverviewGranularity,
+        pub series: Vec<OverviewBucket>,
     }
 }
 pub use overview::*;

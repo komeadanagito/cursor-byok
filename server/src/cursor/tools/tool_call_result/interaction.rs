@@ -174,20 +174,23 @@ pub(crate) fn complete_web_search(
     };
     let (output, is_error) = match outcome {
         Ok(hits) => {
-            let output = hits
-                .iter()
-                .enumerate()
-                .map(|(index, hit)| {
-                    format!(
-                        "{}. {}\nURL: {}\n{}",
-                        index + 1,
-                        hit.title,
-                        hit.url,
-                        hit.chunk
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("\n\n");
+            let output = if hits.is_empty() {
+                "No web search results found.".into()
+            } else {
+                hits.iter()
+                    .enumerate()
+                    .map(|(index, hit)| {
+                        format!(
+                            "{}. {}\nURL: {}\n{}",
+                            index + 1,
+                            hit.title,
+                            hit.url,
+                            hit.chunk
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n\n")
+            };
             tool.result = Some(pb::WebSearchResult {
                 result: Some(pb::web_search_result::Result::Success(
                     pb::WebSearchSuccess {

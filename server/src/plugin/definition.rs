@@ -28,11 +28,6 @@ impl PluginDefinitionLoader {
         Self::in_directory(config::managed_data_dir()?.join("plugins/runtime/sdk/v1"))
     }
 
-    #[cfg(test)]
-    pub(super) fn for_test(root: &Path) -> Result<Self> {
-        Self::in_directory(root.join(".plugin-sdk"))
-    }
-
     fn in_directory(sdk_dir: PathBuf) -> Result<Self> {
         std::fs::create_dir_all(&sdk_dir)?;
         std::fs::create_dir_all(sdk_dir.join("protocol"))?;

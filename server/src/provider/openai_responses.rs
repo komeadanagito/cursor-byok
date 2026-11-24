@@ -7,9 +7,7 @@ use serde_json::{json, Map, Value};
 
 use crate::{
     config::ProviderConfig,
-    model::{
-        ContentPart, ModelInvocation, ModelLatency, ProjectedContent, ProjectedMessage, Role, Usage,
-    },
+    model::{ContentPart, ModelInvocation, ProjectedContent, ProjectedMessage, Role, Usage},
     Error, Result,
 };
 
@@ -82,7 +80,6 @@ impl Provider for OpenAiResponsesProvider {
                 })).collect::<Vec<_>>());
             }
             apply_model(&mut body, &request.model, config.max_output_tokens)?;
-            merge_extra_params(&mut body, &request.model.extra_params)?;
             apply_openai_prompt_cache_key(&mut body, &request.model.model_id)?;
             apply_body_allowlist(&mut body, config.allowed_body_fields.as_ref())?;
             let request_headers = recorded_headers(&config, &[("content-type", "application/json")]);
@@ -377,8 +374,9 @@ fn apply_model(
         }
         object.insert("reasoning".into(), Value::Object(reasoning));
     }
-    if model.latency == ModelLatency::Fast {
-        object.insert("service_tier".into(), json!("fast"));
+    merge_extra_params(body, &model.extra_params)?;
+    if let Some(tier) = model.latency.responses_tier() {
+        body["service_tier"] = json!(tier);
     }
     Ok(())
 }
@@ -543,6 +541,26 @@ pub(crate) fn responses_usage(value: &Value) -> Usage {
 mod tests {
     use super::*;
     use crate::model::ProviderReplayState;
+
+    #[test]
+    fn responses_uses_the_requested_service_tier_without_changing_effort() {
+        use crate::model::{ModelLatency, ModelSpec};
+        let mut model = ModelSpec::new("sol");
+        model.extra_params = json!({"service_tier":"ultrafast"});
+        model.reasoning.effort = Some("high".into());
+        for (latency, expected) in [
+            (ModelLatency::Standard, "ultrafast"),
+            (ModelLatency::DefaultTier, "default"),
+            (ModelLatency::Fast, "priority"),
+            (ModelLatency::Ultrafast, "ultrafast"),
+        ] {
+            model.latency = latency;
+            let mut body = json!({});
+            apply_model(&mut body, &model, None).unwrap();
+            assert_eq!(body["service_tier"], expected);
+            assert_eq!(body["reasoning"]["effort"], "high");
+        }
+    }
 
     #[test]
     fn reasoning_replay_projects_response_items_to_valid_input_items() {

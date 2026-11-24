@@ -1,0 +1,45 @@
+{
+  "name": "byok-workspace-symbols",
+  "displayName": "BYOK Workspace Symbols",
+  "description": "Semantic code search, symbol definitions and references from the active local or SSH workspace.",
+  "publisher": "cursor-byok",
+  "version": "1.1.0",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.cjs",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "byok.checkInferenceRoute",
+        "title": "BYOK: Check Remote Inference Route"
+      }
+    ]
+  },
+  "files": [
+    "extension.cjs",
+    "navigation.cjs",
+    "relay.cjs",
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node --check extension.cjs && node --check navigation.cjs && node --check relay.cjs && node scripts/check-version.mjs && node --test test/*.test.cjs"
+  }
+}

@@ -28,3 +28,15 @@ export function formatCompactInteger(value: number) {
   const fractionDigits = Math.abs(scaled) < 100 ? 1 : 0;
   return `${trimTrailingZeros(scaled.toFixed(fractionDigits))}${unit.suffix}`;
 }
+
+const moneyFormatter = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Sub-cent spend is common for cheap models; two decimals would show it as $0.00.
+export function formatMoney(currency: string, amount: number) {
+  const symbol = currency === "CNY" ? "¥" : "$";
+  if (amount > 0 && amount < 0.01) {
+    const digits = Math.min(8, 1 - Math.floor(Math.log10(amount)));
+    return `${symbol}${amount.toFixed(digits).replace(/0+$/, "")}`;
+  }
+  return `${symbol}${moneyFormatter.format(amount)}`;
+}

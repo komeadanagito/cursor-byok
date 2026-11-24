@@ -5,7 +5,6 @@ mod interaction;
 mod local;
 mod mcp;
 mod mcp_state;
-mod search;
 
 use serde_json::Value;
 use tokio::sync::mpsc;
@@ -23,7 +22,6 @@ pub(crate) use exec::{edit_failure, from_exec};
 pub(crate) use interaction::{complete_web_fetch, complete_web_search, from_interaction};
 pub(crate) use local::{local, subagents_disabled, todo_items};
 pub(crate) use mcp::failure as mcp_failure;
-pub(crate) use search::complete as semble;
 
 #[derive(Clone, Debug)]
 pub struct ToolCompletion {
@@ -124,6 +122,7 @@ impl ToolCompletion {
                 call_id: call.call_id.clone(),
                 content: output,
                 is_error,
+                parts: Vec::new(),
                 image: None,
             },
             tool,

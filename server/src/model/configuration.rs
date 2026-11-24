@@ -84,6 +84,8 @@ impl FromStr for ModelType {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ModelConfigInput {
+    #[serde(default = "default_image_support")]
+    pub supports_images: bool,
     #[serde(default)]
     pub sort_order: i64,
     pub display_name: String,
@@ -95,6 +97,7 @@ pub struct ModelConfigInput {
     pub base_url: String,
     #[serde(default)]
     pub use_full_url: bool,
+    #[serde(default)]
     pub api_key: String,
     pub tooltip_data: String,
     pub model_id: String,
@@ -123,7 +126,16 @@ pub struct ModelConfigInput {
 }
 
 #[derive(Clone, Debug, Serialize)]
+pub struct GatewayCapabilities {
+    pub thinking: bool,
+    pub efforts: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
 pub struct ModelConfig {
+    pub supports_images: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gateway_capabilities: Option<GatewayCapabilities>,
     pub model_hash: String,
     pub sort_order: i64,
     pub display_name: String,
@@ -132,6 +144,7 @@ pub struct ModelConfig {
     pub model_type: ModelType,
     pub base_url: String,
     pub use_full_url: bool,
+    #[serde(skip_serializing)]
     pub api_key: String,
     pub tooltip_data: String,
     pub model_id: String,
@@ -140,6 +153,7 @@ pub struct ModelConfig {
     pub openai_extra_params_enabled: bool,
     pub openai_extra_params: serde_json::Value,
     pub custom_headers_enabled: bool,
+    #[serde(skip_serializing)]
     pub custom_headers: serde_json::Value,
     pub anthropic_extra_params_enabled: bool,
     pub anthropic_extra_params: serde_json::Value,
@@ -150,6 +164,10 @@ pub struct ModelConfig {
     pub thinking_budget_tokens: Option<u64>,
     pub created_at_ms: i64,
     pub updated_at_ms: i64,
+}
+
+fn default_image_support() -> bool {
+    true
 }
 
 impl ModelConfig {
@@ -189,8 +207,20 @@ impl ModelConfig {
         }
     }
 
+    pub(crate) fn uses_ultrafast_by_default(&self) -> bool {
+        self.provider_type() == ProviderType::OpenAiResponses
+            && self
+                .extra_params()
+                .get("service_tier")
+                .and_then(serde_json::Value::as_str)
+                == Some("ultrafast")
+    }
+
     pub fn configure(&self, model: &mut super::ModelSpec) {
         model.display_name = Some(self.display_name.clone());
+        if model.latency == ModelLatency::Standard && self.uses_ultrafast_by_default() {
+            model.latency = ModelLatency::Ultrafast;
+        }
         // A request-selected context is authoritative.  Use the saved model
         // value only when Cursor did not send a context parameter.
         if model.context_window_tokens.is_none() {
@@ -238,6 +268,7 @@ pub fn normalize_model_input(input: &ModelConfigInput) -> Result<ModelConfigInpu
     validate_headers(&input.custom_headers)?;
 
     let normalized = ModelConfigInput {
+        supports_images: input.supports_images,
         sort_order: input.sort_order.max(0),
         display_name,
         group_name,
@@ -282,7 +313,48 @@ pub fn normalize_model_input(input: &ModelConfigInput) -> Result<ModelConfigInpu
     Ok(normalized)
 }
 
-pub fn model_hash(input: &ModelConfigInput) -> Result<String> {
+impl From<&ModelConfig> for ModelConfigInput {
+    fn from(model: &ModelConfig) -> Self {
+        ModelConfigInput {
+            supports_images: model.supports_images,
+            sort_order: model.sort_order,
+            display_name: model.display_name.clone(),
+            group_name: model.group_name.clone(),
+            model_type: model.model_type,
+            base_url: model.base_url.clone(),
+            use_full_url: model.use_full_url,
+            api_key: model.api_key.clone(),
+            tooltip_data: model.tooltip_data.clone(),
+            model_id: model.model_id.clone(),
+            reasoning_effort: model.reasoning_effort.clone(),
+            openai_endpoint: model.openai_endpoint.clone(),
+            openai_extra_params_enabled: model.openai_extra_params_enabled,
+            openai_extra_params: model.openai_extra_params.clone(),
+            custom_headers_enabled: model.custom_headers_enabled,
+            custom_headers: model.custom_headers.clone(),
+            anthropic_extra_params_enabled: model.anthropic_extra_params_enabled,
+            anthropic_extra_params: model.anthropic_extra_params.clone(),
+            context_window_tokens: model.context_window_tokens,
+            max_completion_tokens: model.max_completion_tokens,
+            anthropic_max_tokens: model.anthropic_max_tokens,
+            anthropic_thinking_effort: model.anthropic_thinking_effort.clone(),
+            thinking_budget_tokens: model.thinking_budget_tokens,
+        }
+    }
+}
+
+pub(crate) const MANUAL_MODEL_PREFIX: &str = "byok-";
+
+pub(crate) fn is_manual_model_id(id: &str) -> bool {
+    // Previously issued IDs are stored in Cursor checkpoints even after model deletion.
+    id.starts_with(MANUAL_MODEL_PREFIX)
+        || id.len() == 16
+            && id
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
+pub(crate) fn model_fingerprint(input: &ModelConfigInput) -> Result<String> {
     let normalized = normalize_model_input(input)?;
     let request_url = resolve_request_url(
         normalized.model_type,
@@ -446,7 +518,20 @@ pub struct ReasoningSpec {
 pub enum ModelLatency {
     #[default]
     Standard,
+    DefaultTier,
     Fast,
+    Ultrafast,
+}
+
+impl ModelLatency {
+    pub(crate) fn responses_tier(&self) -> Option<&'static str> {
+        match self {
+            Self::Standard => None,
+            Self::DefaultTier => Some("default"),
+            Self::Fast => Some("priority"),
+            Self::Ultrafast => Some("ultrafast"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

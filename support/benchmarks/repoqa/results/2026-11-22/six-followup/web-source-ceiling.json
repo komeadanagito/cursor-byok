@@ -1,0 +1,128 @@
+[
+  {
+    "id": "12",
+    "available_gold": [
+      "Christmas",
+      "William Gregor"
+    ],
+    "gold": [
+      "Basibasy mine",
+      "Christmas",
+      "Titanium",
+      "William Gregor"
+    ]
+  },
+  {
+    "id": "13",
+    "available_gold": [
+      "Belgian Congo"
+    ],
+    "gold": [
+      "Barbara Kingsolver",
+      "Belgian Congo",
+      "The Poisonwood Bible"
+    ]
+  },
+  {
+    "id": "14",
+    "available_gold": [
+      "Mesut \u00d6zil"
+    ],
+    "gold": [
+      "2010\u201311 La Liga",
+      "Dani Alves",
+      "Lionel Messi",
+      "Mesut \u00d6zil"
+    ]
+  },
+  {
+    "id": "15",
+    "available_gold": [
+      "Bratislava International Film Festival"
+    ],
+    "gold": [
+      "Boredom in Brno",
+      "Bratislava International Film Festival",
+      "Ji\u0159\u00ed Bro\u017eek",
+      "Roudnice nad Labem"
+    ]
+  },
+  {
+    "id": "16",
+    "available_gold": [
+      "List of tallest buildings in San Francisco"
+    ],
+    "gold": [
+      "James Cameron",
+      "List of tallest buildings in San Francisco",
+      "Solomon Sea"
+    ]
+  },
+  {
+    "id": "17",
+    "available_gold": [],
+    "gold": [
+      "Big 12 Conference",
+      "Leirion Gaylor Baird",
+      "Lincoln, Nebraska",
+      "List of presidents of the United States by education"
+    ]
+  },
+  {
+    "id": "18",
+    "available_gold": [],
+    "gold": [
+      "Arlington, Texas",
+      "List of United States cities by population",
+      "Rubik's Cube"
+    ]
+  },
+  {
+    "id": "19",
+    "available_gold": [],
+    "gold": [
+      "Tom Ridge",
+      "United States Secretary of Homeland Security",
+      "United States federal executive departments"
+    ]
+  },
+  {
+    "id": "20",
+    "available_gold": [],
+    "gold": [
+      "Colosteidae",
+      "Deltaherpeton",
+      "Greererpeton",
+      "Pholidogaster"
+    ]
+  },
+  {
+    "id": "21",
+    "available_gold": [],
+    "gold": [
+      "Agnieszka Kotlarska",
+      "Ma\u0142gorzata Ro\u017cniecka",
+      "Miss International"
+    ]
+  },
+  {
+    "id": "22",
+    "available_gold": [],
+    "gold": [
+      "Broken Arrow, Oklahoma",
+      "List of United States cities by population",
+      "Norman, Oklahoma",
+      "Oklahoma City",
+      "Tulsa, Oklahoma"
+    ]
+  },
+  {
+    "id": "23",
+    "available_gold": [],
+    "gold": [
+      "Chikhali, Latur district",
+      "Mahatma Gandhi",
+      "Panchayati raj"
+    ]
+  }
+]

@@ -345,6 +345,196 @@ async fn background_shell_completion_wakes_the_parent_with_the_captured_notifica
     assert_eq!(metadata.task_id.as_deref(), Some("977679"));
 }
 
+#[tokio::test]
+async fn finished_background_subagents_leave_the_backgrounded_state_in_the_woken_run() {
+    for (reported, expected) in [
+        (
+            pb::BackgroundTaskStatus::Success,
+            pb::SubagentRunStatus::Success,
+        ),
+        (
+            pb::BackgroundTaskStatus::Error,
+            pb::SubagentRunStatus::Error,
+        ),
+        (
+            pb::BackgroundTaskStatus::Aborted,
+            pb::SubagentRunStatus::Aborted,
+        ),
+    ] {
+        let mut completion = subagent_completion("child", "task-call");
+        completion.status = reported as i32;
+        let checkpoint = wake_with(
+            vec![completion],
+            backgrounded_state(&[("task-call", "child")]),
+        )
+        .await;
+
+        let run = &checkpoint.subagent_runs_by_parent_tool_call_id["task-call"];
+        assert_eq!(run.status(), expected);
+        assert!(run.completed_timestamp_ms.is_some_and(|at| at > 0));
+        assert_eq!(
+            run.completion_reason(),
+            pb::BackgroundTaskCompletionReason::TaskFinished
+        );
+        assert_eq!(run.detail.as_deref(), Some("child result"));
+        assert_eq!(run.output_path.as_deref(), Some("/tmp/child.jsonl"));
+        assert_eq!(run.title.as_deref(), Some("Started title"));
+    }
+}
+
+#[tokio::test]
+async fn only_the_finished_subagent_run_is_settled() {
+    let mut progress = subagent_completion("in-progress", "progress-call");
+    progress.reason = pb::BackgroundTaskCompletionReason::TaskProgress as i32;
+    let mut shell = subagent_completion("shell-id", "shell-call");
+    shell.kind = pb::BackgroundTaskKind::Shell as i32;
+    let checkpoint = wake_with(
+        vec![
+            progress,
+            shell,
+            subagent_completion("finished", "finished-call"),
+            subagent_completion("other-child", "mismatched-call"),
+            subagent_completion("unknown", "unknown-call"),
+        ],
+        backgrounded_state(&[
+            ("progress-call", "in-progress"),
+            ("shell-call", "shell-call-child"),
+            ("finished-call", "finished"),
+            ("mismatched-call", "original-child"),
+        ]),
+    )
+    .await;
+
+    let runs = &checkpoint.subagent_runs_by_parent_tool_call_id;
+    assert_eq!(runs.len(), 4, "an unknown run must not be invented");
+    assert_eq!(
+        runs["finished-call"].status(),
+        pb::SubagentRunStatus::Success
+    );
+    for untouched in ["progress-call", "shell-call", "mismatched-call"] {
+        assert_eq!(
+            runs[untouched].status(),
+            pb::SubagentRunStatus::Backgrounded,
+            "{untouched}"
+        );
+        assert_eq!(runs[untouched].completed_timestamp_ms, None, "{untouched}");
+    }
+}
+
+#[tokio::test]
+async fn a_repeated_completion_does_not_rewrite_a_settled_subagent_run() {
+    let mut state = backgrounded_state(&[("task-call", "child")]);
+    let run = state
+        .subagent_runs_by_parent_tool_call_id
+        .get_mut("task-call")
+        .unwrap();
+    run.status = pb::SubagentRunStatus::Aborted as i32;
+    run.completed_timestamp_ms = Some(42);
+    let settled = run.clone();
+
+    let checkpoint = wake_with(vec![subagent_completion("child", "task-call")], state).await;
+
+    assert_eq!(
+        checkpoint.subagent_runs_by_parent_tool_call_id["task-call"],
+        settled
+    );
+}
+
+#[tokio::test]
+async fn a_completion_joining_the_active_run_settles_the_run_in_its_checkpoint() {
+    let (_directory, store) = fixtures::temp_store().await;
+    let provider = fake_provider::FakeProvider::default();
+    let first_ready = provider.push_gated(stop_response("model-call-1", "first response"));
+    provider.push(stop_response("model-call-2", "processed both completions"));
+    let registry = delivery_registry(store, &provider);
+    let state = backgrounded_state(&[("call-1", "child-1"), ("call-2", "child-2")]);
+
+    let first = registry.get_or_create("joined-status-1").await.unwrap();
+    let first_message = completions_run(
+        "joined-run-1",
+        state.clone(),
+        vec![subagent_completion("child-1", "call-1")],
+    );
+    let first_run = tokio::spawn(async move { drive_completion(&first, first_message).await });
+    while provider.requests().is_empty() {
+        tokio::task::yield_now().await;
+    }
+    let second = registry.get_or_create("joined-status-2").await.unwrap();
+    let second_message = completions_run(
+        "joined-run-2",
+        state,
+        vec![subagent_completion("child-2", "call-2")],
+    );
+    let second_run =
+        tokio::spawn(async move { drive_forwarded_completion(&second, second_message).await });
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    first_ready.notify_one();
+
+    second_run.await.unwrap();
+    let (checkpoint, _) = first_run.await.unwrap();
+    assert_eq!(provider.requests().len(), 2);
+    for call in ["call-1", "call-2"] {
+        assert_eq!(
+            checkpoint.subagent_runs_by_parent_tool_call_id[call].status(),
+            pb::SubagentRunStatus::Success,
+            "{call}"
+        );
+    }
+}
+
+async fn wake_with(
+    completions: Vec<pb::BackgroundTaskCompletion>,
+    state: pb::ConversationStateStructure,
+) -> pb::ConversationStateStructure {
+    let (_directory, store) = fixtures::temp_store().await;
+    let provider = fake_provider::FakeProvider::default();
+    provider.push(stop_response("model-call", "followed up"));
+    let registry = delivery_registry(store, &provider);
+    let handle = registry.get_or_create("wake-request").await.unwrap();
+    drive_completion(&handle, completions_run("wake-run", state, completions))
+        .await
+        .0
+}
+
+fn delivery_registry(
+    store: cursor_server::store::Store,
+    provider: &fake_provider::FakeProvider,
+) -> TransportRegistry {
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    TransportRegistry::new(
+        store,
+        Arc::new(provider.clone()),
+        PromptCompiler::new(assets),
+    )
+}
+
+fn backgrounded_state(runs: &[(&str, &str)]) -> pb::ConversationStateStructure {
+    pb::ConversationStateStructure {
+        mode: Some(pb::AgentMode::Agent as i32),
+        subagent_runs_by_parent_tool_call_id: runs
+            .iter()
+            .map(|(tool_call_id, subagent_id)| {
+                (
+                    (*tool_call_id).to_owned(),
+                    pb::SubagentRunState {
+                        parent_tool_call_id: (*tool_call_id).into(),
+                        subagent_id: Some((*subagent_id).into()),
+                        status: pb::SubagentRunStatus::Backgrounded as i32,
+                        title: Some("Started title".into()),
+                        ..Default::default()
+                    },
+                )
+            })
+            .collect(),
+        ..Default::default()
+    }
+}
+
 async fn drive_completion(
     handle: &TransportHandle,
     message: pb::AgentClientMessage,
@@ -562,26 +752,38 @@ fn completion_run_with_detail(
     conversation_state: pb::ConversationStateStructure,
     detail: &str,
 ) -> pb::AgentClientMessage {
+    let mut completion = subagent_completion(child_id, "task-call");
+    completion.detail = Some(detail.into());
+    completions_run(run_id, conversation_state, vec![completion])
+}
+
+fn subagent_completion(child_id: &str, tool_call_id: &str) -> pb::BackgroundTaskCompletion {
+    pb::BackgroundTaskCompletion {
+        task_id: child_id.into(),
+        kind: pb::BackgroundTaskKind::Subagent as i32,
+        status: pb::BackgroundTaskStatus::Success as i32,
+        title: "Inspect protocol".into(),
+        detail: Some("child result".into()),
+        output_path: Some("/tmp/child.jsonl".into()),
+        reason: pb::BackgroundTaskCompletionReason::TaskFinished as i32,
+        subagent_id: Some(child_id.into()),
+        tool_call_id: Some(tool_call_id.into()),
+        ..Default::default()
+    }
+}
+
+fn completions_run(
+    run_id: &str,
+    conversation_state: pb::ConversationStateStructure,
+    completions: Vec<pb::BackgroundTaskCompletion>,
+) -> pb::AgentClientMessage {
     pb::AgentClientMessage {
         message: Some(pb::agent_client_message::Message::RunRequest(
             pb::AgentRunRequest {
                 action: Some(pb::ConversationAction {
                     action: Some(
                         pb::conversation_action::Action::BackgroundTaskCompletionAction(
-                            pb::BackgroundTaskCompletionAction {
-                                completions: vec![pb::BackgroundTaskCompletion {
-                                    task_id: child_id.into(),
-                                    kind: pb::BackgroundTaskKind::Subagent as i32,
-                                    status: pb::BackgroundTaskStatus::Success as i32,
-                                    title: "Inspect protocol".into(),
-                                    detail: Some(detail.into()),
-                                    output_path: Some("/tmp/child.jsonl".into()),
-                                    reason: pb::BackgroundTaskCompletionReason::TaskFinished as i32,
-                                    subagent_id: Some(child_id.into()),
-                                    tool_call_id: Some("task-call".into()),
-                                    ..Default::default()
-                                }],
-                            },
+                            pb::BackgroundTaskCompletionAction { completions },
                         ),
                     ),
                     ..Default::default()

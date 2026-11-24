@@ -21,6 +21,7 @@ use cursor_server::{
         proto::{agent::v1 as pb, aiserver::v1 as ai},
     },
     cursor::transport::TransportRegistry,
+    model::{ModelConfigInput, ModelType, OPENAI_CHAT_ENDPOINT},
     network::NetworkClients,
 };
 use flate2::{write::GzEncoder, Compression};
@@ -92,6 +93,167 @@ fn captured_kv_ack_hex_decodes_as_agent_client_message() {
         kv.message,
         Some(pb::kv_client_message::Message::SetBlobResult(_))
     ));
+}
+
+#[test]
+fn binary_and_hex_bidi_requests_deliver_the_same_agent_messages() {
+    let run = pb::AgentClientMessage {
+        message: Some(pb::agent_client_message::Message::RunRequest(
+            pb::AgentRunRequest {
+                conversation_id: Some("conversation".into()),
+                requested_model: Some(pb::RequestedModel {
+                    model_id: "model".into(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )),
+    };
+    let heartbeat = pb::AgentClientMessage {
+        message: Some(pb::agent_client_message::Message::ClientHeartbeat(
+            Default::default(),
+        )),
+    };
+    for (seqno, message) in [run, heartbeat].into_iter().enumerate() {
+        let payload = message.encode_to_vec();
+        let request = ai::BidiAppendRequest {
+            request_id: Some(ai::BidiRequestId {
+                request_id: "request".into(),
+            }),
+            append_seqno: seqno as i64,
+            data: hex::encode(&payload),
+            ..Default::default()
+        };
+        let hex_message = cursor::bidi::decode(&request).unwrap();
+        let binary_message = cursor::bidi::decode(&ai::BidiAppendRequest {
+            data: String::new(),
+            data_binary: payload,
+            ..request
+        })
+        .unwrap();
+        assert_eq!(binary_message.request_id, hex_message.request_id);
+        assert_eq!(binary_message.seqno, hex_message.seqno);
+        assert_eq!(binary_message.message, hex_message.message);
+        assert_eq!(binary_message.message, message);
+    }
+}
+
+#[test]
+fn malformed_binary_bidi_request_is_rejected() {
+    let request = ai::BidiAppendRequest {
+        request_id: Some(ai::BidiRequestId {
+            request_id: "request".into(),
+        }),
+        data_binary: vec![0xff],
+        ..Default::default()
+    };
+    assert!(cursor::bidi::decode(&request).is_err());
+}
+
+#[tokio::test]
+async fn binary_bidi_run_and_heartbeat_reach_the_local_transport() {
+    let (_directory, store) = fixtures::temp_store().await;
+    let model = store
+        .create_model(&ModelConfigInput {
+            supports_images: true,
+            sort_order: 0,
+            display_name: "Test".into(),
+            group_name: None,
+            model_type: ModelType::OpenAi,
+            base_url: "https://example.com/v1".into(),
+            use_full_url: false,
+            api_key: "test".into(),
+            tooltip_data: "Test".into(),
+            model_id: "test-model".into(),
+            reasoning_effort: None,
+            openai_endpoint: OPENAI_CHAT_ENDPOINT.into(),
+            openai_extra_params_enabled: false,
+            openai_extra_params: serde_json::json!({}),
+            custom_headers_enabled: false,
+            custom_headers: serde_json::json!({}),
+            anthropic_extra_params_enabled: false,
+            anthropic_extra_params: serde_json::json!({}),
+            context_window_tokens: None,
+            max_completion_tokens: None,
+            anthropic_max_tokens: None,
+            anthropic_thinking_effort: None,
+            thinking_budget_tokens: None,
+        })
+        .await
+        .unwrap();
+    let assets = PromptAssets::load(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("prompt/cursor")
+            .as_path(),
+    )
+    .unwrap();
+    let provider = fake_provider::FakeProvider::default();
+    provider.push_pending();
+    let clients = NetworkClients::new(store.clone());
+    let registry = TransportRegistry::new(store, Arc::new(provider), PromptCompiler::new(assets));
+    let router = cursor::router(registry.clone(), clients).unwrap();
+    let run = pb::AgentClientMessage {
+        message: Some(pb::agent_client_message::Message::RunRequest(
+            pb::AgentRunRequest {
+                action: Some(pb::ConversationAction {
+                    action: Some(pb::conversation_action::Action::UserMessageAction(
+                        pb::UserMessageAction {
+                            user_message: Some(pb::UserMessage {
+                                text: "hello".into(),
+                                message_id: "binary-user".into(),
+                                mode: pb::AgentMode::Agent as i32,
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        },
+                    )),
+                    ..Default::default()
+                }),
+                conversation_id: Some("binary-conversation".into()),
+                run_id: Some("binary-request".into()),
+                requested_model: Some(pb::RequestedModel {
+                    model_id: model.model_hash,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )),
+    };
+    let heartbeat = pb::AgentClientMessage {
+        message: Some(pb::agent_client_message::Message::ClientHeartbeat(
+            Default::default(),
+        )),
+    };
+    for (seqno, message) in [run, heartbeat].into_iter().enumerate() {
+        let wire = ai::BidiAppendRequest {
+            request_id: Some(ai::BidiRequestId {
+                request_id: "binary-request".into(),
+            }),
+            append_seqno: seqno as i64,
+            data_binary: message.encode_to_vec(),
+            ..Default::default()
+        }
+        .encode_to_vec();
+        let response = router
+            .clone()
+            .oneshot(
+                Request::post("/aiserver.v1.BidiService/BidiAppend")
+                    .header(header::CONTENT_TYPE, "application/proto")
+                    .body(Body::from(wire))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "binary append {seqno} must succeed"
+        );
+    }
+    assert!(
+        registry.local("binary-request").await.is_some(),
+        "binary run must route to the local transport"
+    );
 }
 
 #[tokio::test]

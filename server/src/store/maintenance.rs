@@ -191,6 +191,20 @@ async fn prune_tx(tx: &mut Transaction<'_, Sqlite>) -> Result<PruneResult> {
     .bind(now_ms() - BLOB_GRACE_MS)
     .execute(&mut **tx)
     .await?;
+    // Read tool attachments are durable message references, not wire cache.
+    let read_images: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT json_extract(payload_json, '$.content.image.blob_id')
+         FROM messages WHERE json_type(payload_json, '$.content.image.blob_id') = 'text'",
+    )
+    .fetch_all(&mut **tx)
+    .await?;
+    for image in read_images {
+        let id = super::BlobId::from_base64(&image)?;
+        sqlx::query("DELETE FROM dead_blobs WHERE blob_id = ?")
+            .bind(id.as_bytes().as_slice())
+            .execute(&mut **tx)
+            .await?;
+    }
     sqlx::query("DELETE FROM blob_edges WHERE parent_blob_id IN (SELECT blob_id FROM dead_blobs)")
         .execute(&mut **tx)
         .await?;
@@ -312,6 +326,61 @@ mod tests {
                 .await
                 .unwrap();
         assert!(messages.is_empty());
+    }
+
+    #[tokio::test]
+    async fn cleanup_keeps_old_read_images_referenced_by_live_messages() {
+        use crate::model::{
+            CanonicalMessage, MessageContent, Origin, Role, ToolImageReference, ToolResultContent,
+        };
+        let (_directory, store) = store().await;
+        let image = store.put_blob(b"read image", &[]).await.unwrap();
+        let unused = store
+            .put_blob(b"unreferenced wire data", &[])
+            .await
+            .unwrap();
+        let conversation = ConversationId::new("with-image");
+        let checkpoint = store
+            .import_checkpoint(
+                &conversation,
+                &[CanonicalMessage {
+                    message_id: "read-image".into(),
+                    role: Role::Tool,
+                    origin: Origin::Tool,
+                    runtime_event_id: None,
+                    content: MessageContent::ToolResult(ToolResultContent {
+                        call_id: "read".into(),
+                        name: "Read".into(),
+                        content: "image".into(),
+                        is_error: false,
+                        image: Some(ToolImageReference {
+                            blob_id: image.to_base64(),
+                            mime_type: "image/png".into(),
+                            path: "a.png".into(),
+                        }),
+                        provider_parts: Vec::new(),
+                    }),
+                }],
+            )
+            .await
+            .unwrap();
+        sqlx::query("UPDATE conversations SET current_checkpoint_id=? WHERE conversation_id=?")
+            .bind(checkpoint.0)
+            .bind(conversation.as_str())
+            .execute(store.pool())
+            .await
+            .unwrap();
+        sqlx::query("UPDATE blobs SET created_at_ms = ?")
+            .bind(now_ms() - BLOB_GRACE_MS - 1)
+            .execute(store.pool())
+            .await
+            .unwrap();
+        store.prune_dead_lineages().await.unwrap();
+        assert_eq!(
+            store.get_blob(&image).await.unwrap().as_deref(),
+            Some(b"read image".as_slice())
+        );
+        assert!(store.get_blob(&unused).await.unwrap().is_none());
     }
 
     #[tokio::test]
