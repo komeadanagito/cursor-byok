@@ -1,9 +1,9 @@
-//! Overview stat strip in the classic connected-card layout with v1.1.1 pricing and latency metrics.
+//! Overview stat strip in the classic 4-column connected layout (no horizontal scrollbar).
 import type { OverviewMetrics } from "../../../shared/api";
 import { Icon } from "../../../shared/ui/Icon";
 import { useTooltip, type TooltipAnchor } from "../../../shared/ui/Tooltip";
 import { informationOutlineIcon } from "../../../shared/ui/icons";
-import { formatCompactInteger, formatInteger, formatMoney } from "../../../shared/utils/numberFormat";
+import { formatCompactInteger, formatInteger } from "../../../shared/utils/numberFormat";
 import { CacheHitRateChart } from "./CacheHitRateChart";
 import styles from "./HomeMetrics.module.scss";
 
@@ -59,9 +59,6 @@ export function HomeMetrics({ metrics, refreshVersion = 0 }: { metrics: Overview
     metrics.cache_read_tokens + metrics.cache_write_tokens + inputTokens,
   );
   const successfulCallRate = calculateRate(metrics.successful_calls, metrics.llm_calls);
-  const costDisplay = metrics.costs.length > 0
-    ? metrics.costs.map((cost) => formatMoney(cost.currency, cost.amount)).join(" + ")
-    : "—";
 
   const cacheTooltip = [
     t("当前：{rate}", { rate: formatRate(defaultCacheHitRate) }),
@@ -91,11 +88,6 @@ export function HomeMetrics({ metrics, refreshVersion = 0 }: { metrics: Overview
     "",
     t("缓存读写已计入提示词侧统计。"),
   ].join("\n");
-  const costTooltip = [
-    t("按“系统设置”页配置的模型与渠道单价估算，缓存价留空时与输入价相同。"),
-    ...metrics.costs.map((cost) => t("{currency} 费用：{amount}", { currency: cost.currency, amount: formatMoney(cost.currency, cost.amount) })),
-    ...(metrics.unpriced_calls > 0 ? ["", t("{count} 次调用未定价", { count: formatMetricValue(metrics.unpriced_calls) })] : []),
-  ].join("\n");
   const latencyTooltip = [
     t("首字耗时：{value}", { value: metrics.avg_ttft_ms === null ? t("暂无数据") : formatLatency(metrics.avg_ttft_ms) }),
     t("输出速度：{value}", { value: metrics.output_tokens_per_second === null ? t("暂无数据") : formatSpeed(metrics.output_tokens_per_second) }),
@@ -122,15 +114,6 @@ export function HomeMetrics({ metrics, refreshVersion = 0 }: { metrics: Overview
         <div className={styles.body}>
           <div className={styles.value} title={formatInteger(metrics.token_usage)}>{formatCompactInteger(metrics.token_usage)}</div>
           <div className={styles.secondary}>{t("提示词 {tokens}", { tokens: formatCompactInteger(metrics.prompt_tokens) })}</div>
-        </div>
-      </article>
-      <article className={styles.metric}>
-        <div className={styles.label}>{t("价值估算")}<InfoTooltip content={costTooltip} /></div>
-        <div className={styles.body}>
-          <div className={styles.value} title={costDisplay}>{costDisplay}</div>
-          <div className={styles.secondary}>{metrics.unpriced_calls > 0
-            ? t("{count} 次调用未定价", { count: formatCompactInteger(metrics.unpriced_calls) })
-            : metrics.costs.length > 0 ? t("全部调用已定价") : t("尚未定价任何模型")}</div>
         </div>
       </article>
       <article className={styles.metric}>

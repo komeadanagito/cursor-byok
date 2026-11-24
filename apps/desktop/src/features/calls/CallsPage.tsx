@@ -1,20 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CallTable } from "./CallTable";
+import { CallList } from "./CallList";
 import { PageActions } from "../../shell/PageActions";
-import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Checkbox";
 import { Select } from "../../shared/ui/Select";
 import { PageContent } from "../../shell/layout/PageContent";
 import { appStore, useAppStore } from "../../shared/store/appStore";
-import styles from "./CallsPage.module.scss";
 
 const CALL_REFRESH_INTERVAL_MS = 2_000;
 
 export function CallsPage() {
   const { calls, theme } = useAppStore();
   const dark = theme === "default-dark";
-  const navigate = useNavigate();
   const [model, setModel] = useState("");
   const [conversation, setConversation] = useState("");
   const [agent, setAgent] = useState("");
@@ -49,17 +45,15 @@ export function CallsPage() {
     && (!conversation || call.conversation_id === conversation)
     && (!failures || ["failed", "error"].includes(call.status)));
 
-  const content = <div className={styles.page}>
-    <CallTable calls={filtered} dark={dark} onDetails={(call) => void appStore.openCallDetails(call.call_id)} />
-  </div>;
   return <>
     <PageActions>
       <Select value={model} ariaLabel={t("筛选模型")} onChange={setModel} options={[{ value: "", label: t("全部模型") }, ...models.map(([value, label]) => ({ value, label }))]} />
       <Select value={conversation} ariaLabel={t("筛选会话")} onChange={setConversation} options={[{ value: "", label: t("全部会话") }, ...conversations.map((value) => ({ value, label: value.slice(0, 12) }))]} />
       <Select value={agent} ariaLabel={t("筛选代理")} onChange={setAgent} options={[{ value: "", label: t("全部代理") }, ...agents.map(([value, label]) => ({ value, label }))]} />
       <Checkbox checked={failures} onChange={setFailures} label={t("仅失败")} />
-      <Button size="small" onClick={() => navigate("/settings")}>{t("单价配置")}</Button>
     </PageActions>
-    <PageContent fixed title={t("调用")} contentClassName={styles.pageContent} sections={[{ key: "calls", estimatedHeight: 720, content }]} />
+    <PageContent title={t("调用")} sections={[
+      { key: "calls", estimatedHeight: 1_200, content: <CallList calls={filtered} dark={dark} onOpenExternal={(call) => void appStore.openCallDetails(call.call_id)} /> },
+    ]} />
   </>;
 }

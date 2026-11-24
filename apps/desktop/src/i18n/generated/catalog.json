@@ -21,7 +21,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 78,
+          "line": 75,
           "column": 5
         }
       ]
@@ -33,7 +33,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 57,
+          "line": 50,
           "column": 101
         }
       ]
@@ -160,18 +160,6 @@
         }
       ]
     },
-    "0735276b6885a05d": {
-      "source": "单价配置",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallsPage.tsx",
-          "line": 61,
-          "column": 67
-        }
-      ]
-    },
     "076832c1b2de22c3": {
       "source": "缓存写入：{tokens}",
       "kind": "template",
@@ -181,7 +169,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 90,
+          "line": 87,
           "column": 5
         }
       ]
@@ -195,7 +183,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 87,
+          "line": 84,
           "column": 5
         }
       ]
@@ -232,25 +220,6 @@
         }
       ]
     },
-    "08f9a683c4a27335": {
-      "source": "{count} 次调用未定价",
-      "kind": "template",
-      "placeholders": [
-        "count"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 97,
-          "column": 43
-        },
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 132,
-          "column": 15
-        }
-      ]
-    },
     "092b520558eff5f2": {
       "source": "未测试",
       "kind": "text",
@@ -272,18 +241,6 @@
           "file": "features/models/CursorSettingsPage.tsx",
           "line": 415,
           "column": 89
-        }
-      ]
-    },
-    "09ebc2643631ba25": {
-      "source": "价值估算",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 128,
-          "column": 40
         }
       ]
     },
@@ -313,23 +270,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 52,
           "column": 6
-        }
-      ]
-    },
-    "0c70665b6eb65f1a": {
-      "source": "否",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 56,
-          "column": 72
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 167,
-          "column": 51
         }
       ]
     },
@@ -367,30 +307,6 @@
         }
       ]
     },
-    "0d5e2bdb15579fc4": {
-      "source": "消息数",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 156,
-          "column": 15
-        }
-      ]
-    },
-    "0da01d52ce1fb592": {
-      "source": "全部调用已定价",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 133,
-          "column": 42
-        }
-      ]
-    },
     "0db24603a35b481b": {
       "source": "筛选会话",
       "kind": "text",
@@ -398,7 +314,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 58,
+          "line": 51,
           "column": 47
         }
       ]
@@ -412,6 +328,18 @@
           "file": "features/models/MagpieProvider.tsx",
           "line": 93,
           "column": 12
+        }
+      ]
+    },
+    "0e14d148b46b8c0b": {
+      "source": "速度",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 46,
+          "column": 70
         }
       ]
     },
@@ -507,7 +435,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 121,
+          "line": 113,
           "column": 40
         }
       ]
@@ -577,7 +505,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 107,
+          "line": 99,
           "column": 40
         }
       ]
@@ -659,7 +587,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 77,
+          "line": 74,
           "column": 5
         }
       ]
@@ -753,7 +681,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 58,
+          "line": 51,
           "column": 115
         }
       ]
@@ -869,7 +797,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 85,
+          "line": 82,
           "column": 5
         }
       ]
@@ -903,7 +831,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 68,
+          "line": 65,
           "column": 5
         }
       ]
@@ -1136,6 +1064,18 @@
         }
       ]
     },
+    "28384d7afd2e4fa6": {
+      "source": "失败",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 127,
+          "column": 99
+        }
+      ]
+    },
     "29585d7193539200": {
       "source": "当前版本 {version}",
       "kind": "template",
@@ -1183,7 +1123,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 75,
+          "line": 72,
           "column": 5
         }
       ]
@@ -1354,7 +1294,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 67,
+          "line": 64,
           "column": 5
         }
       ]
@@ -1382,18 +1322,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 112,
           "column": 56
-        }
-      ]
-    },
-    "2eb2bf7c6597ab9a": {
-      "source": "详细记录",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 166,
-          "column": 15
         }
       ]
     },
@@ -1711,7 +1639,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 114,
+          "line": 106,
           "column": 46
         }
       ]
@@ -2117,7 +2045,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 80,
+          "line": 77,
           "column": 5
         }
       ]
@@ -2237,12 +2165,12 @@
         },
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 100,
+          "line": 92,
           "column": 63
         },
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 101,
+          "line": 93,
           "column": 76
         },
         {
@@ -2303,7 +2231,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 46,
+          "line": 42,
           "column": 43
         },
         {
@@ -2342,7 +2270,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 101,
+          "line": 93,
           "column": 5
         }
       ]
@@ -2419,6 +2347,18 @@
         }
       ]
     },
+    "4d5f7e15c8a569bf": {
+      "source": "出",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 117,
+          "column": 131
+        }
+      ]
+    },
     "4d99c976beb8827e": {
       "source": "可用",
       "kind": "text",
@@ -2433,6 +2373,18 @@
           "file": "features/plugins/PluginResourcePanels.tsx",
           "line": 566,
           "column": 42
+        }
+      ]
+    },
+    "4e1c146c3c3ad0a2": {
+      "source": "模型 / 代理",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 43,
+          "column": 16
         }
       ]
     },
@@ -2571,18 +2523,6 @@
         }
       ]
     },
-    "54c65fc203fb6f1f": {
-      "source": "尚未定价任何模型",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 133,
-          "column": 57
-        }
-      ]
-    },
     "54e6745ff43c9c74": {
       "source": "排序失败",
       "kind": "text",
@@ -2677,6 +2617,20 @@
           "file": "features/settings/SettingsPage.tsx",
           "line": 240,
           "column": 78
+        }
+      ]
+    },
+    "58e4b432d8666acb": {
+      "source": "显示更早的 {count} 条",
+      "kind": "template",
+      "placeholders": [
+        "count"
+      ],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 60,
+          "column": 8
         }
       ]
     },
@@ -2828,11 +2782,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 42,
           "column": 6
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 73,
-          "column": 15
         }
       ]
     },
@@ -2951,7 +2900,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 79,
+          "line": 76,
           "column": 5
         }
       ]
@@ -2965,7 +2914,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 89,
+          "line": 86,
           "column": 5
         }
       ]
@@ -2991,11 +2940,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 36,
           "column": 6
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 19,
-          "column": 15
         }
       ]
     },
@@ -3064,6 +3008,18 @@
         }
       ]
     },
+    "648f673719ab98ed": {
+      "source": "耗时 / 首字",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 45,
+          "column": 41
+        }
+      ]
+    },
     "651f274470153a05": {
       "source": "软件更新",
       "kind": "text",
@@ -3102,8 +3058,8 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 63,
-          "column": 31
+          "line": 55,
+          "column": 25
         }
       ]
     },
@@ -3131,18 +3087,6 @@
         }
       ]
     },
-    "65a6318e07ec1e07": {
-      "source": "工具数",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 161,
-          "column": 15
-        }
-      ]
-    },
     "65cb9a7b4f620b6b": {
       "source": "提示词 {tokens}",
       "kind": "template",
@@ -3152,7 +3096,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 124,
+          "line": 116,
           "column": 46
         }
       ]
@@ -3354,9 +3298,9 @@
           "column": 12
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 78,
-          "column": 15
+          "file": "features/calls/CallList.tsx",
+          "line": 44,
+          "column": 16
         }
       ]
     },
@@ -3516,7 +3460,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 105,
+          "line": 97,
           "column": 50
         }
       ]
@@ -3904,16 +3848,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 41,
           "column": 50
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 63,
-          "column": 48
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 69,
-          "column": 44
         }
       ]
     },
@@ -4010,9 +3944,9 @@
           "column": 6
         },
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 39,
-          "column": 15
+          "file": "features/calls/CallList.tsx",
+          "line": 42,
+          "column": 16
         }
       ]
     },
@@ -4037,18 +3971,6 @@
           "file": "features/settings/SettingsPage.tsx",
           "line": 243,
           "column": 22
-        }
-      ]
-    },
-    "8d0c47eb9eac2d34": {
-      "source": "调用类型",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 61,
-          "column": 15
         }
       ]
     },
@@ -4345,7 +4267,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 143,
+          "line": 126,
           "column": 58
         }
       ]
@@ -4481,11 +4403,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 38,
           "column": 6
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 50,
-          "column": 15
         },
         {
           "file": "features/models/CursorModelEditor.tsx",
@@ -4824,6 +4741,18 @@
         }
       ]
     },
+    "a380125a40e0ad8c": {
+      "source": "暂无调用记录",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 35,
+          "column": 73
+        }
+      ]
+    },
     "a49ffd73bc85333d": {
       "source": "平均",
       "kind": "text",
@@ -4923,16 +4852,6 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 210,
-          "column": 32
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 213,
-          "column": 25
-        },
-        {
           "file": "features/models/CursorModelTestResult.tsx",
           "line": 58,
           "column": 86
@@ -4989,7 +4908,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 59,
+          "line": 52,
           "column": 40
         }
       ]
@@ -4999,11 +4918,6 @@
       "kind": "text",
       "placeholders": [],
       "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 33,
-          "column": 15
-        },
         {
           "file": "features/models/CursorModelEditor.tsx",
           "line": 163,
@@ -5100,13 +5014,25 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 45,
+          "line": 41,
           "column": 119
         },
         {
           "file": "features/calls/tokenParts.ts",
           "line": 57,
           "column": 66
+        }
+      ]
+    },
+    "acffbca9d286c505": {
+      "source": "缓",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 117,
+          "column": 67
         }
       ]
     },
@@ -5303,7 +5229,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 59,
+          "line": 52,
           "column": 101
         }
       ]
@@ -5317,40 +5243,8 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 86,
+          "line": 83,
           "column": 5
-        }
-      ]
-    },
-    "b5141d3d19e9a048": {
-      "source": "是",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 56,
-          "column": 63
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 167,
-          "column": 42
-        }
-      ]
-    },
-    "b5cadf1628bcf6a5": {
-      "source": "{currency} 费用：{amount}",
-      "kind": "template",
-      "placeholders": [
-        "currency",
-        "amount"
-      ],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 96,
-          "column": 36
         }
       ]
     },
@@ -5387,7 +5281,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 88,
+          "line": 85,
           "column": 5
         }
       ]
@@ -5449,11 +5343,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 41,
           "column": 6
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 67,
-          "column": 15
         }
       ]
     },
@@ -5655,7 +5544,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 46,
+          "line": 42,
           "column": 32
         },
         {
@@ -5847,28 +5736,11 @@
         }
       ]
     },
-    "caab01b541177b19": {
-      "source": "按“系统设置”页配置的模型与渠道单价估算，缓存价留空时与输入价相同。",
-      "kind": "text",
-      "placeholders": [],
-      "refs": [
-        {
-          "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 95,
-          "column": 5
-        }
-      ]
-    },
     "cb2f1709f983d2f4": {
       "source": "模型名称",
       "kind": "text",
       "placeholders": [],
       "refs": [
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 44,
-          "column": 15
-        },
         {
           "file": "features/models/CursorModelEditor.tsx",
           "line": 162,
@@ -5946,11 +5818,6 @@
           "file": "features/calls/CallDetails.tsx",
           "line": 47,
           "column": 6
-        },
-        {
-          "file": "features/calls/CallTable.tsx",
-          "line": 86,
-          "column": 15
         }
       ]
     },
@@ -6288,7 +6155,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 57,
+          "line": 50,
           "column": 40
         }
       ]
@@ -6387,6 +6254,22 @@
         }
       ]
     },
+    "dd628abeeb32013c": {
+      "source": "入 {input} · 缓 {read} · 出 {output}",
+      "kind": "template",
+      "placeholders": [
+        "input",
+        "read",
+        "output"
+      ],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 87,
+          "column": 7
+        }
+      ]
+    },
     "ddde16f8839da3ce": {
       "source": "总请求",
       "kind": "text",
@@ -6430,7 +6313,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 83,
+          "line": 80,
           "column": 5
         }
       ]
@@ -6560,7 +6443,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 137,
+          "line": 120,
           "column": 40
         }
       ]
@@ -6689,7 +6572,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 111,
+          "line": 103,
           "column": 40
         }
       ]
@@ -6783,7 +6666,7 @@
       "refs": [
         {
           "file": "features/calls/CallsPage.tsx",
-          "line": 60,
+          "line": 53,
           "column": 66
         }
       ]
@@ -6800,15 +6683,15 @@
         }
       ]
     },
-    "e77e3d58b0dcffaa": {
-      "source": "耗时",
+    "e73e38c1f65d0326": {
+      "source": "官方",
       "kind": "text",
       "placeholders": [],
       "refs": [
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 106,
-          "column": 15
+          "file": "features/calls/CallList.tsx",
+          "line": 107,
+          "column": 109
         }
       ]
     },
@@ -6943,11 +6826,6 @@
       "placeholders": [],
       "refs": [
         {
-          "file": "features/calls/CallTable.tsx",
-          "line": 207,
-          "column": 15
-        },
-        {
           "file": "features/models/CursorSettingsPage.tsx",
           "line": 331,
           "column": 98
@@ -7041,7 +6919,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 100,
+          "line": 92,
           "column": 5
         }
       ]
@@ -7343,7 +7221,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 69,
+          "line": 66,
           "column": 5
         }
       ]
@@ -7372,6 +7250,23 @@
         }
       ]
     },
+    "fd00be32a8b109e2": {
+      "source": "在新窗口查看详情",
+      "kind": "text",
+      "placeholders": [],
+      "refs": [
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 131,
+          "column": 32
+        },
+        {
+          "file": "features/calls/CallList.tsx",
+          "line": 135,
+          "column": 25
+        }
+      ]
+    },
     "fd415f8e0097c832": {
       "source": "缓存读写已计入提示词侧统计。",
       "kind": "text",
@@ -7379,7 +7274,7 @@
       "refs": [
         {
           "file": "features/home/metrics/HomeMetrics.tsx",
-          "line": 92,
+          "line": 89,
           "column": 5
         }
       ]
