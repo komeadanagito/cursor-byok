@@ -1,13 +1,10 @@
-//! Overview stat cards: one headline number per metric with its trend over the selected range.
-import type { ReactNode } from "react";
-import type { OverviewBucket, OverviewGranularity, OverviewMetrics } from "../../../shared/api";
-import { Card } from "../../../shared/ui/Card";
+//! Overview stat strip in the classic connected-card layout with v1.1.1 pricing and latency metrics.
+import type { OverviewMetrics } from "../../../shared/api";
 import { Icon } from "../../../shared/ui/Icon";
 import { useTooltip, type TooltipAnchor } from "../../../shared/ui/Tooltip";
 import { informationOutlineIcon } from "../../../shared/ui/icons";
 import { formatCompactInteger, formatInteger, formatMoney } from "../../../shared/utils/numberFormat";
-import { metricSeries, primaryCurrency } from "./overviewSeries";
-import { Sparkline } from "./Sparkline";
+import { CacheHitRateChart } from "./CacheHitRateChart";
 import styles from "./HomeMetrics.module.scss";
 
 function formatMetricValue(value: number) {
@@ -17,10 +14,10 @@ function formatMetricValue(value: number) {
 }
 
 function formatRate(value: number | null) {
-  return value === null ? "—" : `${(Math.max(0, Math.min(1, value)) * 100).toFixed(value >= 0.9995 || value === 0 ? 0 : 1)}%`;
+  return value === null ? t("暂无数据") : `${(Math.max(0, Math.min(1, value)) * 100).toFixed(2)}%`;
 }
 
-function rate(numerator: number, denominator: number) {
+function calculateRate(numerator: number, denominator: number) {
   return denominator > 0 ? numerator / denominator : null;
 }
 
@@ -41,128 +38,112 @@ function elementAnchor(element: HTMLElement): TooltipAnchor {
 
 function InfoTooltip({ content }: { content: string }) {
   const { show, hide } = useTooltip();
-  const open = (element: HTMLElement) => show(elementAnchor(element), undefined, <div className={styles.tooltipText}>{content}</div>);
 
   return <button
     type="button"
     className={styles.info}
     aria-label={t("查看说明")}
-    onMouseEnter={(event) => open(event.currentTarget)}
+    onMouseEnter={(event) => show(elementAnchor(event.currentTarget), undefined, <div className={styles.tooltipText}>{content}</div>)}
     onMouseLeave={hide}
-    onFocus={(event) => open(event.currentTarget)}
+    onFocus={(event) => show(elementAnchor(event.currentTarget), undefined, <div className={styles.tooltipText}>{content}</div>)}
     onBlur={hide}
-  ><Icon icon={informationOutlineIcon} size="1em" /></button>;
+  ><Icon icon={informationOutlineIcon} size="1.1em" /></button>;
 }
 
-function StatCard({ label, info, value, valueTitle, detail, detailTone, trend }: {
-  label: string;
-  info?: string;
-  value: string;
-  valueTitle?: string;
-  detail: ReactNode;
-  detailTone?: "muted" | "warning" | "danger";
-  trend: ReactNode;
-}) {
-  return <Card as="article" className={styles.card}>
-    <div className={styles.label}>
-      <span>{label}</span>
-      {info && <InfoTooltip content={info} />}
-    </div>
-    <div className={styles.value} title={valueTitle ?? value}>{value}</div>
-    <div className={`${styles.detail} ${detailTone === "warning" ? styles.detailWarning : detailTone === "danger" ? styles.detailDanger : ""}`}>{detail}</div>
-    {trend}
-  </Card>;
-}
+export function HomeMetrics({ metrics, refreshVersion = 0 }: { metrics: OverviewMetrics; refreshVersion?: number }) {
+  const inputTokens = metrics.input_tokens;
+  const outputTokens = metrics.output_tokens;
+  const defaultCacheHitRate = calculateRate(metrics.cache_read_tokens, metrics.cache_read_tokens + inputTokens);
+  const cacheReuseRate = calculateRate(
+    metrics.cache_read_tokens,
+    metrics.cache_read_tokens + metrics.cache_write_tokens + inputTokens,
+  );
+  const successfulCallRate = calculateRate(metrics.successful_calls, metrics.llm_calls);
+  const costDisplay = metrics.costs.length > 0
+    ? metrics.costs.map((cost) => formatMoney(cost.currency, cost.amount)).join(" + ")
+    : "—";
 
-export function HomeMetrics({ metrics, series, granularity }: {
-  metrics: OverviewMetrics;
-  series: OverviewBucket[];
-  granularity: OverviewGranularity;
-}) {
-  const freshInput = metrics.input_tokens;
-  const cacheHitRate = rate(metrics.cache_read_tokens, metrics.cache_read_tokens + freshInput);
-  const cacheReuseRate = rate(metrics.cache_read_tokens, metrics.cache_read_tokens + metrics.cache_write_tokens + freshInput);
-  const successRate = rate(metrics.successful_calls, metrics.llm_calls);
-  const failureRate = rate(metrics.failed_calls, metrics.llm_calls);
-  const currency = primaryCurrency(metrics.costs);
-  const trend = metricSeries(series, currency);
-  const times = series.map((bucket) => bucket.bucket_start_ms);
-  const costDisplay = metrics.costs.length > 0 ? metrics.costs.map((cost) => formatMoney(cost.currency, cost.amount)).join(" + ") : "—";
-  const spark = (values: (number | null)[], format: (value: number) => string, label: string, tone?: "accent" | "danger") =>
-    <Sparkline values={values} times={times} granularity={granularity} format={format} label={label} tone={tone} />;
-
-  const tokensInfo = [
+  const cacheTooltip = [
+    t("当前：{rate}", { rate: formatRate(defaultCacheHitRate) }),
+    t("公式：缓存读取 /（缓存读取 + 非缓存输入）"),
+    t("默认 {defaultRate} / 计入创建 {reuseRate}", {
+      defaultRate: formatRate(defaultCacheHitRate),
+      reuseRate: formatRate(cacheReuseRate),
+    }),
+  ].join("\n");
+  const callsTooltip = [
+    t("按历史 LLM 调用记录汇总，进行中的调用不计入。"),
+    "",
+    t("总调用：{count}", { count: formatMetricValue(metrics.llm_calls) }),
+    t("成功调用：{count}", { count: formatMetricValue(metrics.successful_calls) }),
+    t("异常调用：{count}", { count: formatMetricValue(metrics.failed_calls) }),
+    t("成功占比：{rate}", { rate: formatRate(successfulCallRate) }),
+  ].join("\n");
+  const tokensTooltip = [
     t("总请求 Token 包含提示词和模型输出。"),
     "",
     t("总请求：{tokens}", { tokens: formatMetricValue(metrics.token_usage) }),
     t("提示词：{tokens}", { tokens: formatMetricValue(metrics.prompt_tokens) }),
-    t("输出推算：{tokens}", { tokens: formatMetricValue(metrics.output_tokens) }),
-    t("非缓存输入：{tokens}", { tokens: formatMetricValue(freshInput) }),
+    t("输出推算：{tokens}", { tokens: formatMetricValue(outputTokens) }),
+    t("非缓存输入：{tokens}", { tokens: formatMetricValue(inputTokens) }),
     t("缓存读取：{tokens}", { tokens: formatMetricValue(metrics.cache_read_tokens) }),
     t("缓存写入：{tokens}", { tokens: formatMetricValue(metrics.cache_write_tokens) }),
+    "",
+    t("缓存读写已计入提示词侧统计。"),
   ].join("\n");
-  const costInfo = [
-    t("按“调用详细”页配置的模型价格估算，缓存价留空时与输入价相同。"),
+  const costTooltip = [
+    t("按“系统设置”页配置的模型与渠道单价估算，缓存价留空时与输入价相同。"),
     ...metrics.costs.map((cost) => t("{currency} 费用：{amount}", { currency: cost.currency, amount: formatMoney(cost.currency, cost.amount) })),
-    ...(metrics.costs.length > 1 && currency ? [t("走势图按 {currency} 绘制", { currency })] : []),
     ...(metrics.unpriced_calls > 0 ? ["", t("{count} 次调用未定价", { count: formatMetricValue(metrics.unpriced_calls) })] : []),
   ].join("\n");
-  const cacheInfo = [
-    t("公式：缓存读取 /（缓存读取 + 非缓存输入）"),
-    t("默认 {defaultRate} / 计入创建 {reuseRate}", { defaultRate: formatRate(cacheHitRate), reuseRate: formatRate(cacheReuseRate) }),
+  const latencyTooltip = [
+    t("首字耗时：{value}", { value: metrics.avg_ttft_ms === null ? t("暂无数据") : formatLatency(metrics.avg_ttft_ms) }),
+    t("输出速度：{value}", { value: metrics.output_tokens_per_second === null ? t("暂无数据") : formatSpeed(metrics.output_tokens_per_second) }),
   ].join("\n");
 
-  return <section className={styles.root} aria-label={t("调用统计")}>
-    <StatCard
-      label={t("总令牌")}
-      info={tokensInfo}
-      value={formatCompactInteger(metrics.token_usage)}
-      valueTitle={formatInteger(metrics.token_usage)}
-      detail={t("输入 {input} · 输出 {output}", { input: formatCompactInteger(metrics.prompt_tokens), output: formatCompactInteger(metrics.output_tokens) })}
-      trend={spark(trend.tokens, (value) => formatCompactInteger(value), t("总令牌走势"))}
-    />
-    <StatCard
-      label={t("费用")}
-      info={costInfo}
-      value={costDisplay}
-      detail={metrics.unpriced_calls > 0
-        ? t("{count} 次调用未定价", { count: formatCompactInteger(metrics.unpriced_calls) })
-        : metrics.costs.length > 0 ? t("全部调用已定价") : t("尚未定价任何模型")}
-      detailTone={metrics.unpriced_calls > 0 ? "warning" : "muted"}
-      trend={spark(trend.cost, (value) => formatMoney(currency ?? "USD", value), t("费用走势"))}
-    />
-    <StatCard
-      label={t("调用次数")}
-      value={formatCompactInteger(metrics.llm_calls)}
-      valueTitle={formatInteger(metrics.llm_calls)}
-      detail={t("成功率 {rate}", { rate: formatRate(successRate) })}
-      trend={spark(trend.calls, (value) => formatInteger(value), t("调用次数走势"))}
-    />
-    <StatCard
-      label={t("缓存命中率")}
-      info={cacheInfo}
-      value={formatRate(cacheHitRate)}
-      detail={t("缓存读取 {tokens}", { tokens: formatCompactInteger(metrics.cache_read_tokens) })}
-      trend={spark(trend.cacheHitRate, (value) => formatRate(value), t("缓存命中率走势"))}
-    />
-    <StatCard
-      label={t("首字耗时")}
-      value={metrics.avg_ttft_ms === null ? "—" : formatLatency(metrics.avg_ttft_ms)}
-      detail={t("每次调用平均")}
-      trend={spark(trend.ttft, formatLatency, t("首字耗时走势"))}
-    />
-    <StatCard
-      label={t("输出速度")}
-      value={metrics.output_tokens_per_second === null ? "—" : formatSpeed(metrics.output_tokens_per_second)}
-      detail={t("首字之后，每次调用平均")}
-      trend={spark(trend.speed, formatSpeed, t("输出速度走势"))}
-    />
-    <StatCard
-      label={t("失败")}
-      value={formatInteger(metrics.failed_calls)}
-      detail={t("失败率 {rate}", { rate: formatRate(failureRate) })}
-      detailTone={metrics.failed_calls > 0 ? "danger" : "muted"}
-      trend={spark(trend.failed, (value) => formatInteger(value), t("失败走势"), metrics.failed_calls > 0 ? "danger" : "accent")}
-    />
-  </section>;
+  return <div className={styles.scroller}>
+    <section className={styles.root} aria-label={t("调用统计")}>
+      <article className={styles.metric}>
+        <div className={styles.label}>{t("缓存命中率")}<InfoTooltip content={cacheTooltip} /></div>
+        <CacheHitRateChart rate={defaultCacheHitRate ?? 0} animationKey={refreshVersion} />
+      </article>
+      <article className={styles.metric}>
+        <div className={styles.label}>{t("LLM 调用")}<InfoTooltip content={callsTooltip} /></div>
+        <div className={styles.body}>
+          <div className={styles.value} title={formatInteger(metrics.llm_calls)}>{formatCompactInteger(metrics.llm_calls)}</div>
+          <div className={styles.secondary}>{t("成功 {successful} / 异常 {failed}", {
+            successful: formatCompactInteger(metrics.successful_calls),
+            failed: formatCompactInteger(metrics.failed_calls),
+          })}</div>
+        </div>
+      </article>
+      <article className={styles.metric}>
+        <div className={styles.label}>{t("Token 消耗")}<InfoTooltip content={tokensTooltip} /></div>
+        <div className={styles.body}>
+          <div className={styles.value} title={formatInteger(metrics.token_usage)}>{formatCompactInteger(metrics.token_usage)}</div>
+          <div className={styles.secondary}>{t("提示词 {tokens}", { tokens: formatCompactInteger(metrics.prompt_tokens) })}</div>
+        </div>
+      </article>
+      <article className={styles.metric}>
+        <div className={styles.label}>{t("价值估算")}<InfoTooltip content={costTooltip} /></div>
+        <div className={styles.body}>
+          <div className={styles.value} title={costDisplay}>{costDisplay}</div>
+          <div className={styles.secondary}>{metrics.unpriced_calls > 0
+            ? t("{count} 次调用未定价", { count: formatCompactInteger(metrics.unpriced_calls) })
+            : metrics.costs.length > 0 ? t("全部调用已定价") : t("尚未定价任何模型")}</div>
+        </div>
+      </article>
+      <article className={styles.metric}>
+        <div className={styles.label}>{t("响应与速度")}<InfoTooltip content={latencyTooltip} /></div>
+        <div className={styles.body}>
+          <div className={styles.value} title={metrics.avg_ttft_ms === null ? "—" : formatLatency(metrics.avg_ttft_ms)}>
+            {metrics.avg_ttft_ms === null ? "—" : formatLatency(metrics.avg_ttft_ms)}
+          </div>
+          <div className={styles.secondary}>
+            {metrics.output_tokens_per_second === null ? t("首字耗时平均") : formatSpeed(metrics.output_tokens_per_second)}
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>;
 }

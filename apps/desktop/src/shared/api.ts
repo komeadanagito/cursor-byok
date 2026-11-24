@@ -618,6 +618,11 @@ export const api = {
   calls: () => request<LlmCall[]>("/llm-calls?limit=500"),
   pairBrowserDevTools: () => request<{ token: string }>("/browser-devtools/pair", { method: "POST" }),
   call: (id: string) => request<CallDetail>(`/llm-calls/${encodeURIComponent(id)}`),
+  openCallDetails: async (id: string) => {
+    const url = new URL(window.location.href);
+    url.hash = `/calls/${encodeURIComponent(id)}`;
+    await request<void>("/desktop/open-external-url", { method: "POST", body: JSON.stringify({ url: url.toString() }) });
+  },
   openExternalUrl: (url: string) => request<void>("/desktop/open-external-url", { method: "POST", body: JSON.stringify({ url }) }),
   observability: () => request<{ detailed: boolean }>("/settings/observability"),
   setObservability: (detailed: boolean) => request<{ detailed: boolean }>("/settings/observability", { method: "PUT", body: JSON.stringify({ detailed }) }),

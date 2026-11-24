@@ -6,6 +6,7 @@ import { useMessage } from "./shared/ui/message";
 import { AppFrame } from "./shell/AppFrame";
 import { AppLayout } from "./shell/AppLayout";
 import { CallsPage } from "./features/calls/CallsPage";
+import { CallDetailsPage } from "./features/calls/CallDetailsPage";
 import { CursorSettingsPage } from "./features/models/CursorSettingsPage";
 import { HomePage } from "./features/home/HomePage";
 import { PluginManagementPage } from "./features/plugins/PluginManagementPage";
@@ -20,6 +21,7 @@ export function App() {
     <TooltipProvider>
       <HashRouter>
         <Routes>
+          <Route path="calls/:callId" element={<CallDetailsPage />} />
           <Route element={<AppFrame />}>
             <Route element={<AppLayout />}>
               <Route index element={<HomePage />} />

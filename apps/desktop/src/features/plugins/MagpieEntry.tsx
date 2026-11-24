@@ -57,7 +57,7 @@ export function MagpieEntry() {
       <div className={styles.cardFooter}>
         <span className={styles.footerNote}>{note}</span>
         <div className={styles.footerActions}>
-          <Button onClick={() => navigate("/harness/cursor?open=magpie")}>{t("管理模型")}</Button>
+          <Button size="small" onClick={() => navigate("/harness/cursor?magpie=1")}>{t("管理模型")}</Button>
         </div>
       </div>
     </Card>

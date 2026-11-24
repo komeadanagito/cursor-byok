@@ -1,32 +1,19 @@
-//! The local Magpie gateway as a provider: connect it, choose which of its chat models Cursor offers, and test them.
+//! Local Magpie gateway hook and classic modal selector for choosing enabled models.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, type MagpieCatalog, type Model } from "../../shared/api";
+import { api, type MagpieCatalog } from "../../shared/api";
 import { appStore } from "../../shared/store/appStore";
-import { Card } from "../../shared/ui/Card";
-import controls from "../../shared/ui/Controls.module.scss";
-import { Icon } from "../../shared/ui/Icon";
-import { checkIcon, searchIcon } from "../../shared/ui/icons";
-import { brandIconUrl } from "../../shared/utils/brandIcons";
+import { Button } from "../../shared/ui/Button";
+import { Checkbox } from "../../shared/ui/Checkbox";
+import { TextInput } from "../../shared/ui/FormControls";
+import { Modal } from "../../shared/ui/Modal";
 import { useMessage } from "../../shared/ui/message";
-import { TruncatedButton } from "../../shared/ui/TruncatedButton";
-import { PageActions } from "../../shell/PageActions";
-import { CursorModelTestResult, type CursorModelTestState } from "./CursorModelTestResult";
-import { MAGPIE_PROVIDER } from "./cursorProviders";
-import { ModelCheck, ModelRow, ProviderIcon } from "./ProviderParts";
-import styles from "./Providers.module.scss";
 
 type GatewayModel = MagpieCatalog["models"][number];
 
 const errorText = (cause: unknown) => cause instanceof Error ? cause.message : String(cause);
 const vendor = (id: string) => id.includes("/") ? id.slice(0, id.indexOf("/")) : "";
-const knownVendors = new Map([
-  ["anthropic", { name: "Anthropic", brand: "claude" }],
-  ["openai", { name: "OpenAI", brand: "openai" }],
-  ["google", { name: "Google", brand: "google" }],
-  ["deepseek", { name: "DeepSeek", brand: "deepseek" }],
-]);
 
-export const enabledMagpieModels = (catalog: MagpieCatalog) => catalog.models.filter(model => !catalog.disabled.includes(model.id));
+export const enabledMagpieModels = (catalog: MagpieCatalog) => catalog.models.filter((model) => !catalog.disabled.includes(model.id));
 
 export const magpieSummary = (catalog: MagpieCatalog) =>
   `127.0.0.1:${catalog.port} · ${t("已启用 {enabled} / {total} 个模型", { enabled: enabledMagpieModels(catalog).length, total: catalog.models.length })}`;
@@ -43,23 +30,16 @@ export function useMagpieCatalog() {
   return { catalog, setCatalog, reload };
 }
 
-export function MagpiePage({ catalog, setCatalog, models, busy: pageBusy, testing, testResults, batchTesting, onTest, onTestAll }: {
-  catalog: MagpieCatalog | null | undefined;
-  setCatalog: (catalog: MagpieCatalog | null) => void;
-  /** Magpie's models as Cursor sees them: the enabled ones, keyed by gateway id in `model_id`. */
-  models: Model[];
-  busy: boolean;
-  testing: Set<string>;
-  testResults: Map<string, CursorModelTestState>;
-  batchTesting: boolean;
-  onTest: (model: Model) => void;
-  onTestAll: (models: Model[]) => void;
-}) {
+export function MagpieModelsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { catalog, setCatalog, reload } = useMagpieCatalog();
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const saving = useRef(Promise.resolve());
   const message = useMessage();
-  const cursorModels = useMemo(() => new Map(models.map(model => [model.model_id, model])), [models]);
+
+  useEffect(() => {
+    if (open) void reload();
+  }, [open, reload]);
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
@@ -75,15 +55,15 @@ export function MagpiePage({ catalog, setCatalog, models, busy: pageBusy, testin
     setCatalog(null);
     await appStore.refresh();
   });
-  // A choice applies at once; saves run one after another so the last click is the one that stays.
+
   const select = (ids: string[], on: boolean) => {
     if (!catalog) return;
-    const enabled = new Set(enabledMagpieModels(catalog).map(model => model.id));
+    const enabled = new Set(enabledMagpieModels(catalog).map((model) => model.id));
     for (const id of ids) {
       if (on) enabled.add(id);
       else enabled.delete(id);
     }
-    setCatalog({ ...catalog, disabled: catalog.models.map(model => model.id).filter(id => !enabled.has(id)) });
+    setCatalog({ ...catalog, disabled: catalog.models.map((model) => model.id).filter((id) => !enabled.has(id)) });
     saving.current = saving.current.then(async () => {
       try {
         await api.selectMagpieModels([...enabled]);
@@ -101,79 +81,69 @@ export function MagpiePage({ catalog, setCatalog, models, busy: pageBusy, testin
     for (const model of catalog?.models ?? []) {
       const name = model.magpie_label ?? model.display_name ?? model.id;
       if (needle && !`${model.id} ${name}`.toLowerCase().includes(needle)) continue;
-      const key = vendor(model.id);
+      const key = vendor(model.id) || t("其他");
       result.set(key, [...(result.get(key) ?? []), model]);
     }
     return [...result.entries()];
   }, [catalog, query]);
 
-  if (catalog === undefined) return <Card className={styles.list}><div className={styles.empty}>{t("正在读取 Magpie 状态…")}</div></Card>;
-
-  if (catalog === null) {
-    return <Card className={styles.list}>
-      <div className={styles.intro}>
-        <ProviderIcon provider={MAGPIE_PROVIDER} size="3em" />
-        <strong>{t("连接本机 Magpie 网关")}</strong>
-        <span>{t("先在这台电脑上启动 Magpie，BYOK 会自动找到它并同步可用的对话模型。")}</span>
-        <ul>
-          <li><Icon icon={checkIcon} size="1em" />{t("自动发现本机端口，无需填写 API Key")}</li>
-          <li><Icon icon={checkIcon} size="1em" />{t("启动时和每 10 分钟同步一次模型目录")}</li>
-          <li><Icon icon={checkIcon} size="1em" />{t("独立于手动添加的供应商，互不影响")}</li>
-        </ul>
-        <button type="button" className={controls.primary} disabled={busy} onClick={() => void connect()}>{busy ? t("处理中…") : t("连接 Magpie")}</button>
-      </div>
-    </Card>;
-  }
-
-  const fallback = <ProviderIcon provider={MAGPIE_PROVIDER} />;
-  return <>
-    <PageActions>
-      <label className={styles.search}>
-        <Icon icon={searchIcon} size="1em" />
-        <input value={query} placeholder={t("搜索模型名称或 ID")} aria-label={t("搜索模型名称或 ID")} onChange={event => setQuery(event.target.value)} />
-      </label>
-      <div className={styles.segmented}>
-        <button type="button" disabled={pageBusy || models.length === 0} onClick={() => onTestAll(models)}>{batchTesting ? t("取消全部测试") : t("一键测试")}</button>
-        <button type="button" disabled={busy} onClick={() => void connect()}>{t("同步目录")}</button>
-        <button type="button" disabled={busy} onClick={() => void disconnect()}>{t("断开连接")}</button>
-      </div>
-    </PageActions>
-    {groups.length === 0 ? <Card className={styles.list}><div className={styles.empty}>{t("没有匹配的模型")}</div></Card> : <div className={styles.groups}>
-      {groups.map(([key, group]) => {
-        const ids = group.map(model => model.id);
-        const enabled = ids.filter(id => !catalog.disabled.includes(id)).length;
-        const all = enabled === ids.length;
-        const vendorInfo = knownVendors.get(key.toLowerCase());
-        const logo = brandIconUrl(vendorInfo?.brand);
-        return <Card key={key} className={styles.list}>
-          <div className={styles.groupHeader}>
-            {logo && <Icon mask={logo} />}
-            <strong>{vendorInfo?.name ?? (key || t("其他"))}</strong>
-            <span className={styles.groupCount}>{enabled} / {ids.length}</span>
-            <button type="button" className={styles.textButton} onClick={() => select(ids, !all)}>{all ? t("全不选") : t("全选")}</button>
+  return <Modal
+    fullHeight
+    open={open}
+    title={t("Magpie 本地网关")}
+    busy={busy}
+    onClose={onClose}
+    onSubmit={onClose}
+    submitLabel={t("完成")}
+  >
+    {catalog === undefined
+      ? <div style={{ padding: 12 }}>{t("正在读取 Magpie 状态…")}</div>
+      : catalog === null
+        ? <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <span>{t("先在这台电脑上启动 Magpie，BYOK 会自动找到它并同步可用的对话模型。")}</span>
+          <div>
+            <Button variant="primary" disabled={busy} onClick={() => void connect()}>
+              {busy ? t("处理中…") : t("连接 Magpie")}
+            </Button>
           </div>
-            {group.map(model => {
-              const on = !catalog.disabled.includes(model.id);
-              const name = model.magpie_label ?? model.display_name ?? model.id;
-              const cursorModel = on ? cursorModels.get(model.id) : undefined;
-              const running = cursorModel ? testing.has(cursorModel.model_hash) : false;
-              return <ModelRow
-                key={model.id}
-                modelId={model.id}
-                name={name}
-                fallback={fallback}
-                muted={!on}
-                badges={[...(model.reasoning ? [t("推理")] : []), ...(model.modalities?.input.includes("image") ? [t("图片")] : [])]}
-                context={model.context_window ?? null}
-                leading={<ModelCheck checked={on} label={t("启用 {model}", { model: name })} onChange={checked => select([model.id], checked)} />}
-                trailing={cursorModel && <div className={styles.actions}>
-                  <CursorModelTestResult compact state={testResults.get(cursorModel.model_hash)} testing={running} />
-                  <TruncatedButton size="small" disabled={pageBusy && !running} label={running ? t("取消测试") : t("测试")} onClick={() => onTest(cursorModel)} />
-                </div>}
-              />;
+        </div>
+        : <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 220px" }}>
+              <TextInput
+                value={query}
+                placeholder={t("搜索模型名称或 ID")}
+                aria-label={t("搜索模型名称或 ID")}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+            <Button size="small" disabled={busy} onClick={() => void connect()}>{t("同步目录")}</Button>
+            <Button size="small" disabled={busy} onClick={() => void disconnect()}>{t("断开连接")}</Button>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--vscode-descriptionForeground)" }}>{magpieSummary(catalog)}</div>
+          {groups.length === 0
+            ? <div style={{ padding: 12, color: "var(--vscode-descriptionForeground)" }}>{t("没有匹配的模型")}</div>
+            : groups.map(([groupName, groupModels]) => {
+              const ids = groupModels.map((model) => model.id);
+              const enabledCount = ids.filter((id) => !catalog.disabled.includes(id)).length;
+              const all = enabledCount === ids.length;
+              return <div key={groupName} style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 8, borderTop: "1px solid var(--vscode-sideBar-border)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <strong>{groupName} ({enabledCount}/{ids.length})</strong>
+                  <Button size="small" onClick={() => select(ids, !all)}>{all ? t("全不选") : t("全选")}</Button>
+                </div>
+                {groupModels.map((model) => {
+                  const on = !catalog.disabled.includes(model.id);
+                  const name = model.magpie_label ?? model.display_name ?? model.id;
+                  return <Checkbox
+                    key={model.id}
+                    checked={on}
+                    label={`${name} (${model.id})`}
+                    onChange={(checked) => select([model.id], checked)}
+                  />;
+                })}
+              </div>;
             })}
-        </Card>;
-      })}
-    </div>}
-  </>;
+        </div>}
+  </Modal>;
 }

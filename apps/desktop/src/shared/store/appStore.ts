@@ -286,6 +286,10 @@ export const appStore = {
     }
   },
 
+  async openCallDetails(callId: string) {
+    await perform(() => api.openCallDetails(callId));
+  },
+
   async updateDetailed(detailed: boolean) {
     await perform(async () => update(await api.setObservability(detailed)));
   },

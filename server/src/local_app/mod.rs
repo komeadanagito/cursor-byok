@@ -117,7 +117,11 @@ impl CursorHarness {
         if self.inner.store.cursor_takeover_enabled().await?
             && matches!(self.inner.ca.state()?, CaState::Ready)
         {
-            self.enable().await
+            self.enable().await?;
+            if let Err(error) = account::inject_if_missing().await {
+                tracing::warn!(%error, "failed to restore local Cursor membership cache");
+            }
+            Ok(())
         } else {
             settings::clear_stale_managed_settings(
                 self.inner.store.port_settings().await?.proxy_port,

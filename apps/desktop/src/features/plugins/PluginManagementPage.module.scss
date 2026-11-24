@@ -2,7 +2,7 @@
 
 .pluginGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 12px;
   padding-top: 10px;
 }
@@ -14,13 +14,13 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 14px;
-  padding: 16px 16px 0;
+  padding: 18px;
 }
 
 .pluginCardTop {
   min-width: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 }
 
@@ -136,20 +136,14 @@
   word-break: break-word;
 }
 
-// Status on the left, actions on the right, separated from the identity block.
 .cardFooter {
-  min-height: 52px;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 -16px;
-  padding: 10px 16px;
-  border-top: 1px solid color-mix(in srgb, var(--vscode-sideBar-border) 70%, transparent);
+  flex-direction: column;
+  gap: 8px;
 }
 
 .footerNote {
   min-width: 0;
-  flex: 1 1 auto;
   color: var(--vscode-descriptionForeground);
   font-size: type.$font-size-2xs;
   line-height: 1.4;
@@ -160,9 +154,9 @@
 }
 
 .footerActions {
-  flex: none;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 

@@ -258,7 +258,7 @@ function PluginCard({ plugin, onOpen }: {
           <span className={styles.pluginAuthor}>{plugin.author}</span>
         )}
       </div>
-      <div className={`${styles.cardFooter} ${styles.cardActions}`}>
+      <div className={styles.cardActions}>
         <TruncatedButton
           size="small"
           variant="primary"

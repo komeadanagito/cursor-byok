@@ -10,6 +10,7 @@ import { CommitSettingsCard } from "./CommitSettingsCard";
 import { ExternalApiSettingsCard } from "./ExternalApiSettingsCard";
 import { ProxySettingsCard } from "./ProxySettingsCard";
 import { TabSettingsCard } from "./TabSettingsCard";
+import { ModelPricesCard } from "../calls/ModelPricesCard";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Checkbox";
 import { ConfirmDialog } from "../../shared/ui/ConfirmDialog";
@@ -23,7 +24,7 @@ import { themeOptions } from "../../shared/theme/theme";
 import styles from "./SettingsPage.module.scss";
 
 export function SettingsPage() {
-  const { detailed, ports, theme } = useAppStore();
+  const { calls, detailed, ports, theme } = useAppStore();
   const { preference, locale } = useI18n();
   const message = useMessage();
   const [proxyPort, setProxyPort] = useState(String(ports.proxy_port));
@@ -281,6 +282,7 @@ export function SettingsPage() {
           ))}
         </div>
       </TitledCard>
+      <ModelPricesCard calls={calls} />
       <TitledCard title={t("存储管理")}>
         <div className={styles.storageRow}>
           <div>

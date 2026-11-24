@@ -79,11 +79,11 @@ export function WorkspaceSearchEntry() {
       <div className={styles.cardFooter}>
         <span className={`${styles.footerNote} ${missingCli ? styles.footerWarning : ""}`}>{note}</span>
         <div className={styles.footerActions}>
-          <Button disabled={workspaceExtensionBusy} onClick={() => void saveVsix()}>
+          <Button size="small" disabled={workspaceExtensionBusy} onClick={() => void saveVsix()}>
             {t("另存 VSIX")}
           </Button>
           {installable && (
-            <Button variant="primary" disabled={workspaceExtensionBusy || missingCli} onClick={() => void install()}>
+            <Button size="small" variant="primary" disabled={workspaceExtensionBusy || missingCli} onClick={() => void install()}>
               {workspaceExtensionBusy ? t("安装中…") : entry.kind === "outdated" ? t("更新") : t("安装")}
             </Button>
           )}

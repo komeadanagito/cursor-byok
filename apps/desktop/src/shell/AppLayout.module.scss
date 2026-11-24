@@ -133,64 +133,32 @@
   z-index: 12500;
   top: var(--window-safe-top);
   right: max(var(--app-page-padding), calc((100% - var(--app-page-max-width)) / 2));
-  left: max(var(--app-page-padding), calc((100% - var(--app-page-max-width)) / 2));
   height: calc(var(--app-content-top) - var(--window-safe-top));
   display: flex;
   align-items: center;
-  gap: var(--app-region-gap);
-  // The row spans the page width only to lay out title and toolbar; the space
-  // between them must stay transparent to the window drag layer beneath.
-  pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   -webkit-touch-callout: none;
   -webkit-user-drag: none;
-}
-
-.pageTitle {
-  // Title and toolbar shrink together; inside the toolbar only the search field
-  // can narrow, and inside the title the detail goes before the name.
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  font-size: type.$font-size-xxl;
-  font-weight: bolder;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  pointer-events: auto;
-  -webkit-app-region: drag;
-}
-
-.actions {
-  flex: 0 1 auto;
-  min-width: min-content;
-  height: var(--app-toolbar-height);
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 6px;
-  gap: 3px;
-  pointer-events: auto;
-  box-shadow: 0 0px 6px 4px var(--vscode-editor-background);
-  transform: translateX(6px);
   // Page actions (e.g. the overview time-range bar and the floating refresh
   // button) must not act as a window drag handle; the dedicated drag layer in
   // AppHeader owns window dragging. Otherwise these controls get dragged and
   // double-click maximizes the window.
   -webkit-app-region: no-drag;
+}
 
-  // Controls inside the toolbar sit on the card itself: a second fill per
-  // control reads as a separate grey step next to the card's own.
-  --control-height: 25px;
-  --control-inline-padding: 8px;
-  --control-background: transparent;
-  --control-border: transparent;
-  --control-hover-background: var(--vscode-list-hoverBackground);
-
-  > button { flex: none; }
+.actions {
+  height: var(--app-toolbar-height);
+  min-width: var(--app-toolbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 6px;
+  gap: 3px;
+  box-shadow: 0 0px 6px 4px var(--vscode-editor-background);
+  transform: translateX(6px);
 }
 
 .pageActions {
